@@ -8,6 +8,14 @@
 - Evolucion continua
 
 ## Modulos iniciales
+- Ingreso Chatwoot (conversacion personal autorizada)
+- Buffer durable de mensajes (20 segundos)
+- Clasificador inteligente de intencion
+- Router modular
+- Ejecutor de acciones por funcionalidad
+- Writer canonico de estado y auditoria
+- Generador de respuesta final
+- Salida Chatwoot
 - Planes y objetivos
 - Proyectos
 - Tareas

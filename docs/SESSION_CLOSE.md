@@ -24,6 +24,14 @@
 - evidencia: Docker Swarm activo, Traefik `v3.4.0`, red overlay `codexanet`, DNS `sara.codexa.uy` y `/opt/sara` creado.
 - pendientes: reautenticar `gh`, crear repo remoto, configurar `origin` y preparar stack Swarm SARA.
 
+## 2026-06-02 (cierre 2)
+- resumen: arquitectura v1 del flujo Chatwoot personal diagramada y primera task de ingreso trazable especificada.
+- deploy: no
+- tasks_actualizadas: TASK-20260602-002 (SPEC)
+- docs_actualizados: BIBLIA, LEY_ARQUITECTURA, ARQUITECTURA_CHATWOOT_V1, CONTRATOS, BUSINESS, SECURITY, TEST_SUITE, REGRESSION_CASES, BACKLOG, TASKS/README, INICIAL, CHANGELOG
+- evidencia: filtro estricto account `6`, inbox `44`, conversation `20`; buffer durable renovable de 20 segundos; modulos LLM separados; regla de no confirmar accion sin ejecucion verificada.
+- pendientes: completar `CHATWOOT_WEBHOOK_SECRET`, aprobar TASK-20260602-002 e implementar el slice de ingreso.
+
 ## Template de cierre
 - fecha: YYYY-MM-DD
 - sesion: [completar_id_opcional]

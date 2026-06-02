@@ -22,14 +22,15 @@ LAS DECISIONES SE TOMAN CON DATOS Y PROTOCOLOS, NO CON EL ESTADO EMOCIONAL DEL M
 4. docs/SYSTEM.md
 5. docs/BUSINESS.md
 6. docs/CONTRATOS.md
-7. docs/DEBUG.md
-8. docs/DEPLOY.md
-9. docs/INFRASTRUCTURE.md
-10. docs/SECURITY.md
-11. docs/TEST_SUITE.md
-12. docs/REGRESSION_CASES.md
-13. docs/ERROR_REGISTRY.md
-14. docs/biblioteca/README.md
+7. docs/ARQUITECTURA_CHATWOOT_V1.md
+8. docs/DEBUG.md
+9. docs/DEPLOY.md
+10. docs/INFRASTRUCTURE.md
+11. docs/SECURITY.md
+12. docs/TEST_SUITE.md
+13. docs/REGRESSION_CASES.md
+14. docs/ERROR_REGISTRY.md
+15. docs/biblioteca/README.md
 
 ## Task activa o proxima
 - Task: TASK-20260531-001

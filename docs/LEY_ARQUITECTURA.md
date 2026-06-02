@@ -12,6 +12,7 @@ Esta es la ley primera de construccion. No se acepta una implementacion que func
 4. Agregar un modulo no debe modificar comportamiento existente salvo cambio explicito y documentado.
 5. Toda entrada, decision, ejecucion y escritura de estado debe ser trazable.
 6. La base compartida solo puede ser accedida mediante objetos propios con prefijo `sara_`.
+7. La redaccion de respuesta ocurre despues de ejecutar y verificar cualquier accion solicitada.
 
 ## Adaptacion clave para SARA
 SARA es API-first: no usa n8n como runtime de orquestacion. Toda automatizacion y decision corre por servicios API, jobs y eventos con contratos versionados.
@@ -44,3 +45,4 @@ Regla: un solo writer canonico actualiza el estado agregado para evitar inconsis
 - Tomar decisiones criticas sin evidencia de datos.
 - Consultar, crear, alterar o eliminar tablas, vistas, funciones, triggers, politicas o secuencias ajenas al prefijo `sara_`.
 - Incorporar funcionalidad sin tests del modulo y sin ejecutar regresion.
+- Generar una confirmacion de accion antes de obtener resultado verificable del modulo ejecutor.

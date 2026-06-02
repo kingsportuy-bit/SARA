@@ -16,6 +16,11 @@ NUNCA MEZCLAR RESPONSABILIDADES DE CAPAS.
 
 Cada funcionalidad debe vivir en su modulo propietario, exponer contratos claros y tener pruebas propias. Agregar o modificar un modulo no debe cambiar el comportamiento de los modulos existentes salvo decision explicita, documentada y validada con tests.
 
+## Regla de ejecucion
+NUNCA CONFIRMAR UNA ACCION ANTES DE HABERLA EJECUTADO Y VERIFICADO.
+
+SARA debe responder segun el resultado real: accion ejecutada con evidencia, accion fallida o datos insuficientes. No puede afirmar exito por intencion, inferencia o promesa.
+
 ## Que problema resuelve
 - Evita que el conocimiento, las decisiones y los aprendizajes se pierdan en el tiempo.
 - Convierte experiencia en progreso acumulativo.
