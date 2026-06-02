@@ -8,3 +8,4 @@
 2026-06-02 | v0.1.5 | architecture | flujo Chatwoot personal, buffer durable de 20 segundos, dos etapas LLM, modulos de accion y writer canonico diagramados
 2026-06-02 | v0.1.6 | security | secretos retirados de `.env.example`, integraciones trasladadas a `.env.local` y claves Chatwoot/DeepSeek normalizadas
 2026-06-02 | v0.2.0 | chatwoot-bootstrap | servicio Fastify, migracion `sara_*`, buffer durable, bypass temporal DeepSeek, salida Chatwoot, stack Swarm y tests iniciales implementados
+2026-06-02 | v0.2.1 | deploy | stack `sara_api` desplegado `1/1`, migracion aplicada, webhook Chatwoot `id=13` registrado y smoke HTTPS validado

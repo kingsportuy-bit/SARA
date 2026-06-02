@@ -19,9 +19,12 @@
 - PENDING: unit tests modulo decisiones
 - PENDING: integration test checkin -> decision -> dashboard
 - PASS: guard test migraciones limitadas a prefijo `sara_`
+- PASS: smoke HTTPS `GET https://sara.codexa.uy/health`
+- PASS: smoke webhook fuera de alcance responde `202` y descarta sin procesar
 
 ## Evidencia local 2026-06-02
 - `npm run typecheck`: PASS
 - `npm test`: PASS (7 tests)
+- `npm test`: PASS (8 tests luego de hardening del worker)
 - `npm run build`: PASS
 - `npm audit --audit-level=high`: PASS (0 vulnerabilidades)

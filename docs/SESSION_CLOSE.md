@@ -32,6 +32,14 @@
 - evidencia: filtro estricto account `6`, inbox `44`, conversation `20`; buffer durable renovable de 20 segundos; modulos LLM separados; regla de no confirmar accion sin ejecucion verificada.
 - pendientes: completar `CHATWOOT_WEBHOOK_SECRET`, aprobar TASK-20260602-002 e implementar el slice de ingreso.
 
+## 2026-06-02 (cierre 3)
+- resumen: primer slice Chatwoot bootstrap implementado y desplegado con respuesta directa DeepSeek posterior al buffer.
+- deploy: si
+- tasks_actualizadas: TASK-20260602-002 (IN_PROGRESS, pendiente smoke real del operador)
+- docs_actualizados: ARQUITECTURA_CHATWOOT_V1, CONTRATOS, SECURITY, TEST_SUITE, CHANGELOG, SESSION_CLOSE
+- evidencia: `sara_api` `1/1`, `GET https://sara.codexa.uy/health` PASS, webhook Chatwoot `id=13`, smoke fuera de alcance descartado con `202`, 8 tests locales PASS.
+- pendientes: enviar mensaje real en conversacion `20`, verificar respuesta luego del buffer y recuperar `CHATWOOT_WEBHOOK_SECRET` para activar HMAC.
+
 ## Template de cierre
 - fecha: YYYY-MM-DD
 - sesion: [completar_id_opcional]
