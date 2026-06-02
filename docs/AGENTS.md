@@ -8,9 +8,12 @@
 - Especialista Salud: sueno, energia, habitos y estado general.
 - Especialista Fisico: entrenamiento, progreso y recuperacion.
 - Especialista Revision: analisis historico y ajustes.
+- opencode: agente ejecutor de trabajo pesado; implementa, testea, documenta y commitea solo tareas planificadas y aprobadas.
 
 ## Regla operativa
 Ningun agente ejecuta fuera de protocolo y contrato del modulo.
+
+opencode trabaja bajo `docs/agents/OPENCODE_EXECUTOR_PROTOCOL.md`.
 
 ## Reglas de implementacion
 - No mezclar responsabilidades de capas.

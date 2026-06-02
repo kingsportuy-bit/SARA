@@ -17,6 +17,7 @@
 3. docs/SECURITY.md
 4. docs/agents/COMMUNICATION_PROTOCOL.md
 5. docs/TASKS/TASK_TEMPLATE.md
+6. docs/agents/OPENCODE_EXECUTOR_PROTOCOL.md si el agente es opencode
 
 ## Canal de comunicacion
 - Archivo: docs/agents/channels/COMMUNICATION_[completar_agente].md
