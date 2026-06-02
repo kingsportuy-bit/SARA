@@ -30,6 +30,10 @@ Efecto:
 - Crear o extender buffer durable a `now() + 20 seconds`.
 - No invocar LLM dentro del request del webhook.
 
+Nota bootstrap:
+- Temporalmente, el worker envia el lote consolidado directo a DeepSeek y publica la respuesta en Chatwoot.
+- Este bypass no puede ejecutar ni confirmar acciones.
+
 ### Contrato interno: message-buffer.claim-due
 Entrada:
 - timestamp actual

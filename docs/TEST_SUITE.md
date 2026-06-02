@@ -8,14 +8,20 @@
 - Toda migracion valida que solo afecta objetos con prefijo `sara_`.
 
 ## Inventario inicial
-- PENDING: webhook Chatwoot acepta solo cuenta `6`, inbox `44`, conversacion `20`
-- PENDING: webhook Chatwoot rechaza firma invalida
+- PASS: webhook Chatwoot acepta solo cuenta `6`, inbox `44`, conversacion `20`
+- PASS: webhook Chatwoot rechaza firma invalida o vencida
 - PENDING: idempotencia por delivery ID y message ID
 - PENDING: buffer extiende `process_after` por cada mensaje entrante valido
 - PENDING: worker reclama una sola vez cada buffer vencido
-- PENDING: mensajes salientes no generan loop
+- PASS: mensajes salientes no generan loop
 - PENDING: respuesta no confirma accion sin evidencia exitosa
 - PENDING: contract tests API v0
 - PENDING: unit tests modulo decisiones
 - PENDING: integration test checkin -> decision -> dashboard
-- PENDING: guard test migraciones limitadas a prefijo `sara_`
+- PASS: guard test migraciones limitadas a prefijo `sara_`
+
+## Evidencia local 2026-06-02
+- `npm run typecheck`: PASS
+- `npm test`: PASS (7 tests)
+- `npm run build`: PASS
+- `npm audit --audit-level=high`: PASS (0 vulnerabilidades)

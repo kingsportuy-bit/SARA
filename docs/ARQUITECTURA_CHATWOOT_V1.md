@@ -51,6 +51,9 @@ La respuesta final solo puede afirmar una accion si `action-executor` devuelve e
 - La conversacion mantiene un buffer abierto con `process_after = now() + interval '20 seconds'`.
 - Si llega otro mensaje antes del vencimiento, se agrega al lote y se extiende `process_after`.
 - Un worker reclama buffers vencidos con control de concurrencia.
+- Los ingresos simultaneos de una conversacion se serializan mediante lock transaccional.
+- Un lote trabado en `processing` se puede reclamar nuevamente luego de 5 minutos.
+- Un fallo transitorio reabre el lote hasta un maximo de 3 intentos.
 - El lote queda vinculado a sus mensajes, intentos de procesamiento y resultado final.
 
 ## Idempotencia y loops
@@ -73,6 +76,12 @@ La respuesta final solo puede afirmar una accion si `action-executor` devuelve e
 Ninguna migracion puede tocar objetos sin prefijo `sara_`.
 
 ## Fases
+### Bootstrap temporal - prueba end-to-end
+- Despues del buffer, enviar mensajes consolidados directamente a DeepSeek.
+- Enviar la respuesta generada a Chatwoot.
+- No ejecutar acciones ni afirmar que se realizaron.
+- Retirar este bypass al habilitar clasificador, router y modulos funcionales.
+
 ### Fase 1 - Ingress trazable
 - Endpoint webhook.
 - Firma, filtro estricto e idempotencia.

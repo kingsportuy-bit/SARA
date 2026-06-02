@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  api:
+    image: sara-api:latest
+    environment:
+      PORT: "3000"
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      CHATWOOT_URL: ${CHATWOOT_URL}
+      CHATWOOT_ACCOUNT_ID: ${CHATWOOT_ACCOUNT_ID}
+      CHATWOOT_INBOX_ID: ${CHATWOOT_INBOX_ID}
+      CHATWOOT_CONVERSATION_ID: ${CHATWOOT_CONVERSATION_ID}
+      CHATWOOT_USER_TOKEN: ${CHATWOOT_USER_TOKEN}
+      CHATWOOT_WEBHOOK_SECRET: ${CHATWOOT_WEBHOOK_SECRET}
+      CHATWOOT_VERIFY_SIGNATURE: ${CHATWOOT_VERIFY_SIGNATURE:-true}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+      SARA_BUFFER_SECONDS: ${SARA_BUFFER_SECONDS:-20}
+      SARA_WORKER_INTERVAL_MS: ${SARA_WORKER_INTERVAL_MS:-2000}
+    networks:
+      - codexanet
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=codexanet
+        - traefik.http.routers.sara.entrypoints=websecure
+        - traefik.http.routers.sara.rule=Host(`sara.codexa.uy`)
+        - traefik.http.routers.sara.tls=true
+        - traefik.http.routers.sara.tls.certresolver=letsencryptresolver
+        - traefik.http.services.sara.loadbalancer.server.port=3000
+
+networks:
+  codexanet:
+    external: true

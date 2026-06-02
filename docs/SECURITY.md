@@ -53,7 +53,13 @@ Regla absoluta:
 - `CHATWOOT_CONVERSATION_ID`
 - `CHATWOOT_USER_TOKEN`
 - `CHATWOOT_WEBHOOK_SECRET`
+- `CHATWOOT_VERIFY_SIGNATURE`
 - `DEEPSEEK_API_KEY`
+
+## Excepcion bootstrap temporal
+- Hasta recuperar el secreto del webhook Chatwoot, el primer smoke test puede ejecutarse con `CHATWOOT_VERIFY_SIGNATURE=false`.
+- Esta excepcion solo habilita el endpoint ya filtrado por cuenta `6`, inbox `44` y conversacion `20`.
+- Debe retirarse inmediatamente al cargar `CHATWOOT_WEBHOOK_SECRET`.
 
 ## Auditoria
 - Incidentes de seguridad: `docs/INCIDENTS.md`.
