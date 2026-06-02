@@ -13,9 +13,9 @@ Entrada:
 
 Acepta procesamiento solo si:
 - `event = message_created`
-- `account.id = 6`
-- `inbox.id = 44`
-- `conversation.id = 20`
+- `account.id = 7`
+- `inbox.id = 45`
+- `conversation.id = 85`
 - mensaje entrante del usuario
 - firma valida
 - entrega y mensaje no procesados previamente

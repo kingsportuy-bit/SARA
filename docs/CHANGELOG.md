@@ -9,3 +9,4 @@
 2026-06-02 | v0.1.6 | security | secretos retirados de `.env.example`, integraciones trasladadas a `.env.local` y claves Chatwoot/DeepSeek normalizadas
 2026-06-02 | v0.2.0 | chatwoot-bootstrap | servicio Fastify, migracion `sara_*`, buffer durable, bypass temporal DeepSeek, salida Chatwoot, stack Swarm y tests iniciales implementados
 2026-06-02 | v0.2.1 | deploy | stack `sara_api` desplegado `1/1`, migracion aplicada, webhook Chatwoot `id=13` registrado y smoke HTTPS validado
+2026-06-02 | v0.2.2 | chatwoot-scope | alcance personal migrado a `account=7`, `inbox=45`, `conversation=85`; webhook de SARA movido al account correcto y descarte de copias externas cubierto por test
