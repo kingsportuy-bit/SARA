@@ -22,4 +22,22 @@ describe("bootstrapProcessor", () => {
     await processor.processDue();
     expect(complete).toHaveBeenCalledWith("b1", "respuesta", 99);
   });
+
+  it("logs claim failures without crashing the service", async () => {
+    const error = vi.fn();
+    const store: MessageStore = {
+      async ingest() { return { accepted: true, duplicate: false }; },
+      async claimDue() { throw new Error("temporary database failure"); },
+      async complete() {},
+      async fail() {},
+    };
+    const processor = createBootstrapProcessor(
+      store,
+      { async generate() { return "unused"; } },
+      { async send() { return { id: 1 }; } },
+      { info: vi.fn(), error },
+    );
+    await expect(processor.processDue()).resolves.toBeUndefined();
+    expect(error).toHaveBeenCalledWith({ error: "temporary database failure" }, "buffer claim failed");
+  });
 });

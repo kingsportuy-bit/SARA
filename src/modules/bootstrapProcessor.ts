@@ -25,6 +25,9 @@ export function createBootstrapProcessor(
           logger.error({ bufferId: buffer.buffer_id, traceId: buffer.trace_id, error: message }, "buffer failed");
         }
       }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.error({ error: message }, "buffer claim failed");
     } finally {
       running = false;
     }
