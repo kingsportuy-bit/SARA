@@ -30,9 +30,11 @@ Efecto:
 - Crear o extender buffer durable a `now() + 20 seconds`.
 - No invocar LLM dentro del request del webhook.
 
-Nota bootstrap:
-- Temporalmente, el worker envia el lote consolidado directo a DeepSeek y publica la respuesta en Chatwoot.
-- Este bypass no puede ejecutar ni confirmar acciones.
+Nota worker post-buffer:
+- El worker intenta primero el pipeline modular: clasifica modulo, detecta intencion, enruta, ejecuta modulo y compone respuesta.
+- Si detecta `notes.create` ejecutable, ejecuta el modulo y confirma solo con evidencia real (`noteId` + `eventId`).
+- Si no hay accion ejecutable (modulo desconocido, intencion no detectada, ruta no ejecutable), usa DeepSeek como fallback.
+- DeepSeek nunca ejecuta ni confirma acciones.
 
 ### Contrato interno: message-buffer.claim-due
 Entrada:
