@@ -31,4 +31,11 @@ describe("migration guard", () => {
     expect(sql).toContain("enable row level security");
     expect(sql).toContain("revoke all on sara_session_contexts from anon, authenticated");
   });
+
+  it("session context upsert can clear focus and renews TTL", () => {
+    const sql = readFileSync("db/migrations/20260603_009_session_context.sql", "utf8");
+    expect(sql).toContain("focused_entity_type = p_focused_entity_type");
+    expect(sql).toContain("focused_entity_id = p_focused_entity_id");
+    expect(sql).toContain("expires_at = now() + (coalesce(p_ttl_minutes, 30) || ' minutes')::interval");
+  });
 });

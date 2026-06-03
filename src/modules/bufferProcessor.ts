@@ -104,7 +104,7 @@ export function createBufferProcessor(ctx: PipelineContext) {
           const count = actionResult.evidence?.count as number | undefined;
 
           if (tasks && count === 1 && tasks.length === 1) {
-            ctx.sessionContextModule.upsert({
+            await ctx.sessionContextModule.upsert({
               ...base,
               activeModule: "tasks",
               activeFlow: "task_listed",
@@ -280,7 +280,7 @@ export function createBufferProcessor(ctx: PipelineContext) {
       const sent = await ctx.outbound.send(buffer.conversation_id, response.content);
       await ctx.store.complete(buffer.buffer_id, response.content, sent.id);
 
-      void updateSessionContext(buffer, actionResult, intent.module, intent.action);
+      await updateSessionContext(buffer, actionResult, intent.module, intent.action);
 
       ctx.logger.info({ bufferId: buffer.buffer_id, traceId: buffer.trace_id, outboundMessageId: sent.id }, "buffer completed via pipeline");
     } catch (error) {

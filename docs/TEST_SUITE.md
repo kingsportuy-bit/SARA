@@ -240,6 +240,7 @@
 ### Session Context (TASK-20260603-009)
 - PASS: sara_session_contexts tiene unique constraint en account/inbox/conversation
 - PASS: sara_session_contexts tiene RLS y anon/authenticated revocado
+- PASS: sara_upsert_session_context permite limpiar foco y renueva TTL en cada upsert
 - PASS: sessionContextModule.get retorna contexto vigente
 - PASS: sessionContextModule.get retorna null si contexto no existe
 - PASS: sessionContextModule.get ignora contexto expirado (store retorna null)
@@ -276,3 +277,6 @@
 - `npm run typecheck`: PASS
 - `npm test`: PASS (226 tests)
 - `npm run build`: PASS
+- `npm run typecheck`: PASS (hardening foco/TTL TASK-20260603-009)
+- `npm test`: PASS (227 tests, hardening foco/TTL TASK-20260603-009)
+- `npm run build`: PASS (hardening foco/TTL TASK-20260603-009)

@@ -117,14 +117,14 @@ begin
     v_event_type := 'session_context_updated';
 
     update sara_session_contexts
-    set active_module = coalesce(p_active_module, sara_session_contexts.active_module),
-        active_flow = coalesce(p_active_flow, sara_session_contexts.active_flow),
-        focused_entity_type = coalesce(p_focused_entity_type, sara_session_contexts.focused_entity_type),
-        focused_entity_id = coalesce(p_focused_entity_id, sara_session_contexts.focused_entity_id),
+    set active_module = p_active_module,
+        active_flow = p_active_flow,
+        focused_entity_type = p_focused_entity_type,
+        focused_entity_id = p_focused_entity_id,
         awaiting_confirmation = p_awaiting_confirmation,
-        confirmation_payload = coalesce(p_confirmation_payload, sara_session_contexts.confirmation_payload),
+        confirmation_payload = p_confirmation_payload,
         context = sara_session_contexts.context || p_context,
-        expires_at = coalesce(sara_session_contexts.expires_at, now() + (p_ttl_minutes || ' minutes')::interval),
+        expires_at = now() + (coalesce(p_ttl_minutes, 30) || ' minutes')::interval,
         updated_at = now()
     where id = v_id;
   end if;
