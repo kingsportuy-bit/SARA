@@ -36,6 +36,14 @@ describe("messageNormalizer", () => {
     expect(result[0].normalization.removedChatwootGroupHeader).toBe(false);
   });
 
+  it("does not remove bold text at the start when it is not a Chatwoot group header", () => {
+    const result = normalizer.normalize([
+      { id: 1, content: "**idea:** mejorar la rutina semanal", createdAt: "2026-06-03T00:00:00Z" },
+    ]);
+    expect(result[0].content).toBe("**idea:** mejorar la rutina semanal");
+    expect(result[0].normalization.removedChatwootGroupHeader).toBe(false);
+  });
+
   it("normalizes multiple messages preserving id mapping", () => {
     const result = normalizer.normalize([
       { id: 1, content: "**+598 91 608 727 - Fabian:**\nnota: primera", createdAt: "2026-06-03T00:00:00Z" },

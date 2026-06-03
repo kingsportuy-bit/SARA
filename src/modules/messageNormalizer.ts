@@ -12,7 +12,7 @@ export interface MessageNormalizer {
   normalize(messages: Array<{ id: number; content: string; createdAt: string }>): NormalizedMessage[];
 }
 
-const CHATWOOT_GROUP_HEADER_REGEX = /^\*\*.+?\*\*\s*/;
+const CHATWOOT_GROUP_HEADER_REGEX = /^\*\*\+?\d[\d\s-]+ - [^*\n:]+:\*\*\s*/;
 
 export function createMessageNormalizer(): MessageNormalizer {
   return {

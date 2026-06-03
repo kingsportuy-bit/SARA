@@ -105,6 +105,7 @@
 - PASS: messageNormalizer preserva originalContent
 - PASS: messageNormalizer no elimina contenido normal que no sea encabezado
 - PASS: messageNormalizer no remueve bold inline
+- PASS: messageNormalizer no remueve bold inicial si no tiene formato de encabezado Chatwoot
 - PASS: messageNormalizer normaliza multiples mensajes preservando id mapping
 - PASS: messageNormalizer retorna content vacio para mensaje solo-header
 - PASS: messageNormalizer preserva createdAt
@@ -161,5 +162,5 @@
 
 ## Evidencia local 2026-06-03 (TASK-20260603-007)
 - `npm run typecheck`: PASS
-- `npm test`: PASS (131 tests)
+- `npm test`: PASS (132 tests)
 - `npm run build`: PASS
