@@ -1,15 +1,44 @@
 import type { ModuleIntentInput, ModuleIntentResult } from "../contracts/pipeline.js";
-import { matchesNotePrefix, extractNoteContent, stripChatwootHeader } from "./patterns.js";
+import { matchesNotePrefix, extractNoteContent, matchesNoteListQuery, matchesNoteSearchQuery, extractSearchQuery } from "./patterns.js";
 
 export interface ModuleIntentClassifier {
   classify(input: ModuleIntentInput): Promise<ModuleIntentResult>;
 }
 
 function detectNotesIntent(input: ModuleIntentInput): ModuleIntentResult | null {
-  const rawText = input.messages.map((m) => m.content).join(" ").trim();
-  if (!rawText) return null;
+  const text = input.messages.map((m) => m.content).join(" ").trim();
+  if (!text) return null;
 
-  const text = stripChatwootHeader(rawText);
+  if (matchesNoteSearchQuery(text)) {
+    const query = extractSearchQuery(text);
+    if (query) {
+      return {
+        schemaVersion: "module_intent_result.v1",
+        traceId: input.traceId,
+        module: "notes",
+        action: "search",
+        confidence: 0.85,
+        entities: { query },
+        missingData: [],
+        requiresConfirmation: false,
+        reasoningSummary: "Note search intent detected.",
+      };
+    }
+  }
+
+  if (matchesNoteListQuery(text)) {
+    return {
+      schemaVersion: "module_intent_result.v1",
+      traceId: input.traceId,
+      module: "notes",
+      action: "list",
+      confidence: 0.85,
+      entities: {},
+      missingData: [],
+      requiresConfirmation: false,
+      reasoningSummary: "Note list intent detected.",
+    };
+  }
 
   if (!matchesNotePrefix(text)) return null;
 

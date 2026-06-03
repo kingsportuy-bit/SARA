@@ -92,28 +92,17 @@ describe("moduleIntentClassifier notes.create detection", () => {
     expect(result.missingData).toContain("content");
   });
 
-  it("detects notes.create with Chatwoot markdown header", async () => {
+  it("detects notes.create with already-normalized content (no Chatwoot header in classifier)", async () => {
     const result = await classifier.classify({
       schemaVersion: "module_intent_input.v1",
       traceId: "trace-nh1",
       module: "notes",
-      messages: [{ id: 1, content: "**+598 91 608 727 - Fabian:**\nnota: recordar que esta es la primera prueba real", createdAt: "now" }],
+      messages: [{ id: 1, content: "nota: recordar que esta es la primera prueba real", createdAt: "now" }],
     });
 
     expect(result.action).toBe("create");
     expect(result.confidence).toBeGreaterThanOrEqual(0.75);
     expect(result.missingData).toEqual([]);
-  });
-
-  it("extracts content without Chatwoot header in content", async () => {
-    const result = await classifier.classify({
-      schemaVersion: "module_intent_input.v1",
-      traceId: "trace-nh2",
-      module: "notes",
-      messages: [{ id: 1, content: "**+598 91 608 727 - Fabian:**\nnota: recordar algo importante", createdAt: "now" }],
-    });
-
-    expect(result.entities).toHaveProperty("content", "recordar algo importante");
   });
 
   it("does not detect notes.create for non-notes modules", async () => {
@@ -149,5 +138,130 @@ describe("moduleIntentClassifier notes.create detection", () => {
 
     expect(result.action).toBe("none");
     expect(result.confidence).toBe(0.1);
+  });
+});
+
+describe("moduleIntentClassifier notes.list detection", () => {
+  it("detects list intent from que notas tengo", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-l1",
+      module: "notes",
+      messages: [{ id: 1, content: "que notas tengo", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("notes");
+    expect(result.action).toBe("list");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+    expect(result.missingData).toEqual([]);
+    expect(result.requiresConfirmation).toBe(false);
+  });
+
+  it("detects list intent from listar notas", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-l2",
+      module: "notes",
+      messages: [{ id: 1, content: "listar notas", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("list");
+  });
+
+  it("detects list intent from ultimas notas", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-l3",
+      module: "notes",
+      messages: [{ id: 1, content: "ultimas notas", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("list");
+  });
+
+  it("detects list intent from mis notas", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-l4",
+      module: "notes",
+      messages: [{ id: 1, content: "mis notas", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("list");
+  });
+
+  it("detects list intent from lista mis notas", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-l5",
+      module: "notes",
+      messages: [{ id: 1, content: "lista mis notas", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("list");
+  });
+});
+
+describe("moduleIntentClassifier notes.search detection", () => {
+  it("detects search intent from busca notas sobre foco", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-s1",
+      module: "notes",
+      messages: [{ id: 1, content: "busca notas sobre foco", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("notes");
+    expect(result.action).toBe("search");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+    expect(result.missingData).toEqual([]);
+    expect(result.entities).toHaveProperty("query", "foco");
+  });
+
+  it("detects search intent from buscar notas sobre foco", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-s2",
+      module: "notes",
+      messages: [{ id: 1, content: "buscar notas sobre foco", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("search");
+    expect(result.entities).toHaveProperty("query", "foco");
+  });
+
+  it("detects search intent from notas sobre sueño", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-s3",
+      module: "notes",
+      messages: [{ id: 1, content: "notas sobre sueño", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("search");
+    expect(result.entities).toHaveProperty("query", "sueño");
+  });
+
+  it("detects search intent from notas de tipo idea", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-s4",
+      module: "notes",
+      messages: [{ id: 1, content: "notas de tipo idea", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("search");
+    expect(result.entities).toHaveProperty("query", "idea");
+  });
+
+  it("prefers search over list when query pattern matches", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-s5",
+      module: "notes",
+      messages: [{ id: 1, content: "notas sobre entrenamiento", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("search");
   });
 });

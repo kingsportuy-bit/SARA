@@ -24,6 +24,45 @@ function fakeSupabase() {
         error: null,
       };
     },
+    from: (table: string) => {
+      if (table !== "sara_notes") throw new Error("unknown table");
+      let lastFilter: string | null = null;
+      let lastValue: string | null = null;
+      return {
+        select: () => ({
+          eq: (col: string, val: string) => { lastFilter = col; lastValue = val; return {
+            order: () => ({
+              limit: () => ({
+                data: [
+                  { id: "n1", content: "nota 1", note_type: "observacion", source: "chatwoot", tags: [], created_at: "2026-01-01T00:00:00Z" },
+                  { id: "n2", content: "nota 2", note_type: "idea", source: "manual", tags: ["t1"], created_at: "2026-01-02T00:00:00Z" },
+                ],
+                error: null,
+              }),
+            }),
+          }; },
+          order: () => ({
+            limit: () => ({
+              data: [
+                { id: "n1", content: "nota 1", note_type: "observacion", source: "chatwoot", tags: [], created_at: "2026-01-01T00:00:00Z" },
+                { id: "n2", content: "nota 2", note_type: "idea", source: "manual", tags: ["t1"], created_at: "2026-01-02T00:00:00Z" },
+              ],
+              error: null,
+            }),
+          }),
+          ilike: () => ({
+            order: () => ({
+              limit: () => ({
+                data: [
+                  { id: "n1", content: "nota match", note_type: "observacion", source: "chatwoot", tags: [], created_at: "2026-01-01T00:00:00Z" },
+                ],
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      };
+    },
   } as any;
 }
 
@@ -93,5 +132,55 @@ describe("notesStore", () => {
     expect(capturedParams!.p_area_id).toBeNull();
     expect(capturedParams!.p_related_entity_type).toBeNull();
     expect(capturedParams!.p_related_entity_id).toBeNull();
+  });
+});
+
+describe("notesStore listNotes", () => {
+  it("queries sara_notes and returns notes", async () => {
+    const sb = fakeSupabase();
+    const store = createNotesStore(sb);
+    const result = await store.listNotes({
+      schemaVersion: "notes_list_input.v1",
+      traceId: "trace-list-1",
+    });
+
+    expect(result.schemaVersion).toBe("notes_list_result.v1");
+    expect(result.status).toBe("success");
+    expect(result.notes).toHaveLength(2);
+    expect(result.count).toBe(2);
+    expect(result.notes[0].id).toBe("n1");
+    expect(result.notes[0].noteType).toBe("observacion");
+  });
+
+  it("maps note_type and created_at correctly", async () => {
+    const sb = fakeSupabase();
+    const store = createNotesStore(sb);
+    const result = await store.listNotes({
+      schemaVersion: "notes_list_input.v1",
+      traceId: "trace-list-2",
+    });
+
+    expect(result.notes[1].noteType).toBe("idea");
+    expect(result.notes[1].source).toBe("manual");
+    expect(result.notes[1].tags).toEqual(["t1"]);
+    expect(result.notes[1].createdAt).toBe("2026-01-02T00:00:00Z");
+  });
+});
+
+describe("notesStore searchNotes", () => {
+  it("queries sara_notes with ilike and returns matching notes", async () => {
+    const sb = fakeSupabase();
+    const store = createNotesStore(sb);
+    const result = await store.searchNotes({
+      schemaVersion: "notes_search_input.v1",
+      traceId: "trace-search-1",
+      query: "match",
+    });
+
+    expect(result.schemaVersion).toBe("notes_search_result.v1");
+    expect(result.status).toBe("success");
+    expect(result.notes).toHaveLength(1);
+    expect(result.count).toBe(1);
+    expect(result.query).toBe("match");
   });
 });

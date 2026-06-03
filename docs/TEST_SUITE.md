@@ -100,6 +100,43 @@
 - PASS: moduleIntentClassifier extrae content sin encabezado
 - PASS: bufferProcessor ejecuta notes.create con formato Chatwoot (encabezado + nota)
 
+## Message normalizer (TASK-20260603-007)
+- PASS: messageNormalizer remueve encabezado Chatwoot de grupo
+- PASS: messageNormalizer preserva originalContent
+- PASS: messageNormalizer no elimina contenido normal que no sea encabezado
+- PASS: messageNormalizer no remueve bold inline
+- PASS: messageNormalizer normaliza multiples mensajes preservando id mapping
+- PASS: messageNormalizer retorna content vacio para mensaje solo-header
+- PASS: messageNormalizer preserva createdAt
+- PASS: messageNormalizer retorna array vacio para input vacio
+- PASS: messageNormalizer remueve header con gap multilinea
+
+## Notes list/search (TASK-20260603-007)
+- PASS: coarseClassifier detecta notes de que notas tengo, listar notas, ultimas notas
+- PASS: coarseClassifier detecta notes de busca notas sobre foco, notas sobre foco
+- PASS: moduleIntentClassifier detecta notes.list de que notas tengo, listar notas, ultimas notas, mis notas
+- PASS: moduleIntentClassifier detecta notes.search de busca notas sobre foco, notas sobre foco
+- PASS: moduleIntentClassifier extrae query de busqueda
+- PASS: moduleIntentClassifier prefiere search sobre list cuando hay query
+- PASS: notesModule.list retorna notas con schema version
+- PASS: notesModule.list pasa parametro limit al repositorio
+- PASS: notesModule.list propaga fallo del repositorio
+- PASS: notesModule.search rechaza query vacio
+- PASS: notesModule.search pasa parametros al repositorio
+- PASS: notesModule.search retorna resultados vacios sin matches
+- PASS: notesStore.listNotes consulta sara_notes y mapea columnas
+- PASS: notesStore.searchNotes consulta sara_notes con ilike
+- PASS: actionExecutor despacha a notes.list sin guardas de create
+- PASS: actionExecutor despacha a notes.search sin guardas de create
+- PASS: bufferProcessor ejecuta notes.list con que notas tengo y no llama DeepSeek
+- PASS: bufferProcessor ejecuta notes.search con busca notas sobre foco y no llama DeepSeek
+- PASS: bufferProcessor usa DeepSeek fallback cuando ruta no ejecutable
+- PASS: responseComposer formatea resultados de list con tipo y preview
+- PASS: responseComposer muestra mensaje vacio para list sin resultados
+- PASS: responseComposer formatea resultados de search con query
+- PASS: responseComposer muestra mensaje especifico para search sin resultados
+- PASS: responseComposer trunca contenido largo en preview
+
 ## Evidencia local 2026-06-02
 - `npm run typecheck`: PASS
 - `npm test`: PASS (7 tests)
@@ -121,3 +158,8 @@
 - `npm run typecheck`: PASS (fix header TASK-20260603-006)
 - `npm test`: PASS (86 tests, fix header TASK-20260603-006)
 - `npm run build`: PASS (fix header TASK-20260603-006)
+
+## Evidencia local 2026-06-03 (TASK-20260603-007)
+- `npm run typecheck`: PASS
+- `npm test`: PASS (131 tests)
+- `npm run build`: PASS

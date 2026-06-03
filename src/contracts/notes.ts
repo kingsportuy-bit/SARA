@@ -45,6 +45,51 @@ export interface CreateNoteResult {
   error?: string;
 }
 
+export interface NoteRecord {
+  id: string;
+  content: string;
+  noteType: NoteType;
+  source: string;
+  tags: string[];
+  createdAt: string;
+}
+
+export interface ListNotesInput {
+  schemaVersion: "notes_list_input.v1";
+  traceId: string;
+  limit?: number;
+  noteType?: NoteType;
+}
+
+export interface ListNotesResult {
+  schemaVersion: "notes_list_result.v1";
+  traceId: string;
+  status: "success" | "failed";
+  notes: NoteRecord[];
+  count: number;
+  error?: string;
+}
+
+export interface SearchNotesInput {
+  schemaVersion: "notes_search_input.v1";
+  traceId: string;
+  query: string;
+  limit?: number;
+  noteType?: NoteType;
+}
+
+export interface SearchNotesResult {
+  schemaVersion: "notes_search_result.v1";
+  traceId: string;
+  status: "success" | "failed";
+  query: string;
+  notes: NoteRecord[];
+  count: number;
+  error?: string;
+}
+
 export interface NotesRepository {
   createNote(input: CreateNoteInput): Promise<CreateNoteResult>;
+  listNotes(input: ListNotesInput): Promise<ListNotesResult>;
+  searchNotes(input: SearchNotesInput): Promise<SearchNotesResult>;
 }

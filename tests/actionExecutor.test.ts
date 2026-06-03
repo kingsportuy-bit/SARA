@@ -263,6 +263,48 @@ describe("actionExecutor with notes handler", () => {
     expect(result.status).toBe("executed");
     expect(handler).toHaveBeenCalledTimes(1);
   });
+
+  it("dispatches to notes.list handler without create-only guards", async () => {
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { notes: [], count: 0 },
+      stateChanges: [],
+    }));
+
+    const exec = createActionExecutor({ notes: { list: handler } });
+    const result = await exec.execute(execInput({
+      action: "list",
+      entities: {},
+      intentConfidence: 0.85,
+      intentMissingData: [],
+    }));
+
+    expect(result.status).toBe("executed");
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("dispatches to notes.search handler without create-only guards", async () => {
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { notes: [], count: 0, query: "test" },
+      stateChanges: [],
+    }));
+
+    const exec = createActionExecutor({ notes: { search: handler } });
+    const result = await exec.execute(execInput({
+      action: "search",
+      entities: { query: "test" },
+      intentConfidence: 0.85,
+      intentMissingData: [],
+    }));
+
+    expect(result.status).toBe("executed");
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("intentConfidenceSufficient", () => {

@@ -142,7 +142,7 @@ Salida (`CoarseClassificationResult`):
 - `missingData`: string[]
 - `reasoningSummary`: string
 
-Estado actual: detecta modulo `"notes"` con confianza 0.9 para prefijos `nota:`, `guarda una nota:`, `anota esto`, `crear nota`, `aprendizaje:`, `idea:`, `problema:`, `riesgo:`, `mejora:`, `observacion:`. Resto retorna `"unknown"` con 0.5.
+Estado actual: detecta modulo `"notes"` con confianza 0.9 para prefijos de creacion (`nota:`, `guarda una nota:`, `anota esto`, `crear nota`, `aprendizaje:`, `idea:`, `problema:`, `riesgo:`, `mejora:`, `observacion:`), consultas de listado (`que notas tengo`, `listar notas`, `ultimas notas`, `mis notas`) y busqueda (`busca notas sobre`, `notas sobre`). Resto retorna `"unknown"` con 0.5. No realiza stripping de encabezados Chatwoot; recibe contenido ya normalizado por `message-normalizer`.
 
 ### module-intent-classifier.classify
 Responsable: `module-intent-classifier`
@@ -165,7 +165,7 @@ Salida (`ModuleIntentResult`):
 - `requiresConfirmation`: boolean
 - `reasoningSummary`: string
 
-Estado actual: esqueleto retorna accion `"none"` con confianza 0.1. Para modulo `notes`, detecta `notes.create` por patrones explicitos (`nota:`, `guarda una nota:`, `anota esto:`).
+Estado actual: Para modulo `notes`, detecta `notes.create` por patrones explicitos (`nota:`, `guarda una nota:`, `anota esto:`), `notes.list` para consultas de listado (`que notas tengo`, `listar notas`, `ultimas notas`, `mis notas`), y `notes.search` para busquedas (`busca notas sobre foco`, `notas sobre foco`) extrayendo el termino de busqueda en `entities.query`. No realiza stripping de encabezados Chatwoot; recibe contenido ya normalizado por `message-normalizer`.
 
 ### module-router.route
 Responsable: `module-router`
@@ -231,18 +231,38 @@ Salida: `boolean`
 
 Retorna `true` solo si `confidence >= 0.75` y `missingData` esta vacio.
 
+### message-normalizer.normalize
+Responsable: `message-normalizer`
+
+Entrada:
+- `messages`: array de `{ id: number, content: string, createdAt: string }` (mensajes crudos del buffer)
+
+Salida (`NormalizedMessage[]`):
+- `id`: string
+- `content`: string (contenido normalizado sin encabezados de canal)
+- `originalContent`: string (contenido original intacto)
+- `createdAt`: string
+- `normalization.removedChatwootGroupHeader`: boolean
+
+Regla:
+- `sara_messages` conserva contenido crudo.
+- El worker usa contenido normalizado para clasificar/intencionar/responder.
+- Los modulos de dominio no conocen formato Chatwoot.
+- Remueve encabezados markdown de grupo Chatwoot del tipo `**autor:** ` al inicio del mensaje.
+
 ### buffer-processor (orquestador post-buffer)
 Responsable: `buffer-processor`
 
 Flujo por cada `ClaimedBuffer`:
 1. Convierte mensajes `{ id, content, created_at }` a `{ id, content, createdAt }`.
-2. Ejecuta `coarseClassifier.classify`.
-3. Si `module = "unknown"` o `action = "none"` o `route.executable = false`: usa DeepSeek fallback.
-4. Si `intent.confidence < 0.75` o `missingData` no es array vacio: responde con `responseComposer` sin ejecutar accion.
-5. Construye `ActionExecutionInput` con `intent.confidence` y `intent.missingData`.
-6. Ejecuta `actionExecutor.execute`.
-7. Ejecuta `responseComposer.compose`.
-8. Envia respuesta por Chatwoot y completa buffer con `store.complete`.
+2. Normaliza mensajes con `messageNormalizer.normalize` antes de clasificar.
+3. Ejecuta `coarseClassifier.classify` con contenido ya normalizado.
+4. Si `module = "unknown"` o `action = "none"` o `route.executable = false`: usa DeepSeek fallback.
+5. Si `intent.confidence < 0.75` o `missingData` no es array vacio: responde con `responseComposer` sin ejecutar accion.
+6. Construye `ActionExecutionInput` con `intent.confidence` y `intent.missingData`.
+7. Ejecuta `actionExecutor.execute`.
+8. Ejecuta `responseComposer.compose`.
+9. Envia respuesta por Chatwoot y completa buffer con `store.complete`.
 
 DeepSeek como fallback solo para mensajes sin accion ejecutable. Nunca ejecuta ni confirma acciones.
 
@@ -290,6 +310,53 @@ sara_create_note(p_trace_id uuid, p_content text, p_note_type text, p_source tex
 Retorna JSON con `note_id`, `event_id`, `trace_id`, `schema_version`.
 Valida: content no vacio, noteType valido, relacion entidad consistente.
 Ejecutable solo por `service_role`.
+
+### notes.list
+Responsable: `notes`
+
+Entrada (`ListNotesInput`):
+- `schemaVersion`: `"notes_list_input.v1"`
+- `traceId`: string
+- `limit?`: number (default 5, max 10)
+- `noteType?`: NoteType (filtro opcional)
+
+Salida (`ListNotesResult`):
+- `schemaVersion`: `"notes_list_result.v1"`
+- `traceId`: string
+- `status`: `"success"` | `"failed"`
+- `notes`: array de `{ id, content, noteType, source, tags, createdAt }`
+- `count`: number
+- `error?`: string
+
+Consulta `sara_notes` ordenado por `created_at desc`. Read-only, no usa RPC de escritura.
+
+### notes.search
+Responsable: `notes`
+
+Entrada (`SearchNotesInput`):
+- `schemaVersion`: `"notes_search_input.v1"`
+- `traceId`: string
+- `query`: string (no vacio)
+- `limit?`: number (default 5, max 10)
+- `noteType?`: NoteType (filtro opcional)
+
+Salida (`SearchNotesResult`):
+- `schemaVersion`: `"notes_search_result.v1"`
+- `traceId`: string
+- `status`: `"success"` | `"failed"`
+- `query`: string
+- `notes`: array de `{ id, content, noteType, source, tags, createdAt }`
+- `count`: number
+- `error?`: string
+
+Busca por `ILIKE` sobre `content` en `sara_notes`. Read-only.
+
+Reglas de respuesta:
+- Con resultados list: `"Estas son tus ultimas notas:\n1. [tipo] preview..."`
+- Con resultados search: `"Resultados de busqueda para \"query\":\n1. [tipo] preview..."`
+- Sin resultados list: `"No encontre notas todavia."`
+- Sin resultados search: `"No encontre notas para \"query\"."`
+- Content preview truncado a 60 caracteres.
 
 ### Tablas autorizadas
 - `sara_events`: registro canonico de eventos (note_created, etc.)

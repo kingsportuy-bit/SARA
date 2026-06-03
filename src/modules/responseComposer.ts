@@ -4,6 +4,11 @@ export interface ResponseComposer {
   compose(input: ResponseCompositionInput): Promise<ResponseCompositionResult>;
 }
 
+function formatNoteLine(note: { noteType: string; content: string }, index: number): string {
+  const preview = note.content.length > 60 ? note.content.slice(0, 57) + "..." : note.content;
+  return `${index}. [${note.noteType}] ${preview}`;
+}
+
 export function createResponseComposer(): ResponseComposer {
   return {
     async compose(input) {
@@ -23,12 +28,32 @@ export function createResponseComposer(): ResponseComposer {
           ? `La accion no pudo completarse: ${actionResult.error}`
           : "La accion no pudo completarse por un error inesperado.";
       } else if (actionResult.status === "executed") {
-        const noteId = actionResult.evidence?.noteId;
-        const eventId = actionResult.evidence?.eventId;
-        if (noteId && eventId) {
-          content = "Accion ejecutada correctamente.";
+        const action = classification.intent.action;
+
+        if (action === "list" || action === "search") {
+          const notes = actionResult.evidence?.notes as Array<{ noteType: string; content: string }> | undefined;
+          const count = actionResult.evidence?.count as number | undefined;
+          const searchQuery = actionResult.evidence?.query as string | undefined;
+
+          if (!notes || count === 0) {
+            content = searchQuery
+              ? `No encontre notas para "${searchQuery}".`
+              : "No encontre notas todavia.";
+          } else if (action === "search") {
+            const lines = notes.map(formatNoteLine).join("\n");
+            content = `Resultados de busqueda para "${searchQuery || ""}":\n${lines}`;
+          } else {
+            const lines = notes.map(formatNoteLine).join("\n");
+            content = `Estas son tus ultimas notas:\n${lines}`;
+          }
         } else {
-          content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          const noteId = actionResult.evidence?.noteId;
+          const eventId = actionResult.evidence?.eventId;
+          if (noteId && eventId) {
+            content = "Accion ejecutada correctamente.";
+          } else {
+            content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          }
         }
       } else {
         content = "Recibi tu mensaje pero no pude procesarlo en este momento.";

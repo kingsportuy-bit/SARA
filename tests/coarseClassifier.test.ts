@@ -97,11 +97,11 @@ describe("coarseClassifier", () => {
     expect(result.module).toBe("notes");
   });
 
-  it("detects notes with Chatwoot markdown header prefix", async () => {
+  it("detects notes with already-normalized content after Chatwoot header removal", async () => {
     const result = await classifier.classify({
       schemaVersion: "coarse_classification_input.v1",
       traceId: "trace-h1",
-      messages: [{ id: 1, content: "**+598 91 608 727 - Fabian:**\nnota: recordar que esta es la primera prueba real", createdAt: "now" }],
+      messages: [{ id: 1, content: "nota: recordar que esta es la primera prueba real", createdAt: "now" }],
     });
 
     expect(result.module).toBe("notes");
@@ -117,5 +117,65 @@ describe("coarseClassifier", () => {
 
     expect(result.module).toBe("unknown");
     expect(result.confidence).toBe(0.5);
+  });
+
+  it("detects notes module from que notas tengo", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-l1",
+      messages: [{ id: 1, content: "que notas tengo", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("notes");
+  });
+
+  it("detects notes module from listar notas", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-l2",
+      messages: [{ id: 1, content: "listar notas", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("notes");
+  });
+
+  it("detects notes module from ultimas notas", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-l3",
+      messages: [{ id: 1, content: "ultimas notas", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("notes");
+  });
+
+  it("detects notes module from busca notas sobre foco", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-s1",
+      messages: [{ id: 1, content: "busca notas sobre foco", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("notes");
+  });
+
+  it("detects notes module from notas sobre foco", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-s2",
+      messages: [{ id: 1, content: "notas sobre foco", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("notes");
+  });
+
+  it("remains unknown for non-note natural language", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-u1",
+      messages: [{ id: 1, content: "cuentame un chiste", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("unknown");
   });
 });

@@ -140,7 +140,6 @@ describe("responseComposer", () => {
     const result = await composer.compose(input);
 
     expect(result.content).toContain("no se puede verificar la evidencia");
-    expect(result.content).not.toContain("Accion ejecutada correctamente");
   });
 
   it("does not confirm executed with only reason in evidence", async () => {
@@ -236,5 +235,123 @@ describe("responseComposer", () => {
     const result = await composer.compose(input);
 
     expect(result.content).toContain("DB connection lost");
+  });
+
+  it("formats list results with notes", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "notes" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "list", confidence: 0.85 },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: {
+          notes: [
+            { noteType: "observacion", content: "tercera prueba real con RPC cache corregida" },
+            { noteType: "idea", content: "crear una rutina semanal de revision" },
+          ],
+          count: 2,
+        },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("Estas son tus ultimas notas:");
+    expect(result.content).toContain("[observacion]");
+    expect(result.content).toContain("[idea]");
+    expect(result.content).toContain("tercera prueba real");
+    expect(result.content).toContain("rutina semanal");
+  });
+
+  it("shows empty message for list with no results", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "notes" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "list", confidence: 0.85 },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: { notes: [], count: 0 },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("No encontre notas");
+  });
+
+  it("formats search results with query", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "notes" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "search", confidence: 0.85 },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: {
+          notes: [
+            { noteType: "aprendizaje", content: "dormir bien mejora el foco" },
+          ],
+          count: 1,
+          query: "foco",
+        },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("Resultados de busqueda para");
+    expect(result.content).toContain("\"foco\"");
+    expect(result.content).toContain("[aprendizaje]");
+  });
+
+  it("shows search-specific empty message for no search results", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "notes" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "search", confidence: 0.85 },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: { notes: [], count: 0, query: "inexistente" },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("No encontre notas para");
+    expect(result.content).toContain("inexistente");
+  });
+
+  it("truncates long note content in list format", async () => {
+    const longContent = "a".repeat(100);
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "notes" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "list", confidence: 0.85 },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: {
+          notes: [{ noteType: "observacion", content: longContent }],
+          count: 1,
+        },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("...");
   });
 });

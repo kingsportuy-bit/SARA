@@ -4,9 +4,11 @@ import type { ModuleIntentClassifier } from "./moduleIntentClassifier.js";
 import type { ModuleRouter } from "./moduleRouter.js";
 import type { ActionExecutor } from "./actionExecutor.js";
 import type { ResponseComposer } from "./responseComposer.js";
+import type { MessageNormalizer } from "./messageNormalizer.js";
 
 interface PipelineContext {
   store: MessageStore;
+  normalizer: MessageNormalizer;
   coarseClassifier: CoarseClassifier;
   intentClassifier: ModuleIntentClassifier;
   router: ModuleRouter;
@@ -37,10 +39,17 @@ export function createBufferProcessor(ctx: PipelineContext) {
   }
 
   async function processBuffer(buffer: ClaimedBuffer): Promise<void> {
-    const messages = buffer.messages.map((m) => ({
+    const rawMessages = buffer.messages.map((m) => ({
       id: m.id,
       content: m.content,
       createdAt: m.created_at,
+    }));
+
+    const normalized = ctx.normalizer.normalize(rawMessages);
+    const messages = normalized.map((nm) => ({
+      id: Number(nm.id),
+      content: nm.content,
+      createdAt: nm.createdAt,
     }));
 
     try {

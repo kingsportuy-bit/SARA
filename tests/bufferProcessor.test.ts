@@ -5,6 +5,7 @@ import { createModuleIntentClassifier } from "../src/modules/moduleIntentClassif
 import { createModuleRouter, registerModule } from "../src/modules/moduleRouter.js";
 import { createActionExecutor } from "../src/modules/actionExecutor.js";
 import { createResponseComposer } from "../src/modules/responseComposer.js";
+import { createMessageNormalizer } from "../src/modules/messageNormalizer.js";
 import { createNotesModule } from "../src/modules/notes/notesModule.js";
 import type { MessageStore, OutboundChatwoot, ResponseGenerator } from "../src/contracts.js";
 import type { ActionExecutionInput, ActionExecutionResult } from "../src/contracts/pipeline.js";
@@ -55,6 +56,7 @@ function buildProcessor(buffers: Array<{ bid: string; tid: string; cid: number; 
 
   const proc = createBufferProcessor({
     store,
+    normalizer: createMessageNormalizer(),
     coarseClassifier: createCoarseClassifier(),
     intentClassifier: createModuleIntentClassifier(),
     router: createModuleRouter(),
@@ -136,6 +138,7 @@ describe("bufferProcessor", () => {
 
     const proc = createBufferProcessor({
       store,
+      normalizer: createMessageNormalizer(),
       coarseClassifier: createCoarseClassifier(),
       intentClassifier: createModuleIntentClassifier(),
       router: createModuleRouter(),
@@ -173,6 +176,7 @@ describe("bufferProcessor", () => {
 
     const proc = createBufferProcessor({
       store,
+      normalizer: createMessageNormalizer(),
       coarseClassifier: createCoarseClassifier(),
       intentClassifier: createModuleIntentClassifier(),
       router: createModuleRouter(),
@@ -213,6 +217,7 @@ describe("bufferProcessor", () => {
 
     const proc = createBufferProcessor({
       store,
+      normalizer: createMessageNormalizer(),
       coarseClassifier: createCoarseClassifier(),
       intentClassifier: createModuleIntentClassifier(),
       router: createModuleRouter(),
@@ -250,6 +255,7 @@ describe("bufferProcessor", () => {
 
     const proc = createBufferProcessor({
       store,
+      normalizer: createMessageNormalizer(),
       coarseClassifier: createCoarseClassifier(),
       intentClassifier: createModuleIntentClassifier(),
       router: createModuleRouter(),
@@ -268,7 +274,7 @@ describe("bufferProcessor", () => {
     expect(complete).toHaveBeenCalledWith("b5", expect.any(String), 99);
   });
 
-  it("executes notes.create with Chatwoot header format", async () => {
+  it("executes notes.create with Chatwoot header format (normalized by normalizer)", async () => {
     registerModule("notes", ["create"]);
 
     const handler = vi.fn(async (): Promise<ActionExecutionResult> => ({
@@ -288,6 +294,7 @@ describe("bufferProcessor", () => {
 
     const proc = createBufferProcessor({
       store,
+      normalizer: createMessageNormalizer(),
       coarseClassifier: createCoarseClassifier(),
       intentClassifier: createModuleIntentClassifier(),
       router: createModuleRouter(),
@@ -303,5 +310,111 @@ describe("bufferProcessor", () => {
     expect(handler).toHaveBeenCalledTimes(1);
     expect(send).toHaveBeenCalledTimes(1);
     expect(complete).toHaveBeenCalledWith("b6", expect.any(String), 99);
+  });
+
+  it("executes notes.list for que notas tengo message", async () => {
+    registerModule("notes", ["list"]);
+
+    const handler = vi.fn(async (): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: "t7",
+      status: "executed",
+      evidence: { notes: [{ noteType: "observacion", content: "test note" }], count: 1 },
+      stateChanges: [],
+    }));
+
+    const { store, complete, send } = (() => {
+      const s = fakeStore([{ bid: "b7", tid: "t7", cid: 85, msgs: [{ id: 1, content: "que notas tengo" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ notes: { list: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate: vi.fn() },
+      outbound: { send },
+      logger: fakeLogger(),
+    });
+
+    await proc.processDue();
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalledWith("b7", expect.any(String), 99);
+  });
+
+  it("executes notes.search for busca notas sobre foco and does not call DeepSeek", async () => {
+    registerModule("notes", ["search"]);
+
+    const handler = vi.fn(async (): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: "t8",
+      status: "executed",
+      evidence: { notes: [], count: 0, query: "foco" },
+      stateChanges: [],
+    }));
+
+    const { store, complete, send, generate } = (() => {
+      const s = fakeStore([{ bid: "b8", tid: "t8", cid: 85, msgs: [{ id: 1, content: "busca notas sobre foco" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ notes: { search: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate },
+      outbound: { send },
+      logger: fakeLogger(),
+    });
+
+    await proc.processDue();
+
+    expect(generate).not.toHaveBeenCalled();
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalledWith("b8", expect.any(String), 99);
+  });
+
+  it("uses DeepSeek fallback when route is not executable for unregistered action", async () => {
+    registerModule("notes", ["create"]);
+
+    const { store, complete, send, generate } = (() => {
+      const s = fakeStore([{ bid: "b9", tid: "t9", cid: 85, msgs: [{ id: 1, content: "que notas tengo" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({}),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate },
+      outbound: { send },
+      logger: fakeLogger(),
+    });
+
+    await proc.processDue();
+
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalled();
   });
 });

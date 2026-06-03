@@ -11,7 +11,8 @@ import { createModuleRouter, registerModule } from "./modules/moduleRouter.js";
 import { createActionExecutor } from "./modules/actionExecutor.js";
 import { createResponseComposer } from "./modules/responseComposer.js";
 import { createBufferProcessor } from "./modules/bufferProcessor.js";
-import type { CreateNoteInput } from "./contracts/notes.js";
+import { createMessageNormalizer } from "./modules/messageNormalizer.js";
+import type { CreateNoteInput, ListNotesInput, SearchNotesInput } from "./contracts/notes.js";
 import type { ActionExecutionInput, ActionExecutionResult } from "./contracts/pipeline.js";
 
 const config = loadConfig();
@@ -22,7 +23,7 @@ const app = buildApp(config, store);
 const notesStore = createNotesStore(supabase);
 const notesModule = createNotesModule(notesStore);
 
-registerModule("notes", ["create"]);
+registerModule("notes", ["create", "list", "search"]);
 
 function notesCreateHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
   const createInput: CreateNoteInput = {
@@ -64,12 +65,81 @@ function notesCreateHandler(input: ActionExecutionInput): Promise<ActionExecutio
   });
 }
 
+function notesListHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const listInput: ListNotesInput = {
+    schemaVersion: "notes_list_input.v1",
+    traceId: input.traceId,
+    limit: typeof input.entities.limit === "number" ? input.entities.limit : 5,
+  };
+  return notesModule.list(listInput).then((listResult) => {
+    if (listResult.status === "success") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: {
+          notes: listResult.notes,
+          count: listResult.count,
+        },
+        stateChanges: [],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: listResult.error,
+    };
+  });
+}
+
+function notesSearchHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const searchInput: SearchNotesInput = {
+    schemaVersion: "notes_search_input.v1",
+    traceId: input.traceId,
+    query: String(input.entities.query ?? ""),
+    limit: typeof input.entities.limit === "number" ? input.entities.limit : 5,
+  };
+  return notesModule.search(searchInput).then((searchResult) => {
+    if (searchResult.status === "success") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: {
+          notes: searchResult.notes,
+          count: searchResult.count,
+          query: searchResult.query,
+        },
+        stateChanges: [],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: searchResult.error,
+    };
+  });
+}
+
 const processor = createBufferProcessor({
   store,
+  normalizer: createMessageNormalizer(),
   coarseClassifier: createCoarseClassifier(),
   intentClassifier: createModuleIntentClassifier(),
   router: createModuleRouter(),
-  executor: createActionExecutor({ notes: { create: notesCreateHandler } }),
+  executor: createActionExecutor({
+    notes: {
+      create: notesCreateHandler,
+      list: notesListHandler,
+      search: notesSearchHandler,
+    },
+  }),
   composer: createResponseComposer(),
   fallbackGenerator: createDeepseekClient(config.deepseek.apiKey, config.deepseek.model),
   outbound: createChatwootClient(config.chatwoot.url, config.chatwoot.accountId, config.chatwoot.userToken),

@@ -22,16 +22,42 @@ export const NOTE_PREFIX_PATTERNS = [
 
 export const NOTE_PREFIX_REMOVE = NOTE_COMMAND_PATTERN;
 
-const CHATWOOT_HEADER = /^\*\*.+?\*\*\s*/;
+export const NOTE_LIST_PATTERNS = [
+  /que notas (tengo|hay|tienes|existen)/i,
+  /listar?\s*notas/i,
+  /lista\s*(mis\s*)?notas/i,
+  /ultimas?\s*notas/i,
+  /ver\s*notas/i,
+  /mostrar\s*notas/i,
+  /mis\s*notas/i,
+];
 
-export function stripChatwootHeader(text: string): string {
-  if (!text) return "";
-  return text.replace(CHATWOOT_HEADER, "").trim();
-}
+export const NOTE_SEARCH_PATTERNS = [
+  /busc[ao]r?\s*notas?\s*(?:sobre\s*|de\s*)?(.+)/i,
+  /notas?\s*(?:sobre\s*|de\s*tipo\s*)(.+)/i,
+];
 
 export function matchesNotePrefix(text: string): boolean {
   if (!text) return false;
   return NOTE_PREFIX_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesNoteListQuery(text: string): boolean {
+  if (!text) return false;
+  return NOTE_LIST_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesNoteSearchQuery(text: string): boolean {
+  if (!text) return false;
+  return NOTE_SEARCH_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function extractSearchQuery(text: string): string | null {
+  for (const pattern of NOTE_SEARCH_PATTERNS) {
+    const match = pattern.exec(text);
+    if (match && match[1] && match[1].trim()) return match[1].trim();
+  }
+  return null;
 }
 
 export function extractNoteContent(text: string): string {
