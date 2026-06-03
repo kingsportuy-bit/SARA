@@ -21,3 +21,4 @@
 2026-06-02 | v0.2.11 | agents | roles Codex Orquestador y opencode explicitados en INICIAL y AGENTS
 2026-06-02 | v0.2.12 | agents | regla anti-scope-creep agregada para revisar entregas de opencode
 2026-06-02 | v0.2.13 | pipeline | esqueleto modular de comprension y respuesta: contratos TypeScript (coarse-classifier, module-intent-classifier, module-router, action-executor, response-composer), 5 modulos skeleton con guardas `intentConfidenceSufficient`, 5 test suites (22 tests), bootstrap mantenido como fallback
+2026-06-02 | v0.2.14 | planning | TASK-20260602-005 preparada para implementar `notes.create` con alcance cerrado: solo `sara_events`, `sara_notes`, writer canonico, contratos y tests

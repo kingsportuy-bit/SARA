@@ -41,8 +41,14 @@ opencode debe leer, en este orden:
 4. `docs/SECURITY.md`
 5. `docs/CONTRATOS.md`
 6. `docs/DEPLOY.md`
-7. `docs/agents/COMMUNICATION_PROTOCOL.md`
-8. La task asignada en `docs/TASKS/`
+7. `docs/ENTITY_CATALOG.md`
+8. `docs/INFORME_ANALISIS_ARQUITECTURA_FEATURES.md`
+9. `docs/agents/COMMUNICATION_PROTOCOL.md`
+10. La task asignada en `docs/TASKS/`
+
+Regla de sesion:
+- opencode debe leer `docs/INICIAL.md` al comenzar cada nueva sesion de trabajo.
+- la task asignada no reemplaza `docs/INICIAL.md`; la task define el alcance puntual y `INICIAL.md` define el contexto operativo real.
 
 ## Regla de no decision
 Si falta informacion, opencode debe detenerse y registrar bloqueo.
@@ -133,3 +139,23 @@ Si se le autoriza deploy, debe seguir `docs/DEPLOY.md`:
 - [ ] La arquitectura sigue modular.
 - [ ] La trazabilidad queda completa.
 - [ ] Se acepta, se corrige o se rechaza el trabajo.
+
+## Regla de revision de Codex
+Codex no aprueba el diff de opencode a ciegas.
+
+Antes de aceptar una entrega, Codex debe:
+- ejecutar `npm run typecheck`
+- ejecutar `npm test`
+- leer el diff completo
+- revisar especificamente que opencode no haya completado mas alcance del pedido por iniciativa propia
+- verificar que no haya creado tablas, modulos o features de dominio por adelantado
+- verificar que no haya escrituras fuera del writer canonico
+- verificar que no haya logica de negocio en ingress o clasificadores
+- verificar que toda tabla o evento de trazabilidad tenga `schema_version`
+- verificar que no se tocaron objetos ajenos a `sara_`
+- verificar que no se expusieron secretos
+
+Riesgo principal a vigilar:
+- opencode puede tender a hacer "un poco mas" porque parece conveniente.
+- Ese excedente debe rechazarse aunque funcione.
+- En `TASK-20260602-004`, cualquier creacion anticipada de `sara_notes`, `sara_tasks`, `sara_plans`, `sara_objectives` u otra tabla/modulo de dominio queda fuera de alcance.
