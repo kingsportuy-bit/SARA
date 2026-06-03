@@ -64,7 +64,7 @@ export function createActionExecutor(handlers: HandlerRegistry = {}): ActionExec
             error: "confidence insufficient for notes.create",
           };
         }
-        if (input.intentMissingData && input.intentMissingData.length > 0) {
+        if (!Array.isArray(input.intentMissingData) || input.intentMissingData.length > 0) {
           return {
             schemaVersion: "action_execution_result.v1",
             traceId: input.traceId,

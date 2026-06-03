@@ -75,7 +75,7 @@
 - PASS: actionExecutor bloquea notes.create cuando content es solo espacios
 - PASS: actionExecutor bloquea notes.create cuando content no es string
 - PASS: actionExecutor no bloquea modulos no-notes sin content
-- PASS: responseComposer confirma ejecucion solo si existe noteId o eventId
+- PASS: responseComposer confirma ejecucion solo si existen noteId y eventId
 - PASS: responseComposer no confirma executed sin evidencia
 - PASS: responseComposer no confirma con solo noteId (sin eventId)
 - PASS: responseComposer no confirma con solo eventId (sin noteId)
@@ -83,6 +83,8 @@
 - PASS: actionExecutor bloquea notes.create con intentConfidence undefined
 - PASS: actionExecutor bloquea notes.create con intentConfidence < 0.75
 - PASS: actionExecutor bloquea notes.create con intentMissingData no vacio
+- PASS: actionExecutor bloquea notes.create con intentMissingData undefined
+- PASS: actionExecutor bloquea notes.create con intentMissingData no-array
 - PASS: actionExecutor permite notes.create con confidence 0.75 exacto
 
 ## Evidencia local 2026-06-02
@@ -97,6 +99,6 @@
 - `npm run typecheck`: PASS (TASK-20260602-005)
 - `npm test`: PASS (55 tests, TASK-20260602-005)
 - `npm run build`: PASS (TASK-20260602-005)
-- `npm run typecheck`: PASS (fix 2 TASK-20260602-005)
-- `npm test`: PASS (69 tests, fix 2 TASK-20260602-005)
-- `npm run build`: PASS (fix 2 TASK-20260602-005)
+- `npm run typecheck`: PASS (fix 3 TASK-20260602-005)
+- `npm test`: PASS (71 tests, fix 3 TASK-20260602-005)
+- `npm run build`: PASS (fix 3 TASK-20260602-005)

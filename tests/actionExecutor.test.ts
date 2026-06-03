@@ -215,6 +215,35 @@ describe("actionExecutor with notes handler", () => {
     expect(handler).not.toHaveBeenCalled();
   });
 
+  it("blocks notes.create when intentMissingData is undefined", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ notes: { create: handler } });
+
+    const result = await exec.execute(execInput({
+      entities: { content: "nota content" },
+      intentConfidence: 0.9,
+    }));
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toContain("missing data prevents");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("blocks notes.create when intentMissingData is not an array", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ notes: { create: handler } });
+
+    const result = await exec.execute(execInput({
+      entities: { content: "nota content" },
+      intentConfidence: 0.9,
+      intentMissingData: "invalid" as any,
+    }));
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toContain("missing data prevents");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
   it("blocks notes.create when confidence 0.75 exactly passes", async () => {
     const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
       schemaVersion: "action_execution_result.v1",
