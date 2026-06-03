@@ -456,6 +456,8 @@ Estado: DONE + DEPLOYED + VALIDATED
 
 ## Modulo areas (TASK-20260603-012)
 
+Estado: DONE + DEPLOYED + VALIDATED
+
 ### DB y migraciones
 - PASS: migracion solo crea/modifica objetos `sara_`.
 - PASS: `sara_areas` tiene unique por `slug`.
@@ -523,6 +525,23 @@ Estado: DONE + DEPLOYED + VALIDATED
 - `npm run typecheck`: PASS (hardening areaSlug TASK-20260603-012)
 - `npm test`: PASS (460 tests, hardening areaSlug TASK-20260603-012)
 - `npm run build`: PASS (hardening areaSlug TASK-20260603-012)
+
+## Evidencia productiva 2026-06-03 (TASK-20260603-012)
+- PASS: `GET https://sara.codexa.uy/health`
+- PASS: migracion `20260603_012_areas.sql` aplicada en VPS.
+- PASS: `sara_areas` existe en DB compartida.
+- PASS: RPCs `sara_create_area`, `sara_archive_area`, `sara_assign_note_area` y `sara_assign_task_area` existen.
+- PASS: Chatwoot recibio `crear area salud`.
+- PASS: SARA respondio `Area creada: salud`.
+- PASS: Chatwoot recibio `que areas tengo`.
+- PASS: SARA respondio con el area activa `salud`.
+- PASS: Chatwoot recibio `tarea: comprar vitaminas`.
+- PASS: SARA respondio `Tarea creada: comprar vitaminas`.
+- PASS: Chatwoot recibio `asociar esa tarea al area salud`.
+- PASS: SARA respondio `Tarea asociada al area salud: comprar vitaminas`.
+- PASS: DB dejo `sara_tasks.area_id` asociado a `sara_areas.id`.
+- PASS: `sara_events` registro `area_created`, `task_created` y `task_area_assigned`.
+- PASS: `sara_session_contexts` quedo enfocado en la tarea asignada con `lastAreaSlug = salud`.
 
 ## Evidencia productiva 2026-06-03 (TASK-20260603-011)
 - PASS: `GET https://sara.codexa.uy/health`

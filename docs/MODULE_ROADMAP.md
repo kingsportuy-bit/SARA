@@ -165,7 +165,7 @@ No incluir todavia:
 - score complejo de productividad.
 
 ### 6. `areas`
-Estado: IMPLEMENTED_PENDING_DEPLOY
+Estado: DONE + DEPLOYED + VALIDATED
 
 Proposito:
 - agrupar notas, tareas y futuros objetivos por areas de vida o negocio.
@@ -182,6 +182,14 @@ Tabla autorizable:
 
 Task:
 - `docs/TASKS/TASK-20260603-012.md`
+
+Resultado actual:
+- La prueba productiva por Chatwoot creo el area `salud`.
+- `que areas tengo` listo el area activa `salud`.
+- La prueba productiva creo la tarea `comprar vitaminas`.
+- `asociar esa tarea al area salud` asigno la tarea al area usando session-context.
+- DB dejo `sara_tasks.area_id` apuntando a `sara_areas.id`.
+- `sara_events` registro `area_created`, `task_created` y `task_area_assigned`.
 
 No incluir todavia:
 - proyectos complejos;
@@ -249,8 +257,8 @@ No incluir todavia:
 3. `session-context` - listo.
 4. `reminders` - listo.
 5. `daily-log` - listo.
-6. `areas` - siguiente recomendado.
-7. `objectives` - objetivos.
+6. `areas` - listo.
+7. `objectives` - siguiente recomendado.
 8. `plans` - planes.
 9. `protocols` - reglas avanzadas.
 

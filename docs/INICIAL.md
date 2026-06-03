@@ -2,7 +2,7 @@
 
 ## Estado del sistema (actualizado: 2026-06-03)
 - Produccion: worker post-buffer con pipeline modular operativo en VPS
-- En progreso: TASK-20260603-012 implementada y revisada localmente; pendiente deploy y validacion productiva
+- En progreso: preparar proxima task del roadmap (`objectives`) cuando Codex Orquestador la apruebe
 - Bloqueos activos: activar firma HMAC de Chatwoot cuando se recupere `CHATWOOT_WEBHOOK_SECRET`
 - Primer flujo vertical: Chatwoot -> buffer durable -> DeepSeek bootstrap -> respuesta Chatwoot -> trazabilidad `sara_*`
 - Pipeline modular base: implementado y validado; DeepSeek queda como fallback solo para mensajes sin accion ejecutable.
@@ -11,7 +11,7 @@
 - Tercer modulo interno: `session-context` implementado, conectado al worker, desplegado y probado en produccion resolviendo referencias simples como `completar esa`.
 - Cuarto modulo real: `reminders` implementado, conectado al worker/dispatcher, desplegado y probado en produccion con create, disparo automatico y evento `reminder_sent`.
 - Quinto modulo real: `daily-log` implementado, conectado al worker, desplegado y probado en produccion con morning, evening y summary.
-- Sexto modulo real: `areas` implementado, conectado al worker, pendiente de deploy y validacion productiva con create, list, archive y asignacion de notas/tareas existentes.
+- Sexto modulo real: `areas` implementado, conectado al worker, desplegado y probado en produccion con create, list y asignacion de tareas existentes.
 
 ## Stack actual
 - Backend: Node.js 22 + TypeScript + Fastify
@@ -79,9 +79,9 @@ Reglas derivadas:
 
 ## Task activa o proxima
 - Task: `docs/TASKS/TASK-20260603-012.md`
-- Estado: IMPLEMENTED_REVIEWED_PENDING_DEPLOY
+- Estado: DONE_DEPLOYED_VALIDATED
 - Owner: Codex Orquestador
-- Objetivo: implementar modulo `areas` MVP para crear/listar/archivar areas y asociar notas/tareas existentes, sin proyectos ni objetivos.
+- Objetivo: preparar siguiente modulo del roadmap sin que opencode decida arquitectura ni alcance.
 
 ## Ultimo cierre de sesion
 - Fecha: 2026-06-03
