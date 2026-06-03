@@ -846,3 +846,220 @@ Reglas de respuesta:
 - Evening: `"Cierre del dia actualizado para <date>."`
 - Summary con datos: `"Resumen de <date>:\nEnergia: ...\nSueno: ...\nIntencion: ...\nCierre: ..."`
 - Summary sin datos: `"No encontre registro diario para <date>."`
+
+## Modulo areas (v0 MVP)
+
+### areas.create
+Responsable: `areas`
+
+Entrada (`CreateAreaInput`):
+- `schemaVersion`: `"areas_create_input.v1"`
+- `traceId`: string
+- `name`: string (no vacio)
+- `slug`: string (no vacio, unico)
+- `description?`: string
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+
+Salida (`CreateAreaResult`):
+- `schemaVersion`: `"areas_create_result.v1"`
+- `traceId`: string
+- `status`: `"created"` | `"failed"`
+- `areaId?`: uuid
+- `eventId?`: uuid
+- `name?`: string
+- `slug?`: string
+- `evidence.areaId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"area_created"`
+- `error?`: string
+
+Reglas:
+- `name` no puede ser vacio.
+- `slug` se genera de forma deterministica y ASCII-safe.
+- No se duplican slugs existentes.
+- El area nace con `status = active`.
+- Solo confirma con `areaId` y `eventId`.
+
+### areas.list
+Responsable: `areas`
+
+Entrada (`ListAreasInput`):
+- `schemaVersion`: `"areas_list_input.v1"`
+- `traceId`: string
+- `status?`: `"active"` | `"paused"` | `"archived"` (default `"active"`)
+- `limit?`: number (default 10, max 20)
+
+Salida (`ListAreasResult`):
+- `schemaVersion`: `"areas_list_result.v1"`
+- `traceId`: string
+- `status`: `"success"` | `"failed"`
+- `areas`: array de `{ id, name, slug, description?, status, createdAt, updatedAt }`
+- `count`: number
+- `error?`: string
+
+Consulta `sara_areas` read-only, filtrada por estado y ordenada por `name asc`.
+
+### areas.archive
+Responsable: `areas`
+
+Entrada (`ArchiveAreaInput`):
+- `schemaVersion`: `"areas_archive_input.v1"`
+- `traceId`: string
+- `areaId?`: uuid
+- `slug?`: string
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+
+Salida (`ArchiveAreaResult`):
+- `schemaVersion`: `"areas_archive_result.v1"`
+- `traceId`: string
+- `status`: `"archived"` | `"failed"`
+- `areaId?`: uuid
+- `eventId?`: uuid
+- `name?`: string
+- `slug?`: string
+- `evidence.areaId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"area_archived"`
+- `error?`: string
+
+Reglas:
+- Requiere `areaId` o `slug`.
+- No borra datos.
+- Solo cambia `status` a `archived`.
+- Solo confirma con `areaId` y `eventId`.
+
+### areas.assign-note
+Responsable: `areas`
+
+Entrada (`AssignNoteAreaInput`):
+- `schemaVersion`: `"areas_assign_note_input.v1"`
+- `traceId`: string
+- `noteId`: uuid
+- `areaId?`: uuid
+- `areaSlug?`: string
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+
+Salida (`AssignNoteAreaResult`):
+- `schemaVersion`: `"areas_assign_note_result.v1"`
+- `traceId`: string
+- `status`: `"assigned"` | `"failed"`
+- `noteId?`: uuid
+- `areaId?`: uuid
+- `areaName?`: string
+- `eventId?`: uuid
+- `evidence.noteId?`: uuid
+- `evidence.areaId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"note_area_assigned"`
+- `error?`: string
+
+Reglas:
+- Requiere nota existente.
+- Requiere area activa existente.
+- No crea nota.
+- No crea area implicitamente.
+- Solo confirma con `noteId`, `areaId` y `eventId`.
+
+### areas.assign-task
+Responsable: `areas`
+
+Entrada (`AssignTaskAreaInput`):
+- `schemaVersion`: `"areas_assign_task_input.v1"`
+- `traceId`: string
+- `taskId`: uuid
+- `areaId?`: uuid
+- `areaSlug?`: string
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+
+Salida (`AssignTaskAreaResult`):
+- `schemaVersion`: `"areas_assign_task_result.v1"`
+- `traceId`: string
+- `status`: `"assigned"` | `"failed"`
+- `taskId?`: uuid
+- `title?`: string
+- `areaId?`: uuid
+- `areaName?`: string
+- `eventId?`: uuid
+- `evidence.taskId?`: uuid
+- `evidence.areaId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"task_area_assigned"`
+- `error?`: string
+
+Reglas:
+- Requiere tarea existente.
+- Requiere area activa existente.
+- No crea tarea.
+- No crea area implicitamente.
+- Solo confirma con `taskId`, `areaId` y `eventId`.
+
+### RPC `sara_create_area`
+Firma:
+```
+sara_create_area(p_trace_id uuid, p_name text, p_slug text, p_description text, p_source text)
+```
+Retorna JSON con `area_id`, `event_id`, `name`, `slug`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+### RPC `sara_archive_area`
+Firma:
+```
+sara_archive_area(p_trace_id uuid, p_area_id uuid, p_slug text, p_source text)
+```
+Retorna JSON con `area_id`, `event_id`, `name`, `slug`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+### RPC `sara_assign_note_area`
+Firma:
+```
+sara_assign_note_area(p_trace_id uuid, p_note_id uuid, p_area_id uuid, p_area_slug text, p_source text)
+```
+Actualiza `sara_notes.area_id` y emite `note_area_assigned`.
+Retorna JSON con `note_id`, `area_id`, `area_name`, `event_id`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+### RPC `sara_assign_task_area`
+Firma:
+```
+sara_assign_task_area(p_trace_id uuid, p_task_id uuid, p_area_id uuid, p_area_slug text, p_source text)
+```
+Actualiza `sara_tasks.area_id` y emite `task_area_assigned`.
+Retorna JSON con `task_id`, `title`, `area_id`, `area_name`, `event_id`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+### Parseo MVP desde Chatwoot
+Responsable: `areas-intent-parser`
+
+Soporta:
+- `crear area salud`
+- `nueva area trabajo`
+- `que areas tengo`
+- `listar areas`
+- `archivar area salud`
+- `asociar esa tarea al area salud`
+- `asignar ultima tarea a salud`
+- `asociar esa nota al area aprendizaje`
+
+Reglas:
+- Si falta nombre de area en create, `missingData=["areaName"]`.
+- Si falta area en archive/assign, `missingData=["area"]`.
+- Si falta entidad en assign, `missingData=["entity"]`.
+- Para referencias como `esa tarea` o `esa nota`, usar solo `session-context` seguro.
+- No usar LLM para ejecutar ni inventar datos faltantes.
+
+No soporta todavia:
+- proyectos;
+- objetivos;
+- planes;
+- dashboards;
+- permisos por area;
+- jerarquias de areas;
+- reactivacion de areas archivadas.
+
+Reglas de respuesta:
+- Crear: `"Area creada: <name>"`
+- Listar con resultados: `"Estas son tus areas activas:\n1. <name>"`
+- Listar sin resultados: `"No encontre areas activas."`
+- Archivar: `"Area archivada: <name>"`
+- Asignar nota: `"Nota asociada al area <areaName>."`
+- Asignar tarea: `"Tarea asociada al area <areaName>: <title>"`

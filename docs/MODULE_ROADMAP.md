@@ -165,7 +165,7 @@ No incluir todavia:
 - score complejo de productividad.
 
 ### 6. `areas`
-Estado: PLANNED
+Estado: APPROVED_PENDING_OPENCODE
 
 Proposito:
 - agrupar notas, tareas y futuros objetivos por areas de vida o negocio.
@@ -174,10 +174,14 @@ Acciones MVP sugeridas:
 - `areas.create`
 - `areas.list`
 - `areas.archive`
-- asociar nota/tarea a area
+- `areas.assign-note`
+- `areas.assign-task`
 
 Tabla autorizable:
 - `sara_areas`
+
+Task:
+- `docs/TASKS/TASK-20260603-012.md`
 
 No incluir todavia:
 - proyectos complejos;

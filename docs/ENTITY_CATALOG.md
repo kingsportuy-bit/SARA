@@ -1,6 +1,6 @@
 # ENTITY_CATALOG.md - SARA
 
-Estado: FASE A MINIMA + TASKS MVP + SESSION CONTEXT MVP + REMINDERS MVP + DAILY LOG MVP AUTORIZADO
+Estado: FASE A MINIMA + TASKS MVP + SESSION CONTEXT MVP + REMINDERS MVP + DAILY LOG MVP + AREAS MVP AUTORIZADO
 Fecha: 2026-06-03
 
 ## Objetivo
@@ -119,6 +119,7 @@ Representar el dia operativo como unidad de analisis.
 - `daily_log_evening_updated`
 
 ## 4. `sara_areas`
+Estado: AUTORIZADA PARA TASK-20260603-012
 
 ### Proposito
 Agrupar planes, notas, tareas y objetivos por area de vida o negocio.
@@ -151,6 +152,8 @@ Agrupar planes, notas, tareas y objetivos por area de vida o negocio.
 - `area_updated`
 - `area_archived`
 - `area_reactivated`
+- `note_area_assigned`
+- `task_area_assigned`
 
 ## 5. `sara_notes`
 
