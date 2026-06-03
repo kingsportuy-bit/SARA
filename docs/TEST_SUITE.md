@@ -133,6 +133,7 @@
 - PASS: bufferProcessor ejecuta notes.search con busca notas sobre foco y no llama DeepSeek
 - PASS: bufferProcessor usa DeepSeek fallback cuando ruta no ejecutable
 - PASS: responseComposer formatea resultados de list con tipo y preview
+- PASS: responseComposer numera resultados list/search desde 1, no desde 0
 - PASS: responseComposer muestra mensaje vacio para list sin resultados
 - PASS: responseComposer formatea resultados de search con query
 - PASS: responseComposer muestra mensaje especifico para search sin resultados
@@ -164,3 +165,6 @@
 - `npm run typecheck`: PASS
 - `npm test`: PASS (132 tests)
 - `npm run build`: PASS
+- `npm run typecheck`: PASS (hotfix numbering TASK-20260603-007)
+- `npm test`: PASS (132 tests, hotfix numbering TASK-20260603-007)
+- `npm run build`: PASS (hotfix numbering TASK-20260603-007)

@@ -6,7 +6,7 @@ export interface ResponseComposer {
 
 function formatNoteLine(note: { noteType: string; content: string }, index: number): string {
   const preview = note.content.length > 60 ? note.content.slice(0, 57) + "..." : note.content;
-  return `${index}. [${note.noteType}] ${preview}`;
+  return `${index + 1}. [${note.noteType}] ${preview}`;
 }
 
 export function createResponseComposer(): ResponseComposer {

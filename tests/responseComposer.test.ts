@@ -260,6 +260,9 @@ describe("responseComposer", () => {
     const result = await composer.compose(input);
 
     expect(result.content).toContain("Estas son tus ultimas notas:");
+    expect(result.content).toContain("1. [observacion]");
+    expect(result.content).toContain("2. [idea]");
+    expect(result.content).not.toContain("0. [observacion]");
     expect(result.content).toContain("[observacion]");
     expect(result.content).toContain("[idea]");
     expect(result.content).toContain("tercera prueba real");
