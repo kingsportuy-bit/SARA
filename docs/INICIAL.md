@@ -72,10 +72,10 @@ Reglas derivadas:
 - Codex revisa el diff completo y valida con `npm run typecheck`, `npm test` y `npm run build` antes de aprobar.
 
 ## Task activa o proxima
-- Task: TASK-20260603-007
-- Estado: APPROVED
-- Owner: opencode
-- Objetivo: separar normalizacion de mensajes Chatwoot como capa propia y completar MVP read-only de notas (`notes.list` y `notes.search`) sin crear nuevas tablas.
+- Task: pendiente de definir
+- Estado: READY_FOR_NEXT_PLAN
+- Owner: Codex Orquestador
+- Objetivo: validar `notes.list` y `notes.search` en produccion y definir siguiente modulo/feature.
 
 ## Ultimo cierre de sesion
 - Fecha: 2026-06-02
