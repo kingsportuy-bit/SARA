@@ -1,7 +1,7 @@
 # ENTITY_CATALOG.md - SARA
 
-Estado: FASE A MINIMA
-Fecha: 2026-06-02
+Estado: FASE A MINIMA + TASKS MVP
+Fecha: 2026-06-03
 
 ## Objetivo
 Definir las entidades minimas que deben existir antes de entregar la primera task a opencode.
@@ -186,10 +186,46 @@ Capturar conocimiento, observaciones, riesgos, ideas y aprendizajes.
 - `note_created`
 - `note_linked`
 
+## 6. `sara_tasks`
+
+### Proposito
+Representar acciones pendientes simples capturadas desde Chatwoot.
+
+### Owner
+`tasks`
+
+### Campos
+- `id uuid primary key`
+- `schema_version text not null`
+- `title text not null`
+- `description text`
+- `status text not null`
+- `source text not null`
+- `area_id uuid`
+- `due_at timestamptz`
+- `completed_at timestamptz`
+- `trace_id uuid`
+- `created_at timestamptz not null`
+- `updated_at timestamptz not null`
+
+### Estados
+- `pending`
+- `completed`
+
+### Invariantes
+- `title` no puede estar vacio.
+- `status` debe estar dentro de los estados permitidos.
+- `completed_at` solo existe cuando `status = completed`.
+- En MVP no hay recordatorios, recurrencias, prioridad ni calendario.
+- Cada creacion o completado debe emitir evento en `sara_events`.
+
+### Eventos que emite
+- `task_created`
+- `task_completed`
+
 ## Decisiones pendientes fuera de Fase A
 - `sara_plans`
 - `sara_objectives`
-- `sara_tasks`
 - `sara_protocols`
 - `sara_usage_metrics`
 - entidades de Delta, Gym, Finanzas, Salud y Barberox

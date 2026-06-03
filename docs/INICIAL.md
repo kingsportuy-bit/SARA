@@ -2,11 +2,11 @@
 
 ## Estado del sistema (actualizado: 2026-06-03)
 - Produccion: worker post-buffer con pipeline modular operativo en VPS
-- En progreso: normalizacion de mensajes Chatwoot como capa propia y cierre MVP read-only de notas
+- En progreso: preparacion del modulo `tasks` MVP (`tasks.create`, `tasks.list`, `tasks.complete`)
 - Bloqueos activos: activar firma HMAC de Chatwoot cuando se recupere `CHATWOOT_WEBHOOK_SECRET`
 - Primer flujo vertical: Chatwoot -> buffer durable -> DeepSeek bootstrap -> respuesta Chatwoot -> trazabilidad `sara_*`
 - Pipeline modular base: implementado y validado; DeepSeek queda como fallback solo para mensajes sin accion ejecutable.
-- Primer modulo real: `notes.create` implementado, conectado al worker, desplegado y probado en produccion con `sara_notes` + `sara_events`.
+- Primer modulo real: `notes` implementado, conectado al worker, desplegado y probado en produccion con `create`, `list` y `search`.
 
 ## Stack actual
 - Backend: Node.js 22 + TypeScript + Fastify
@@ -72,10 +72,10 @@ Reglas derivadas:
 - Codex revisa el diff completo y valida con `npm run typecheck`, `npm test` y `npm run build` antes de aprobar.
 
 ## Task activa o proxima
-- Task: pendiente de definir
-- Estado: READY_FOR_NEXT_PLAN
-- Owner: Codex Orquestador
-- Objetivo: validar `notes.list` y `notes.search` en produccion y definir siguiente modulo/feature.
+- Task: TASK-20260603-008
+- Estado: APPROVED
+- Owner: opencode
+- Objetivo: implementar modulo `tasks` MVP con `tasks.create`, `tasks.list` y `tasks.complete`, manteniendo trazabilidad con `sara_events`.
 
 ## Ultimo cierre de sesion
 - Fecha: 2026-06-02
