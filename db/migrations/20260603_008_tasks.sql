@@ -78,17 +78,28 @@ declare
   v_task_id uuid;
   v_event_id uuid;
   v_title text;
+  v_match_count integer;
 begin
   if p_task_id is not null then
     select id, title into v_task_id, v_title
     from sara_tasks
     where id = p_task_id and status = 'pending';
   elsif p_title_match is not null then
-    select id, title into v_task_id, v_title
+    select count(*) into v_match_count
     from sara_tasks
-    where status = 'pending' and lower(title) like lower('%' || trim(p_title_match) || '%')
-    order by created_at desc
-    limit 1;
+    where status = 'pending' and lower(title) like lower('%' || trim(p_title_match) || '%');
+
+    if v_match_count > 1 then
+      raise exception 'multiple matching pending tasks found';
+    end if;
+
+    if v_match_count = 1 then
+      select id, title into v_task_id, v_title
+      from sara_tasks
+      where status = 'pending' and lower(title) like lower('%' || trim(p_title_match) || '%')
+      order by created_at desc
+      limit 1;
+    end if;
   elsif p_position is not null and p_position > 0 then
     select id, title into v_task_id, v_title
     from (

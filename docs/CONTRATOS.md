@@ -428,7 +428,7 @@ Entrada (`CompleteTaskInput`):
 - `schemaVersion`: `"tasks_complete_input.v1"`
 - `traceId`: string
 - `taskId?`: uuid
-- `titleMatch?`: string
+- `titleMatch?`: string (debe matchear una unica tarea pendiente)
 - `position?`: number (indice humano 1-based)
 - `source`: `"chatwoot"` | `"manual"` | `"system"`
 
@@ -447,7 +447,8 @@ Salida (`CompleteTaskResult`):
 Reglas:
 - Requiere al menos un identificador: `taskId`, `titleMatch` o `position` > 0.
 - `position` se resuelve contra la lista de pendientes ordenada por `created_at desc`.
-- `titleMatch` busca por ILIKE parcial en `title`.
+- `titleMatch` busca por ILIKE parcial en `title`, pero solo ejecuta si hay una unica tarea pendiente coincidente.
+- Si `titleMatch` coincide con multiples tareas pendientes, falla sin cambiar estado.
 - Solo confirma con `taskId` y `eventId`.
 - Emite evento `task_completed` en `sara_events`.
 

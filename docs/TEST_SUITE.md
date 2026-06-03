@@ -176,6 +176,7 @@
 - PASS: migracion solo crea/modifica objetos `sara_`
 - PASS: RPC `sara_create_task` valida title no vacio
 - PASS: RPC `sara_complete_task` soporta taskId, titleMatch y position
+- PASS: RPC `sara_complete_task` falla si titleMatch coincide con multiples tareas pendientes
 
 ### Tasks Module
 - PASS: tasksModule.create acepta input valido con taskId y eventId
@@ -244,3 +245,6 @@
 - `npm run typecheck`: PASS
 - `npm test`: PASS (195 tests)
 - `npm run build`: PASS
+- `npm run typecheck`: PASS (hardening titleMatch TASK-20260603-008)
+- `npm test`: PASS (196 tests, hardening titleMatch TASK-20260603-008)
+- `npm run build`: PASS (hardening titleMatch TASK-20260603-008)

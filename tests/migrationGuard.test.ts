@@ -13,4 +13,10 @@ describe("migration guard", () => {
     expect(objects.length).toBeGreaterThan(0);
     expect(objects.every((name) => name.startsWith("sara_"))).toBe(true);
   });
+
+  it("tasks complete by title fails when match is ambiguous", () => {
+    const sql = readFileSync("db/migrations/20260603_008_tasks.sql", "utf8");
+    expect(sql).toContain("multiple matching pending tasks found");
+    expect(sql).toContain("v_match_count > 1");
+  });
 });
