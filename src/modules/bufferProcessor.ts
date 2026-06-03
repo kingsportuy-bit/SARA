@@ -307,6 +307,108 @@ export function createBufferProcessor(ctx: PipelineContext) {
             ctx.logger.info({ bufferId: buffer.buffer_id, reminderId: canceledReminderId }, "session context updated for reminders.cancel");
           }
         }
+      } else if (module === "areas") {
+        if (action === "create" && actionResult.status === "executed") {
+          const areaId = actionResult.evidence?.areaId as string | undefined;
+          const name = actionResult.evidence?.name as string | undefined;
+          const slug = actionResult.evidence?.slug as string | undefined;
+          if (areaId) {
+            const ctxPayload: Record<string, unknown> = {};
+            if (name) ctxPayload.lastAreaName = name;
+            if (slug) ctxPayload.lastAreaSlug = slug;
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "areas",
+              activeFlow: "area_created",
+              focusedEntityType: "area",
+              focusedEntityId: areaId,
+              context: ctxPayload,
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, areaId }, "session context updated for areas.create");
+          }
+        } else if (action === "list" && actionResult.status === "executed") {
+          const areas = actionResult.evidence?.areas as Array<{ id: string; name: string; slug: string }> | undefined;
+          const count = actionResult.evidence?.count as number | undefined;
+
+          if (areas && count === 1 && areas.length === 1) {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "areas",
+              focusedEntityType: "area",
+              focusedEntityId: areas[0].id,
+              context: {
+                lastAreaName: areas[0].name,
+                lastAreaSlug: areas[0].slug,
+                lastAreaList: [{ position: 1, id: areas[0].id, name: areas[0].name, slug: areas[0].slug }],
+              },
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id }, "session context focused on single active area");
+          } else if (areas && count && count > 1) {
+            const areaList = areas.map((a, i) => ({ position: i + 1, id: a.id, name: a.name, slug: a.slug }));
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "areas",
+              focusedEntityType: undefined,
+              focusedEntityId: undefined,
+              context: { lastAreaList: areaList },
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, count }, "session context saved lastAreaList");
+          }
+        } else if (action === "archive" && actionResult.status === "executed") {
+          const archivedAreaId = actionResult.evidence?.areaId as string | undefined;
+          const archivedName = actionResult.evidence?.name as string | undefined;
+
+          const existingCtx = await ctx.sessionContextModule.get({
+            accountId: buffer.account_id,
+            inboxId: buffer.inbox_id,
+            conversationId: buffer.conversation_id,
+          });
+
+          const focusedId = existingCtx.context?.focusedEntityId;
+          const shouldClearFocus = archivedAreaId && focusedId === archivedAreaId;
+
+          if (shouldClearFocus) {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "areas",
+              activeFlow: "area_archived",
+              focusedEntityType: undefined,
+              focusedEntityId: undefined,
+              context: archivedName ? { lastArchivedAreaName: archivedName } : {},
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, areaId: archivedAreaId }, "session context cleared focus after areas.archive of focused area");
+          } else {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "areas",
+              activeFlow: "area_archived",
+              context: archivedName ? { lastArchivedAreaName: archivedName } : {},
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, areaId: archivedAreaId }, "session context updated for areas.archive");
+          }
+        } else if ((action === "assign-note" || action === "assign-task") && actionResult.status === "executed") {
+          const areaId = actionResult.evidence?.areaId as string | undefined;
+          const areaName = actionResult.evidence?.areaName as string | undefined;
+          const areaSlug = actionResult.evidence?.areaSlug as string | undefined;
+          const entityType = action === "assign-note" ? "note" : "task";
+          const entityId = actionResult.evidence?.noteId as string | undefined ?? actionResult.evidence?.taskId as string | undefined;
+          const entityTitle = actionResult.evidence?.title as string | undefined;
+
+          const ctxPayload: Record<string, unknown> = {};
+          if (areaName) ctxPayload.lastAreaName = areaName;
+          if (areaSlug) ctxPayload.lastAreaSlug = areaSlug;
+          if (entityTitle) ctxPayload.lastAssignedTitle = entityTitle;
+
+          await ctx.sessionContextModule.upsert({
+            ...base,
+            activeModule: "areas",
+            activeFlow: action === "assign-note" ? "note_area_assigned" : "task_area_assigned",
+            focusedEntityType: entityType,
+            focusedEntityId: entityId,
+            context: ctxPayload,
+          });
+          ctx.logger.info({ bufferId: buffer.buffer_id, areaId, entityId }, `session context updated for areas.${action}`);
+        }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

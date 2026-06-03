@@ -145,6 +145,64 @@ export function createResponseComposer(): ResponseComposer {
           } else {
             content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
           }
+        } else if (module === "areas") {
+          if (action === "create") {
+            const areaId = actionResult.evidence?.areaId;
+            const eventId = actionResult.evidence?.eventId;
+            const name = actionResult.evidence?.name ?? classification.intent.entities?.name;
+            if (areaId && eventId) {
+              content = name ? `Area creada: ${name}` : "Area creada.";
+            } else {
+              content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+            }
+          } else if (action === "list") {
+            const areas = actionResult.evidence?.areas as Array<{ name: string }> | undefined;
+            const count = actionResult.evidence?.count as number | undefined;
+            if (!areas || count === 0) {
+              content = "No encontre areas activas.";
+            } else {
+              const lines = areas.map((a, i) => `${i + 1}. ${a.name}`).join("\n");
+              content = `Estas son tus areas activas:\n${lines}`;
+            }
+          } else if (action === "archive") {
+            const areaId = actionResult.evidence?.areaId;
+            const eventId = actionResult.evidence?.eventId;
+            const name = actionResult.evidence?.name ?? classification.intent.entities?.name;
+            if (areaId && eventId) {
+              content = name ? `Area archivada: ${name}` : "Area archivada.";
+            } else {
+              content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+            }
+          } else if (action === "assign-note") {
+            const noteId = actionResult.evidence?.noteId;
+            const areaId = actionResult.evidence?.areaId;
+            const eventId = actionResult.evidence?.eventId;
+            const areaName = actionResult.evidence?.areaName as string | undefined;
+            if (noteId && areaId && eventId) {
+              content = areaName ? `Nota asociada al area ${areaName}.` : "Nota asociada al area.";
+            } else {
+              content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+            }
+          } else if (action === "assign-task") {
+            const taskId = actionResult.evidence?.taskId;
+            const areaId = actionResult.evidence?.areaId;
+            const eventId = actionResult.evidence?.eventId;
+            const areaName = actionResult.evidence?.areaName as string | undefined;
+            const title = actionResult.evidence?.title as string | undefined;
+            if (taskId && areaId && eventId) {
+              if (areaName && title) {
+                content = `Tarea asociada al area ${areaName}: ${title}`;
+              } else if (areaName) {
+                content = `Tarea asociada al area ${areaName}.`;
+              } else {
+                content = "Tarea asociada al area.";
+              }
+            } else {
+              content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+            }
+          } else {
+            content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          }
         } else if (action === "list" || action === "search") {
           const notes = actionResult.evidence?.notes as Array<{ noteType: string; content: string }> | undefined;
           const count = actionResult.evidence?.count as number | undefined;

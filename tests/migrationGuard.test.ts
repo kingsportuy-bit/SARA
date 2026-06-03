@@ -133,4 +133,50 @@ describe("migration guard", () => {
     expect(sql).toContain("grant execute on function sara_upsert_daily_log_evening");
     expect(sql).toContain("to service_role");
   });
+
+  it("sara_areas has unique constraint on slug", () => {
+    const sql = readFileSync("db/migrations/20260603_012_areas.sql", "utf8");
+    expect(sql).toContain("sara_areas_slug_unique");
+    expect(sql).toContain("unique (slug)");
+  });
+
+  it("sara_areas has RLS enabled and anon/authenticated access revoked", () => {
+    const sql = readFileSync("db/migrations/20260603_012_areas.sql", "utf8");
+    expect(sql).toContain("enable row level security");
+    expect(sql).toContain("revoke all on table sara_areas from anon, authenticated");
+  });
+
+  it("sara_areas has status check constraint", () => {
+    const sql = readFileSync("db/migrations/20260603_012_areas.sql", "utf8");
+    expect(sql).toContain("sara_areas_status_valid");
+    expect(sql).toContain("status in ('active', 'paused', 'archived')");
+  });
+
+  it("sara_create_area rejects empty name", () => {
+    const sql = readFileSync("db/migrations/20260603_012_areas.sql", "utf8");
+    expect(sql).toContain("area name cannot be empty");
+  });
+
+  it("sara_create_area rejects duplicate slug", () => {
+    const sql = readFileSync("db/migrations/20260603_012_areas.sql", "utf8");
+    expect(sql).toContain("already exists");
+  });
+
+  it("sara_archive_area fails if area not found", () => {
+    const sql = readFileSync("db/migrations/20260603_012_areas.sql", "utf8");
+    expect(sql).toContain("area not found");
+  });
+
+  it("areas RPCs are restricted to service_role", () => {
+    const sql = readFileSync("db/migrations/20260603_012_areas.sql", "utf8");
+    expect(sql).toContain("revoke execute on function sara_create_area");
+    expect(sql).toContain("grant execute on function sara_create_area");
+    expect(sql).toContain("to service_role");
+    expect(sql).toContain("revoke execute on function sara_archive_area");
+    expect(sql).toContain("grant execute on function sara_archive_area");
+    expect(sql).toContain("revoke execute on function sara_assign_note_area");
+    expect(sql).toContain("grant execute on function sara_assign_note_area");
+    expect(sql).toContain("revoke execute on function sara_assign_task_area");
+    expect(sql).toContain("grant execute on function sara_assign_task_area");
+  });
 });

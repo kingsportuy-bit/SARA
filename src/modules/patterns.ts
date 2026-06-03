@@ -351,3 +351,81 @@ export function resolveTaskReference(
 
   return null;
 }
+
+// -- Area patterns --
+
+export const AREA_CREATE_PATTERNS = [
+  /^crear\s+area\b/i,
+  /^crea\s+area\b/i,
+  /^nueva\s+area\b/i,
+  /^agregar\s+area\b/i,
+];
+
+export const AREA_LIST_PATTERNS = [
+  /^(?:que|mis)\s+areas\s+(?:tengo|hay|tienes|existen)/i,
+  /^listar?\s*areas/i,
+  /^lista\s*(?:mis\s*)?areas/i,
+  /^mis\s*areas/i,
+  /^areas\s*$/i,
+  /^ver\s*areas/i,
+  /^mostrar\s*areas/i,
+];
+
+export const AREA_ARCHIVE_PATTERNS = [
+  /^archivar\s+area\b/i,
+  /^archiva\s+area\b/i,
+  /^eliminar\s+area\b/i,
+];
+
+export const AREA_ASSIGN_PATTERNS = [
+  /^asociar\b/i,
+  /^asignar\b/i,
+  /^mover\b/i,
+  /^vincular\b/i,
+];
+
+export function matchesAreaCreate(text: string): boolean {
+  if (!text) return false;
+  return AREA_CREATE_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesAreaListQuery(text: string): boolean {
+  if (!text) return false;
+  return AREA_LIST_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesAreaArchive(text: string): boolean {
+  if (!text) return false;
+  return AREA_ARCHIVE_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesAreaAssign(text: string): boolean {
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  if (!/\barea\b/i.test(lower)) return false;
+  return AREA_ASSIGN_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesAreaQuery(text: string): boolean {
+  return matchesAreaCreate(text) || matchesAreaListQuery(text) || matchesAreaArchive(text) || matchesAreaAssign(text);
+}
+
+export interface ResolvedNoteReference {
+  noteId?: string;
+}
+
+export function resolveNoteReference(
+  sessionContext: {
+    focusedEntityType?: string;
+    focusedEntityId?: string;
+    context?: Record<string, unknown>;
+  } | undefined,
+): ResolvedNoteReference | null {
+  if (!sessionContext) return null;
+
+  if (sessionContext.focusedEntityType === "note" && sessionContext.focusedEntityId) {
+    return { noteId: sessionContext.focusedEntityId };
+  }
+
+  return null;
+}

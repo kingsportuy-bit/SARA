@@ -908,4 +908,117 @@ describe("moduleIntentClassifier daily-log detection", () => {
     expect(result.confidence).toBeLessThan(0.75);
     expect(result.missingData).toContain("dailyLogFields");
   });
+
+  it("detects areas.create intent from crear area", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-areas-1",
+      module: "areas",
+      messages: [{ id: 1, content: "crear area salud", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("create");
+    expect(result.confidence).toBe(0.85);
+    expect(result.entities).toHaveProperty("name", "salud");
+    expect(result.entities).toHaveProperty("slug", "salud");
+    expect(result.missingData).toEqual([]);
+  });
+
+  it("detects areas.list intent from que areas tengo", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-areas-2",
+      module: "areas",
+      messages: [{ id: 1, content: "que areas tengo", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("list");
+    expect(result.confidence).toBe(0.85);
+    expect(result.missingData).toEqual([]);
+  });
+
+  it("detects areas.list intent from listar areas", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-areas-3",
+      module: "areas",
+      messages: [{ id: 1, content: "listar areas", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("list");
+  });
+
+  it("detects areas.archive intent from archivar area salud", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-areas-4",
+      module: "areas",
+      messages: [{ id: 1, content: "archivar area salud", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("archive");
+    expect(result.confidence).toBe(0.85);
+    expect(result.entities).toHaveProperty("areaSlug", "salud");
+  });
+
+  it("detects areas.assign-note intent from asociar esa nota al area", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-areas-5",
+      module: "areas",
+      messages: [{ id: 1, content: "asociar esa nota al area salud", createdAt: "now" }],
+      sessionContext: {
+        focusedEntityType: "note",
+        focusedEntityId: "note-uuid-1",
+      },
+    });
+
+    expect(result.action).toBe("assign-note");
+    expect(result.confidence).toBe(0.85);
+    expect(result.entities).toHaveProperty("areaSlug", "salud");
+    expect(result.entities).toHaveProperty("noteId", "note-uuid-1");
+  });
+
+  it("detects areas.assign-task intent from asociar esa tarea al area", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-areas-6",
+      module: "areas",
+      messages: [{ id: 1, content: "asociar esa tarea al area salud", createdAt: "now" }],
+      sessionContext: {
+        focusedEntityType: "task",
+        focusedEntityId: "task-uuid-1",
+      },
+    });
+
+    expect(result.action).toBe("assign-task");
+    expect(result.confidence).toBe(0.85);
+    expect(result.entities).toHaveProperty("areaSlug", "salud");
+    expect(result.entities).toHaveProperty("taskId", "task-uuid-1");
+  });
+
+  it("areas.assign does not execute with ambiguous entity", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-areas-7",
+      module: "areas",
+      messages: [{ id: 1, content: "asociar esa tarea al area salud", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("assign-task");
+    expect(result.confidence).toBe(0.4);
+    expect(result.missingData).toContain("entity");
+  });
+
+  it("areas.assign does not execute without area", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-areas-8",
+      module: "areas",
+      messages: [{ id: 1, content: "asignar esa tarea al area", createdAt: "now" }],
+    });
+
+    expect(result.confidence).toBe(0.4);
+    expect(result.missingData).toContain("area");
+  });
 });

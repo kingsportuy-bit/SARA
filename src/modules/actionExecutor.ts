@@ -113,6 +113,53 @@ function guardConfidenceAndMissing(input: ActionExecutionInput): string | null {
   return null;
 }
 
+function validateAreaCreate(input: ActionExecutionInput): string | null {
+  const name = input.entities?.name;
+  if (!name || typeof name !== "string" || String(name).trim().length === 0) {
+    return "name is required for areas.create";
+  }
+  const slug = input.entities?.slug;
+  if (!slug || typeof slug !== "string" || String(slug).trim().length === 0) {
+    return "slug is required for areas.create";
+  }
+  return null;
+}
+
+function validateAreaArchive(input: ActionExecutionInput): string | null {
+  const hasAreaId = input.entities?.areaId;
+  const hasAreaSlug = input.entities?.areaSlug && typeof input.entities.areaSlug === "string" && input.entities.areaSlug.trim().length > 0;
+  if (!hasAreaId && !hasAreaSlug) {
+    return "areaId or areaSlug required for areas.archive";
+  }
+  return null;
+}
+
+function validateAreaAssignNote(input: ActionExecutionInput): string | null {
+  const noteId = input.entities?.noteId;
+  if (!noteId || typeof noteId !== "string" || String(noteId).trim().length === 0) {
+    return "noteId is required for areas.assign-note";
+  }
+  const hasAreaId = input.entities?.areaId;
+  const hasAreaSlug = input.entities?.areaSlug && typeof input.entities.areaSlug === "string" && input.entities.areaSlug.trim().length > 0;
+  if (!hasAreaId && !hasAreaSlug) {
+    return "areaId or areaSlug required for areas.assign-note";
+  }
+  return null;
+}
+
+function validateAreaAssignTask(input: ActionExecutionInput): string | null {
+  const taskId = input.entities?.taskId;
+  if (!taskId || typeof taskId !== "string" || String(taskId).trim().length === 0) {
+    return "taskId is required for areas.assign-task";
+  }
+  const hasAreaId = input.entities?.areaId;
+  const hasAreaSlug = input.entities?.areaSlug && typeof input.entities.areaSlug === "string" && input.entities.areaSlug.trim().length > 0;
+  if (!hasAreaId && !hasAreaSlug) {
+    return "areaId or areaSlug required for areas.assign-task";
+  }
+  return null;
+}
+
 function guardAction(input: ActionExecutionInput): string | null {
   const mutatingActions = new Set([
     "create",
@@ -120,6 +167,9 @@ function guardAction(input: ActionExecutionInput): string | null {
     "cancel",
     "morning",
     "evening",
+    "archive",
+    "assign-note",
+    "assign-task",
   ]);
 
   if (mutatingActions.has(input.action)) {
@@ -153,6 +203,22 @@ function guardAction(input: ActionExecutionInput): string | null {
 
   if (input.module === "daily-log" && input.action === "evening") {
     return validateDailyLogEvening(input);
+  }
+
+  if (input.module === "areas" && input.action === "create") {
+    return validateAreaCreate(input);
+  }
+
+  if (input.module === "areas" && input.action === "archive") {
+    return validateAreaArchive(input);
+  }
+
+  if (input.module === "areas" && input.action === "assign-note") {
+    return validateAreaAssignNote(input);
+  }
+
+  if (input.module === "areas" && input.action === "assign-task") {
+    return validateAreaAssignTask(input);
   }
 
   return null;

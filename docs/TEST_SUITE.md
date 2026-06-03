@@ -454,6 +454,72 @@ Estado: DONE + DEPLOYED + VALIDATED
 - `npm test`: PASS (387 tests, hardening parser/guardas TASK-20260603-011)
 - `npm run build`: PASS (hardening parser/guardas TASK-20260603-011)
 
+## Modulo areas (TASK-20260603-012)
+
+### DB y migraciones
+- PASS: migracion solo crea/modifica objetos `sara_`.
+- PASS: `sara_areas` tiene unique por `slug`.
+- PASS: `sara_areas` tiene RLS y anon/authenticated revocado.
+- PASS: `sara_areas` valida status permitido.
+- PASS: `sara_create_area` rechaza nombre vacio.
+- PASS: `sara_create_area` rechaza slug duplicado.
+- PASS: `sara_archive_area` falla si no encuentra area.
+- PASS: areas RPCs restringidas a `service_role`.
+
+### Parser
+- PASS: `areasParser` parsea crear area.
+- PASS: `areasParser` parsea listar areas.
+- PASS: `areasParser` parsea archivar area.
+- PASS: `areasParser` parsea asignar tarea a area.
+- PASS: `areasParser` parsea asignar nota a area.
+- PASS: `areasParser` genera slug deterministico ASCII-safe.
+- PASS: `areasParser` retorna `missingData` cuando falta area.
+
+### Modulo
+- PASS: `areasModule.create` valida name.
+- PASS: `areasModule.create` valida slug.
+- PASS: `areasModule.list` consulta read-only.
+- PASS: `areasModule.archive` requiere area identificable.
+- PASS: `areasModule.assignNote` requiere area y note.
+- PASS: `areasModule.assignTask` requiere area y task.
+
+### Store
+- PASS: `areasStore.createArea` llama RPC `sara_create_area`.
+- PASS: `areasStore.archiveArea` llama RPC `sara_archive_area`.
+- PASS: `areasStore.assignNoteArea` llama RPC `sara_assign_note_area`.
+- PASS: `areasStore.assignTaskArea` llama RPC `sara_assign_task_area`.
+- PASS: `areasStore.listAreas` consulta `sara_areas`.
+
+### Clasificadores
+- PASS: `coarseClassifier` detecta modulo areas.
+- PASS: `moduleIntentClassifier` detecta `areas.create`.
+- PASS: `moduleIntentClassifier` detecta `areas.list`.
+- PASS: `moduleIntentClassifier` detecta `areas.archive`.
+- PASS: `moduleIntentClassifier` detecta `areas.assign-note`.
+- PASS: `moduleIntentClassifier` detecta `areas.assign-task`.
+- PASS: `moduleIntentClassifier` no ejecuta assign ambiguo.
+
+### Executor y composer
+- PASS: `actionExecutor` despacha create/list/archive/assign.
+- PASS: `actionExecutor` bloquea mutaciones con confianza baja.
+- PASS: `actionExecutor` bloquea create sin name.
+- PASS: `actionExecutor` bloquea assign sin entityId.
+- PASS: `responseComposer` confirma create/archive/assign solo con evidencia.
+- PASS: `responseComposer` formatea list.
+
+### Regresion
+- PASS: `notes.create/list/search` sigue pasando.
+- PASS: `tasks.create/list/complete` sigue pasando.
+- PASS: `session-context` sigue pasando.
+- PASS: `reminders` sigue pasando.
+- PASS: `daily-log` sigue pasando.
+- PASS: Chatwoot scope `7/45/85` sigue pasando.
+
+## Evidencia local 2026-06-03 (TASK-20260603-012)
+- `npm run typecheck`: PASS
+- `npm test`: PASS (460 tests)
+- `npm run build`: PASS
+
 ## Evidencia productiva 2026-06-03 (TASK-20260603-011)
 - PASS: `GET https://sara.codexa.uy/health`
 - PASS: migracion `20260603_011_daily_log.sql` aplicada en VPS.

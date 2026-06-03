@@ -634,3 +634,154 @@ describe("intentConfidenceSufficient", () => {
     expect(intentConfidenceSufficient(makeIntent({ confidence: 0.5, missingData: ["a"] }))).toBe(false);
   });
 });
+
+describe("actionExecutor with areas handlers", () => {
+  it("dispatches to areas.create handler with valid input", async () => {
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { areaId: "a1", eventId: "e1", name: "salud", slug: "salud" },
+      stateChanges: [{ entityType: "area", entityId: "a1", eventType: "area_created", payload: {} }],
+    }));
+
+    const exec = createActionExecutor({ areas: { create: handler } });
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-a1",
+      module: "areas",
+      action: "create",
+      entities: { name: "salud", slug: "salud" },
+      requiresConfirmation: false,
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("executed");
+    expect(result.evidence).toHaveProperty("areaId", "a1");
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("blocks areas.create when name is missing", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ areas: { create: handler } });
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-a2",
+      module: "areas",
+      action: "create",
+      entities: { slug: "salud" },
+      requiresConfirmation: false,
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toContain("name is required");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("blocks areas.create with low confidence", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ areas: { create: handler } });
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-a3",
+      module: "areas",
+      action: "create",
+      entities: { name: "salud", slug: "salud" },
+      requiresConfirmation: false,
+      intentConfidence: 0.5,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("failed");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("dispatches to areas.list handler", async () => {
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { areas: [], count: 0 },
+      stateChanges: [],
+    }));
+
+    const exec = createActionExecutor({ areas: { list: handler } });
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-a4",
+      module: "areas",
+      action: "list",
+      entities: {},
+      requiresConfirmation: false,
+    });
+
+    expect(result.status).toBe("executed");
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("dispatches to areas.archive handler", async () => {
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { areaId: "a1", eventId: "e1", name: "salud", slug: "salud" },
+      stateChanges: [{ entityType: "area", entityId: "a1", eventType: "area_archived", payload: {} }],
+    }));
+
+    const exec = createActionExecutor({ areas: { archive: handler } });
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-a5",
+      module: "areas",
+      action: "archive",
+      entities: { areaSlug: "salud" },
+      requiresConfirmation: false,
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("executed");
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("blocks areas.assign-note without noteId", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ areas: { "assign-note": handler } });
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-a6",
+      module: "areas",
+      action: "assign-note",
+      entities: { areaSlug: "salud" },
+      requiresConfirmation: false,
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toContain("noteId is required");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("blocks areas.assign-task without taskId", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ areas: { "assign-task": handler } });
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-a7",
+      module: "areas",
+      action: "assign-task",
+      entities: { areaSlug: "salud" },
+      requiresConfirmation: false,
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toContain("taskId is required");
+    expect(handler).not.toHaveBeenCalled();
+  });
+});

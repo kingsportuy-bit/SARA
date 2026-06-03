@@ -760,4 +760,166 @@ describe("responseComposer daily-log", () => {
 
     expect(result.content).toContain("No encontre registro diario");
   });
+
+  it("confirms area creation with evidence", async () => {
+    const input = {
+      schemaVersion: "response_composition_input.v1" as const,
+      traceId: "trace-areas-1",
+      messages: [{ id: 1, content: "crear area salud", createdAt: "now" }],
+      classification: {
+        coarse: { schemaVersion: "coarse_classification_result.v1" as const, traceId: "trace-areas-1", module: "areas" as const, confidence: 0.9, missingData: [], reasoningSummary: "test" },
+        intent: { schemaVersion: "module_intent_result.v1" as const, traceId: "trace-areas-1", module: "areas" as const, action: "create", confidence: 0.85, entities: { name: "salud" }, missingData: [], requiresConfirmation: false, reasoningSummary: "test" },
+      },
+      actionResult: {
+        schemaVersion: "action_execution_result.v1" as const,
+        traceId: "trace-areas-1",
+        status: "executed",
+        evidence: { areaId: "a1", eventId: "e1", name: "salud" },
+      },
+    };
+    const result = await composer.compose(input);
+    expect(result.content).toBe("Area creada: salud");
+  });
+
+  it("does not confirm area creation without evidence", async () => {
+    const input = {
+      schemaVersion: "response_composition_input.v1" as const,
+      traceId: "trace-areas-2",
+      messages: [{ id: 1, content: "crear area salud", createdAt: "now" }],
+      classification: {
+        coarse: { schemaVersion: "coarse_classification_result.v1" as const, traceId: "trace-areas-2", module: "areas" as const, confidence: 0.9, missingData: [], reasoningSummary: "test" },
+        intent: { schemaVersion: "module_intent_result.v1" as const, traceId: "trace-areas-2", module: "areas" as const, action: "create", confidence: 0.85, entities: {}, missingData: [], requiresConfirmation: false, reasoningSummary: "test" },
+      },
+      actionResult: {
+        schemaVersion: "action_execution_result.v1" as const,
+        traceId: "trace-areas-2",
+        status: "executed",
+        evidence: {},
+      },
+    };
+    const result = await composer.compose(input);
+    expect(result.content).toContain("no se puede verificar la evidencia");
+  });
+
+  it("formats area list with results", async () => {
+    const input = {
+      schemaVersion: "response_composition_input.v1" as const,
+      traceId: "trace-areas-3",
+      messages: [{ id: 1, content: "que areas tengo", createdAt: "now" }],
+      classification: {
+        coarse: { schemaVersion: "coarse_classification_result.v1" as const, traceId: "trace-areas-3", module: "areas" as const, confidence: 0.9, missingData: [], reasoningSummary: "test" },
+        intent: { schemaVersion: "module_intent_result.v1" as const, traceId: "trace-areas-3", module: "areas" as const, action: "list", confidence: 0.85, entities: {}, missingData: [], requiresConfirmation: false, reasoningSummary: "test" },
+      },
+      actionResult: {
+        schemaVersion: "action_execution_result.v1" as const,
+        traceId: "trace-areas-3",
+        status: "executed",
+        evidence: { areas: [{ name: "salud" }, { name: "trabajo" }], count: 2 },
+      },
+    };
+    const result = await composer.compose(input);
+    expect(result.content).toContain("Estas son tus areas activas");
+    expect(result.content).toContain("1. salud");
+    expect(result.content).toContain("2. trabajo");
+  });
+
+  it("formats area list with no results", async () => {
+    const input = {
+      schemaVersion: "response_composition_input.v1" as const,
+      traceId: "trace-areas-4",
+      messages: [{ id: 1, content: "que areas tengo", createdAt: "now" }],
+      classification: {
+        coarse: { schemaVersion: "coarse_classification_result.v1" as const, traceId: "trace-areas-4", module: "areas" as const, confidence: 0.9, missingData: [], reasoningSummary: "test" },
+        intent: { schemaVersion: "module_intent_result.v1" as const, traceId: "trace-areas-4", module: "areas" as const, action: "list", confidence: 0.85, entities: {}, missingData: [], requiresConfirmation: false, reasoningSummary: "test" },
+      },
+      actionResult: {
+        schemaVersion: "action_execution_result.v1" as const,
+        traceId: "trace-areas-4",
+        status: "executed",
+        evidence: { areas: [], count: 0 },
+      },
+    };
+    const result = await composer.compose(input);
+    expect(result.content).toBe("No encontre areas activas.");
+  });
+
+  it("confirms area archive with evidence", async () => {
+    const input = {
+      schemaVersion: "response_composition_input.v1" as const,
+      traceId: "trace-areas-5",
+      messages: [{ id: 1, content: "archivar area salud", createdAt: "now" }],
+      classification: {
+        coarse: { schemaVersion: "coarse_classification_result.v1" as const, traceId: "trace-areas-5", module: "areas" as const, confidence: 0.9, missingData: [], reasoningSummary: "test" },
+        intent: { schemaVersion: "module_intent_result.v1" as const, traceId: "trace-areas-5", module: "areas" as const, action: "archive", confidence: 0.85, entities: { areaSlug: "salud" }, missingData: [], requiresConfirmation: false, reasoningSummary: "test" },
+      },
+      actionResult: {
+        schemaVersion: "action_execution_result.v1" as const,
+        traceId: "trace-areas-5",
+        status: "executed",
+        evidence: { areaId: "a1", eventId: "e1", name: "salud" },
+      },
+    };
+    const result = await composer.compose(input);
+    expect(result.content).toBe("Area archivada: salud");
+  });
+
+  it("confirms note assign with evidence", async () => {
+    const input = {
+      schemaVersion: "response_composition_input.v1" as const,
+      traceId: "trace-areas-6",
+      messages: [{ id: 1, content: "asociar nota al area salud", createdAt: "now" }],
+      classification: {
+        coarse: { schemaVersion: "coarse_classification_result.v1" as const, traceId: "trace-areas-6", module: "areas" as const, confidence: 0.9, missingData: [], reasoningSummary: "test" },
+        intent: { schemaVersion: "module_intent_result.v1" as const, traceId: "trace-areas-6", module: "areas" as const, action: "assign-note", confidence: 0.85, entities: {}, missingData: [], requiresConfirmation: false, reasoningSummary: "test" },
+      },
+      actionResult: {
+        schemaVersion: "action_execution_result.v1" as const,
+        traceId: "trace-areas-6",
+        status: "executed",
+        evidence: { noteId: "n1", areaId: "a1", eventId: "e1", areaName: "salud" },
+      },
+    };
+    const result = await composer.compose(input);
+    expect(result.content).toBe("Nota asociada al area salud.");
+  });
+
+  it("confirms task assign with evidence", async () => {
+    const input = {
+      schemaVersion: "response_composition_input.v1" as const,
+      traceId: "trace-areas-7",
+      messages: [{ id: 1, content: "asociar tarea al area salud", createdAt: "now" }],
+      classification: {
+        coarse: { schemaVersion: "coarse_classification_result.v1" as const, traceId: "trace-areas-7", module: "areas" as const, confidence: 0.9, missingData: [], reasoningSummary: "test" },
+        intent: { schemaVersion: "module_intent_result.v1" as const, traceId: "trace-areas-7", module: "areas" as const, action: "assign-task", confidence: 0.85, entities: {}, missingData: [], requiresConfirmation: false, reasoningSummary: "test" },
+      },
+      actionResult: {
+        schemaVersion: "action_execution_result.v1" as const,
+        traceId: "trace-areas-7",
+        status: "executed",
+        evidence: { taskId: "t1", areaId: "a1", eventId: "e1", areaName: "salud", title: "llamar al contador" },
+      },
+    };
+    const result = await composer.compose(input);
+    expect(result.content).toBe("Tarea asociada al area salud: llamar al contador");
+  });
+
+  it("does not confirm assign without evidence", async () => {
+    const input = {
+      schemaVersion: "response_composition_input.v1" as const,
+      traceId: "trace-areas-8",
+      messages: [{ id: 1, content: "asociar tarea al area salud", createdAt: "now" }],
+      classification: {
+        coarse: { schemaVersion: "coarse_classification_result.v1" as const, traceId: "trace-areas-8", module: "areas" as const, confidence: 0.9, missingData: [], reasoningSummary: "test" },
+        intent: { schemaVersion: "module_intent_result.v1" as const, traceId: "trace-areas-8", module: "areas" as const, action: "assign-task", confidence: 0.85, entities: {}, missingData: [], requiresConfirmation: false, reasoningSummary: "test" },
+      },
+      actionResult: {
+        schemaVersion: "action_execution_result.v1" as const,
+        traceId: "trace-areas-8",
+        status: "executed",
+        evidence: {},
+      },
+    };
+    const result = await composer.compose(input);
+    expect(result.content).toContain("no se puede verificar la evidencia");
+  });
 });

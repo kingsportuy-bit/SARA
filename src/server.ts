@@ -8,11 +8,13 @@ import { createTasksStore } from "./infra/tasksStore.js";
 import { createSessionContextStore } from "./infra/sessionContextStore.js";
 import { createRemindersStore } from "./infra/remindersStore.js";
 import { createDailyLogStore } from "./infra/dailyLogStore.js";
+import { createAreasStore } from "./infra/areasStore.js";
 import { createNotesModule } from "./modules/notes/notesModule.js";
 import { createTasksModule } from "./modules/tasks/tasksModule.js";
 import { createSessionContextModule } from "./modules/sessionContext/sessionContextModule.js";
 import { createRemindersModule } from "./modules/reminders/remindersModule.js";
 import { createDailyLogModule } from "./modules/dailyLog/dailyLogModule.js";
+import { createAreasModule } from "./modules/areas/areasModule.js";
 import { createRemindersDispatcher } from "./modules/reminders/remindersDispatcher.js";
 import { createCoarseClassifier } from "./modules/coarseClassifier.js";
 import { createModuleIntentClassifier } from "./modules/moduleIntentClassifier.js";
@@ -25,6 +27,7 @@ import type { CreateNoteInput, ListNotesInput, SearchNotesInput } from "./contra
 import type { CreateTaskInput, ListTasksInput, CompleteTaskInput } from "./contracts/tasks.js";
 import type { CreateReminderInput, ListRemindersInput, CancelReminderInput } from "./contracts/reminders.js";
 import type { DailyLogMorningInput, DailyLogEveningInput, DailyLogSummaryInput } from "./contracts/dailyLog.js";
+import type { CreateAreaInput, ListAreasInput, ArchiveAreaInput, AssignNoteAreaInput, AssignTaskAreaInput } from "./contracts/areas.js";
 import type { ActionExecutionInput, ActionExecutionResult } from "./contracts/pipeline.js";
 
 const config = loadConfig();
@@ -47,10 +50,14 @@ const remindersModule = createRemindersModule(remindersStore);
 const dailyLogStore = createDailyLogStore(supabase);
 const dailyLogModule = createDailyLogModule(dailyLogStore);
 
+const areasStore = createAreasStore(supabase);
+const areasModule = createAreasModule(areasStore);
+
 registerModule("notes", ["create", "list", "search"]);
 registerModule("tasks", ["create", "list", "complete"]);
 registerModule("reminders", ["create", "list", "cancel"]);
 registerModule("daily-log", ["morning", "evening", "summary"]);
+registerModule("areas", ["create", "list", "archive", "assign-note", "assign-task"]);
 
 function notesCreateHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
   const createInput: CreateNoteInput = {
@@ -508,6 +515,204 @@ function dailyLogSummaryHandler(input: ActionExecutionInput): Promise<ActionExec
   });
 }
 
+function areasCreateHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const createInput: CreateAreaInput = {
+    schemaVersion: "areas_create_input.v1",
+    traceId: input.traceId,
+    name: String(input.entities.name ?? ""),
+    slug: String(input.entities.slug ?? ""),
+    description: input.entities.description as string | undefined,
+    source: "chatwoot",
+  };
+  return areasModule.create(createInput).then((result) => {
+    if (result.status === "created") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: {
+          areaId: result.areaId,
+          eventId: result.eventId,
+          name: result.name,
+          slug: result.slug,
+        },
+        stateChanges: [
+          {
+            entityType: "area",
+            entityId: result.areaId,
+            eventType: "area_created",
+            payload: {},
+          },
+        ],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: result.error,
+    };
+  });
+}
+
+function areasListHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const listInput: ListAreasInput = {
+    schemaVersion: "areas_list_input.v1",
+    traceId: input.traceId,
+    limit: typeof input.entities.limit === "number" ? input.entities.limit : 10,
+  };
+  return areasModule.list(listInput).then((listResult) => {
+    if (listResult.status === "success") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: {
+          areas: listResult.areas,
+          count: listResult.count,
+        },
+        stateChanges: [],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: listResult.error,
+    };
+  });
+}
+
+function areasArchiveHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const archiveInput: ArchiveAreaInput = {
+    schemaVersion: "areas_archive_input.v1",
+    traceId: input.traceId,
+    areaId: input.entities.areaId as string | undefined,
+    slug: input.entities.areaSlug as string | undefined,
+    source: "chatwoot",
+  };
+  return areasModule.archive(archiveInput).then((result) => {
+    if (result.status === "archived") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: {
+          areaId: result.areaId,
+          eventId: result.eventId,
+          name: result.name,
+          slug: result.slug,
+        },
+        stateChanges: [
+          {
+            entityType: "area",
+            entityId: result.areaId,
+            eventType: "area_archived",
+            payload: {},
+          },
+        ],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: result.error,
+    };
+  });
+}
+
+function areasAssignNoteHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const assignInput: AssignNoteAreaInput = {
+    schemaVersion: "areas_assign_note_input.v1",
+    traceId: input.traceId,
+    noteId: String(input.entities.noteId ?? ""),
+    areaId: input.entities.areaId as string | undefined,
+    areaSlug: input.entities.areaSlug as string | undefined,
+    source: "chatwoot",
+  };
+  return areasModule.assignNote(assignInput).then((result) => {
+    if (result.status === "assigned") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: {
+          noteId: result.noteId,
+          areaId: result.areaId,
+          areaName: result.areaName,
+          eventId: result.eventId,
+        },
+        stateChanges: [
+          {
+            entityType: "note",
+            entityId: result.noteId,
+            eventType: "note_area_assigned",
+            payload: {},
+          },
+        ],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: result.error,
+    };
+  });
+}
+
+function areasAssignTaskHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const assignInput: AssignTaskAreaInput = {
+    schemaVersion: "areas_assign_task_input.v1",
+    traceId: input.traceId,
+    taskId: String(input.entities.taskId ?? ""),
+    areaId: input.entities.areaId as string | undefined,
+    areaSlug: input.entities.areaSlug as string | undefined,
+    source: "chatwoot",
+  };
+  return areasModule.assignTask(assignInput).then((result) => {
+    if (result.status === "assigned") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: {
+          taskId: result.taskId,
+          title: result.title,
+          areaId: result.areaId,
+          areaName: result.areaName,
+          eventId: result.eventId,
+        },
+        stateChanges: [
+          {
+            entityType: "task",
+            entityId: result.taskId,
+            eventType: "task_area_assigned",
+            payload: {},
+          },
+        ],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: result.error,
+    };
+  });
+}
+
 const outboundClient = createChatwootClient(config.chatwoot.url, config.chatwoot.accountId, config.chatwoot.userToken);
 
 const processor = createBufferProcessor({
@@ -536,6 +741,13 @@ const processor = createBufferProcessor({
       morning: dailyLogMorningHandler,
       evening: dailyLogEveningHandler,
       summary: dailyLogSummaryHandler,
+    },
+    areas: {
+      create: areasCreateHandler,
+      list: areasListHandler,
+      archive: areasArchiveHandler,
+      "assign-note": areasAssignNoteHandler,
+      "assign-task": areasAssignTaskHandler,
     },
   }),
   composer: createResponseComposer(),

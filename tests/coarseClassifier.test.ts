@@ -427,4 +427,45 @@ describe("coarseClassifier daily-log detection", () => {
 
     expect(result.module).toBe("daily-log");
   });
+
+  it("detects areas module from crear area", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-areas-1",
+      messages: [{ id: 1, content: "crear area salud", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("areas");
+    expect(result.confidence).toBe(0.9);
+  });
+
+  it("detects areas module from que areas tengo", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-areas-2",
+      messages: [{ id: 1, content: "que areas tengo", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("areas");
+  });
+
+  it("detects areas module from archivar area", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-areas-3",
+      messages: [{ id: 1, content: "archivar area salud", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("areas");
+  });
+
+  it("detects areas module from asignar tarea a area", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-areas-4",
+      messages: [{ id: 1, content: "asignar esa tarea al area salud", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("areas");
+  });
 });

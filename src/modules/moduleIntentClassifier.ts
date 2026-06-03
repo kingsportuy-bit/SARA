@@ -1,7 +1,8 @@
 import type { ModuleIntentInput, ModuleIntentResult } from "../contracts/pipeline.js";
-import { matchesNotePrefix, extractNoteContent, matchesNoteListQuery, matchesNoteSearchQuery, extractSearchQuery, matchesTaskCreate, matchesTaskListQuery, matchesTaskComplete, extractTaskTitle, extractCompleteTaskIdentifier, matchesTaskReference, resolveTaskReference, matchesReminderCreate, matchesReminderListQuery, matchesReminderCancel, extractCancelReminderIdentifier, matchesReminderReference, resolveReminderReference, extractReminderTitle, matchesDailyLogMorning, matchesDailyLogEvening, matchesDailyLogSummary } from "./patterns.js";
+import { matchesNotePrefix, extractNoteContent, matchesNoteListQuery, matchesNoteSearchQuery, extractSearchQuery, matchesTaskCreate, matchesTaskListQuery, matchesTaskComplete, extractTaskTitle, extractCompleteTaskIdentifier, matchesTaskReference, resolveTaskReference, resolveNoteReference, matchesReminderCreate, matchesReminderListQuery, matchesReminderCancel, extractCancelReminderIdentifier, matchesReminderReference, resolveReminderReference, extractReminderTitle, matchesDailyLogMorning, matchesDailyLogEvening, matchesDailyLogSummary, matchesAreaCreate, matchesAreaListQuery, matchesAreaArchive, matchesAreaAssign } from "./patterns.js";
 import { parseReminderTime } from "./reminders/reminderTimeParser.js";
 import { parseDailyLog } from "./dailyLog/dailyLogParser.js";
+import { parseAreasInput } from "./areas/areasParser.js";
 
 export interface ModuleIntentClassifier {
   classify(input: ModuleIntentInput): Promise<ModuleIntentResult>;
@@ -455,6 +456,190 @@ function detectDailyLogIntent(input: ModuleIntentInput): ModuleIntentResult | nu
   return null;
 }
 
+function detectAreasIntent(input: ModuleIntentInput): ModuleIntentResult | null {
+  const text = input.messages.map((m) => m.content).join(" ").trim();
+  if (!text) return null;
+
+  const parseResult = parseAreasInput(text);
+
+  if (!parseResult.success || parseResult.intent === "unknown") {
+    // Check if any area pattern matched without a successful parse
+    if (matchesAreaCreate(text) || matchesAreaArchive(text) || matchesAreaAssign(text)) {
+      return {
+        schemaVersion: "module_intent_result.v1",
+        traceId: input.traceId,
+        module: "areas",
+        action: parseResult.intent === "assign-note" ? "assign-note" : parseResult.intent === "assign-task" ? "assign-task" : parseResult.intent === "archive" ? "archive" : "create",
+        confidence: 0.4,
+        entities: {},
+        missingData: parseResult.missingData,
+        requiresConfirmation: false,
+        reasoningSummary: "Area intent detected but missing required data: " + parseResult.missingData.join(", "),
+      };
+    }
+    return null;
+  }
+
+  const { intent } = parseResult;
+
+  if (intent === "create") {
+    return {
+      schemaVersion: "module_intent_result.v1",
+      traceId: input.traceId,
+      module: "areas",
+      action: "create",
+      confidence: 0.85,
+      entities: {
+        name: parseResult.name,
+        slug: parseResult.slug,
+        description: parseResult.description,
+      },
+      missingData: [],
+      requiresConfirmation: false,
+      reasoningSummary: "Area create intent detected.",
+    };
+  }
+
+  if (intent === "list") {
+    return {
+      schemaVersion: "module_intent_result.v1",
+      traceId: input.traceId,
+      module: "areas",
+      action: "list",
+      confidence: 0.85,
+      entities: {},
+      missingData: [],
+      requiresConfirmation: false,
+      reasoningSummary: "Area list intent detected.",
+    };
+  }
+
+  if (intent === "archive") {
+    if (!parseResult.areaSlug) {
+      return {
+        schemaVersion: "module_intent_result.v1",
+        traceId: input.traceId,
+        module: "areas",
+        action: "archive",
+        confidence: 0.4,
+        entities: {},
+        missingData: ["area"],
+        requiresConfirmation: false,
+        reasoningSummary: "Area archive intent detected but area not identified.",
+      };
+    }
+    return {
+      schemaVersion: "module_intent_result.v1",
+      traceId: input.traceId,
+      module: "areas",
+      action: "archive",
+      confidence: 0.85,
+      entities: { areaSlug: parseResult.areaSlug },
+      missingData: [],
+      requiresConfirmation: false,
+      reasoningSummary: "Area archive intent detected.",
+    };
+  }
+
+  if (intent === "assign-note") {
+    if (!parseResult.areaSlug) {
+      return {
+        schemaVersion: "module_intent_result.v1",
+        traceId: input.traceId,
+        module: "areas",
+        action: "assign-note",
+        confidence: 0.4,
+        entities: { entityType: "note" },
+        missingData: ["area"],
+        requiresConfirmation: false,
+        reasoningSummary: "Area assign-note intent detected but area not identified.",
+      };
+    }
+
+    // Try to resolve note reference from session context
+    let noteId: string | undefined;
+    const sessionCtx = input.sessionContext;
+    if (sessionCtx) {
+      if (sessionCtx.focusedEntityType === "note" && sessionCtx.focusedEntityId) {
+        noteId = sessionCtx.focusedEntityId;
+      }
+    }
+
+    if (!noteId) {
+      return {
+        schemaVersion: "module_intent_result.v1",
+        traceId: input.traceId,
+        module: "areas",
+        action: "assign-note",
+        confidence: 0.4,
+        entities: { areaSlug: parseResult.areaSlug, entityType: "note" },
+        missingData: ["entity"],
+        requiresConfirmation: false,
+        reasoningSummary: "Area assign-note intent detected but note entity not resolved.",
+      };
+    }
+
+    return {
+      schemaVersion: "module_intent_result.v1",
+      traceId: input.traceId,
+      module: "areas",
+      action: "assign-note",
+      confidence: 0.85,
+      entities: { areaSlug: parseResult.areaSlug, noteId, entityType: "note" },
+      missingData: [],
+      requiresConfirmation: false,
+      reasoningSummary: "Area assign-note intent detected and entity resolved.",
+    };
+  }
+
+  if (intent === "assign-task") {
+    if (!parseResult.areaSlug) {
+      return {
+        schemaVersion: "module_intent_result.v1",
+        traceId: input.traceId,
+        module: "areas",
+        action: "assign-task",
+        confidence: 0.4,
+        entities: { entityType: "task" },
+        missingData: ["area"],
+        requiresConfirmation: false,
+        reasoningSummary: "Area assign-task intent detected but area not identified.",
+      };
+    }
+
+    // Try to resolve task reference from session context
+    const sessionCtx = input.sessionContext;
+    const resolved = resolveTaskReference(sessionCtx);
+    if (!resolved || !resolved.taskId) {
+      return {
+        schemaVersion: "module_intent_result.v1",
+        traceId: input.traceId,
+        module: "areas",
+        action: "assign-task",
+        confidence: 0.4,
+        entities: { areaSlug: parseResult.areaSlug, entityType: "task" },
+        missingData: ["entity"],
+        requiresConfirmation: false,
+        reasoningSummary: "Area assign-task intent detected but task entity not resolved.",
+      };
+    }
+
+    return {
+      schemaVersion: "module_intent_result.v1",
+      traceId: input.traceId,
+      module: "areas",
+      action: "assign-task",
+      confidence: 0.85,
+      entities: { areaSlug: parseResult.areaSlug, taskId: resolved.taskId, entityType: "task" },
+      missingData: [],
+      requiresConfirmation: false,
+      reasoningSummary: "Area assign-task intent detected and entity resolved.",
+    };
+  }
+
+  return null;
+}
+
 export function createModuleIntentClassifier(): ModuleIntentClassifier {
   return {
     async classify(input) {
@@ -475,6 +660,11 @@ export function createModuleIntentClassifier(): ModuleIntentClassifier {
 
       if (input.module === "daily-log") {
         const detected = detectDailyLogIntent(input);
+        if (detected) return detected;
+      }
+
+      if (input.module === "areas") {
+        const detected = detectAreasIntent(input);
         if (detected) return detected;
       }
 

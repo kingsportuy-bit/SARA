@@ -165,7 +165,7 @@ No incluir todavia:
 - score complejo de productividad.
 
 ### 6. `areas`
-Estado: APPROVED_PENDING_OPENCODE
+Estado: IMPLEMENTED_PENDING_REVIEW
 
 Proposito:
 - agrupar notas, tareas y futuros objetivos por areas de vida o negocio.
