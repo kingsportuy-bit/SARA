@@ -69,7 +69,7 @@ Tablas/eventos:
 ## Proximo orden recomendado
 
 ### 3. `session-context`
-Estado: IMPLEMENTED_PENDING_REVIEW
+Estado: IMPLEMENTED_PENDING_DEPLOY
 
 Proposito:
 - recordar contexto conversacional efimero;
@@ -228,7 +228,7 @@ No incluir todavia:
 ## Orden resumido
 1. `notes` - listo.
 2. `tasks` - listo.
-3. `session-context` - siguiente recomendado.
+3. `session-context` - implementado, pendiente de deploy/validacion.
 4. `reminders` - despues de contexto.
 5. `daily-log` - registro diario.
 6. `areas` - agrupacion transversal.

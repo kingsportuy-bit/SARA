@@ -2,7 +2,7 @@
 
 ## Estado del sistema (actualizado: 2026-06-03)
 - Produccion: worker post-buffer con pipeline modular operativo en VPS
-- En progreso: preparacion del modulo interno `session-context` MVP
+- En progreso: deploy y validacion productiva del modulo interno `session-context` MVP
 - Bloqueos activos: activar firma HMAC de Chatwoot cuando se recupere `CHATWOOT_WEBHOOK_SECRET`
 - Primer flujo vertical: Chatwoot -> buffer durable -> DeepSeek bootstrap -> respuesta Chatwoot -> trazabilidad `sara_*`
 - Pipeline modular base: implementado y validado; DeepSeek queda como fallback solo para mensajes sin accion ejecutable.
@@ -74,10 +74,10 @@ Reglas derivadas:
 - Codex revisa el diff completo y valida con `npm run typecheck`, `npm test` y `npm run build` antes de aprobar.
 
 ## Task activa o proxima
-- Task: TASK-20260603-009
-- Estado: APPROVED
-- Owner: opencode
-- Objetivo: implementar `session-context` MVP para foco conversacional efimero y resolucion segura de referencias simples.
+- Task: pendiente de definir
+- Estado: READY_FOR_DEPLOY_VALIDATION
+- Owner: Codex Orquestador
+- Objetivo: desplegar y validar `session-context` en produccion; luego definir siguiente task segun `docs/MODULE_ROADMAP.md`.
 
 ## Ultimo cierre de sesion
 - Fecha: 2026-06-02
