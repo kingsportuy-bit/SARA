@@ -7,6 +7,7 @@
 - Primer flujo vertical: Chatwoot -> buffer durable -> DeepSeek bootstrap -> respuesta Chatwoot -> trazabilidad `sara_*`
 - Pipeline modular base: implementado y validado; DeepSeek queda como fallback solo para mensajes sin accion ejecutable.
 - Primer modulo real: `notes` implementado, conectado al worker, desplegado y probado en produccion con `create`, `list` y `search`.
+- Segundo modulo real: `tasks` implementado, conectado al worker, desplegado y probado en produccion con `create`, `list` y `complete`.
 
 ## Stack actual
 - Backend: Node.js 22 + TypeScript + Fastify
@@ -47,16 +48,17 @@ Reglas derivadas:
 6. docs/CONTRATOS.md
 7. docs/ARQUITECTURA_CHATWOOT_V1.md
 8. docs/ENTITY_CATALOG.md
-9. docs/INFORME_ANALISIS_ARQUITECTURA_FEATURES.md
-10. docs/agents/OPENCODE_EXECUTOR_PROTOCOL.md
-11. docs/DEBUG.md
-12. docs/DEPLOY.md
-13. docs/INFRASTRUCTURE.md
-14. docs/SECURITY.md
-15. docs/TEST_SUITE.md
-16. docs/REGRESSION_CASES.md
-17. docs/ERROR_REGISTRY.md
-18. docs/biblioteca/README.md
+9. docs/MODULE_ROADMAP.md
+10. docs/INFORME_ANALISIS_ARQUITECTURA_FEATURES.md
+11. docs/agents/OPENCODE_EXECUTOR_PROTOCOL.md
+12. docs/DEBUG.md
+13. docs/DEPLOY.md
+14. docs/INFRASTRUCTURE.md
+15. docs/SECURITY.md
+16. docs/TEST_SUITE.md
+17. docs/REGRESSION_CASES.md
+18. docs/ERROR_REGISTRY.md
+19. docs/biblioteca/README.md
 
 ## Roles al iniciar un hilo nuevo
 - Codex Orquestador: agente principal del proyecto. Lee `docs/INICIAL.md`, mantiene contexto, planifica, define contratos, prepara tasks para opencode, revisa diffs, valida evidencia y decide si se aprueba o se piden correcciones.
@@ -75,7 +77,7 @@ Reglas derivadas:
 - Task: pendiente de definir
 - Estado: READY_FOR_NEXT_PLAN
 - Owner: Codex Orquestador
-- Objetivo: desplegar y validar `tasks.create`, `tasks.list` y `tasks.complete` en produccion, luego definir siguiente feature.
+- Objetivo: definir siguiente task segun `docs/MODULE_ROADMAP.md`; siguiente recomendado: `session-context`.
 
 ## Ultimo cierre de sesion
 - Fecha: 2026-06-02
