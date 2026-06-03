@@ -2,10 +2,11 @@
 
 ## Estado del sistema (actualizado: 2026-06-02)
 - Produccion: bootstrap operativo desplegado en VPS
-- En progreso: preparacion de primer modulo real para opencode
+- En progreso: preparacion de conexion del pipeline real al worker
 - Bloqueos activos: activar firma HMAC de Chatwoot cuando se recupere `CHATWOOT_WEBHOOK_SECRET`
 - Primer flujo vertical: Chatwoot -> buffer durable -> DeepSeek bootstrap -> respuesta Chatwoot -> trazabilidad `sara_*`
 - Pipeline modular base: implementado y validado en TASK-20260602-004; bootstrap sigue como fallback.
+- Primer modulo real: `notes.create` implementado y validado en TASK-20260602-005; pendiente conectarlo al worker real.
 
 ## Stack actual
 - Backend: Node.js 22 + TypeScript + Fastify
@@ -70,10 +71,10 @@ Reglas derivadas:
 - Codex revisa el diff completo y valida con `npm run typecheck`, `npm test` y `npm run build` antes de aprobar.
 
 ## Task activa o proxima
-- Task: TASK-20260602-005
+- Task: TASK-20260603-006
 - Estado: APPROVED
 - Owner: opencode
-- Objetivo: implementar `notes.create` como primer modulo real, con `sara_events`, `sara_notes`, writer canonico, contratos y tests.
+- Objetivo: conectar `notes.create` al worker post-buffer y mantener DeepSeek como fallback para mensajes sin accion ejecutable.
 
 ## Ultimo cierre de sesion
 - Fecha: 2026-06-02
