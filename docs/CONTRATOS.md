@@ -163,7 +163,7 @@ Salida (`ModuleIntentResult`):
 - `requiresConfirmation`: boolean
 - `reasoningSummary`: string
 
-Estado actual: esqueleto retorna accion `"none"` con confianza 0.1.
+Estado actual: esqueleto retorna accion `"none"` con confianza 0.1. Para modulo `notes`, detecta `notes.create` por patrones explicitos (`nota:`, `guarda una nota:`, `anota esto:`).
 
 ### module-router.route
 Responsable: `module-router`
@@ -228,3 +228,53 @@ Entrada: `ModuleIntentResult`
 Salida: `boolean`
 
 Retorna `true` solo si `confidence >= 0.75` y `missingData` esta vacio.
+
+## Modulo notes (v0)
+
+### notes.create
+Responsable: `notes`
+
+Entrada (`CreateNoteInput`):
+- `schemaVersion`: `"notes_create_input.v1"`
+- `traceId`: string
+- `content`: string (no vacio)
+- `noteType`: `NoteType` (aprendizaje | idea | problema | riesgo | mejora | observacion)
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+- `areaId?`: uuid
+- `relatedEntityType?`: string
+- `relatedEntityId?`: uuid
+- `tags`: string[]
+
+Salida (`CreateNoteResult`):
+- `schemaVersion`: `"notes_create_result.v1"`
+- `traceId`: string
+- `status`: `"created"` | `"failed"`
+- `noteId?`: uuid (solo si status = created)
+- `eventId?`: uuid (solo si status = created)
+- `evidence.noteId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"note_created"`
+- `error?`: string (solo si status = failed)
+
+Reglas de negocio:
+- `content` no puede ser vacio.
+- `noteType` debe ser uno de los valores validos.
+- Si `relatedEntityId` existe, `relatedEntityType` debe existir (validado en RPC).
+- Cada creacion emite evento `note_created` en `sara_events`.
+
+### RPC `sara_create_note`
+Responsable: DB
+
+Firma:
+```
+sara_create_note(p_trace_id uuid, p_content text, p_note_type text, p_source text, p_area_id uuid, p_related_entity_type text, p_related_entity_id uuid, p_tags jsonb)
+```
+
+Retorna JSON con `note_id`, `event_id`, `trace_id`, `schema_version`.
+Valida: content no vacio, noteType valido, relacion entidad consistente.
+Ejecutable solo por `service_role`.
+
+### Tablas autorizadas
+- `sara_events`: registro canonico de eventos (note_created, etc.)
+- `sara_notes`: notas con schema_version, note_type, content, source, area_id, tags, trace_id
+- Ambas con RLS habilitado, acceso revocado a anon/authenticated.

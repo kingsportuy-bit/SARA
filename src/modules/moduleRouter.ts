@@ -6,6 +6,10 @@ export interface ModuleRouter {
 
 const REGISTRY: Record<string, string[]> = {};
 
+export function registerModule(module: string, actions: string[]): void {
+  REGISTRY[module] = actions;
+}
+
 export function createModuleRouter(): ModuleRouter {
   return {
     async route(intent) {

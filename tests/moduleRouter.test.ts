@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createModuleRouter } from "../src/modules/moduleRouter.js";
+import { createModuleRouter, registerModule } from "../src/modules/moduleRouter.js";
 import type { ModuleIntentResult } from "../src/contracts/pipeline.js";
 
 const router = createModuleRouter();
@@ -49,5 +49,23 @@ describe("moduleRouter", () => {
 
     expect(result.executable).toBe(false);
     expect(result.reason).toBeDefined();
+  });
+
+  it("marks notes.create executable after registration", async () => {
+    registerModule("notes", ["create"]);
+    const registered = createModuleRouter();
+
+    const result = await registered.route(intent({ module: "notes", action: "create" }));
+    expect(result.executable).toBe(true);
+    expect(result.reason).toBeUndefined();
+  });
+
+  it("rejects unregistered action within registered module", async () => {
+    registerModule("notes", ["create"]);
+    const registered = createModuleRouter();
+
+    const result = await registered.route(intent({ module: "notes", action: "delete" }));
+    expect(result.executable).toBe(false);
+    expect(result.reason).toContain("not registered");
   });
 });

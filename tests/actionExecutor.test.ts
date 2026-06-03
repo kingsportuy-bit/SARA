@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createActionExecutor, intentConfidenceSufficient } from "../src/modules/actionExecutor.js";
-import type { ActionExecutionInput, ModuleIntentResult } from "../src/contracts/pipeline.js";
+import type { ActionExecutionInput, ActionExecutionResult, ModuleIntentResult } from "../src/contracts/pipeline.js";
 
 const executor = createActionExecutor();
 
@@ -45,6 +45,55 @@ describe("actionExecutor", () => {
     const result = await executor.execute(execInput({ traceId: "custom-trace" }));
 
     expect(result.traceId).toBe("custom-trace");
+  });
+});
+
+describe("actionExecutor with notes handler", () => {
+  it("dispatches to notes.create handler and returns its result", async () => {
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { noteId: "n1", eventId: "e1" },
+      stateChanges: [{ entityType: "note", entityId: "n1", eventType: "note_created", payload: {} }],
+    }));
+
+    const exec = createActionExecutor({ notes: { create: handler } });
+    const result = await exec.execute(execInput({
+      entities: { content: "nota de prueba", noteType: "observacion" },
+    }));
+
+    expect(result.status).toBe("executed");
+    expect(result.evidence).toEqual({ noteId: "n1", eventId: "e1" });
+    expect(result.stateChanges).toHaveLength(1);
+    expect(result.stateChanges[0].eventType).toBe("note_created");
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns skipped for unregistered action within a registered module", async () => {
+    const handler = vi.fn(async () => ({
+      schemaVersion: "action_execution_result.v1" as const,
+      traceId: "",
+      status: "executed" as const,
+      evidence: {},
+      stateChanges: [],
+    }));
+
+    const exec = createActionExecutor({ notes: { create: handler } });
+    const result = await exec.execute(execInput({ action: "delete" }));
+
+    expect(result.status).toBe("skipped");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("does not dispatch when requiresConfirmation is true even with handler", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ notes: { create: handler } });
+
+    const result = await exec.execute(execInput({ requiresConfirmation: true }));
+
+    expect(result.status).toBe("needs_confirmation");
+    expect(handler).not.toHaveBeenCalled();
   });
 });
 

@@ -46,6 +46,31 @@
 - PASS: responseComposer informa executed
 - PASS: responseComposer informa failed con mensaje de error
 
+## Modulo notes (TASK-20260602-005)
+- PASS: notesModule.create acepta input valido con noteId y eventId
+- PASS: notesModule.create rechaza content vacio
+- PASS: notesModule.create rechaza content solo espacios
+- PASS: notesModule.create rechaza noteType invalido
+- PASS: notesModule.create acepta los 6 noteType validos
+- PASS: notesModule.create propaga error del repositorio
+- PASS: notesModule.create pasa todos los campos al repositorio
+- PASS: notesStore llama sara_create_note con parametros correctos
+- PASS: notesStore retorna failed en error de RPC
+- PASS: notesStore envia null para campos opcionales indefinidos
+- PASS: moduleRouter marca notes.create ejecutable tras registerModule
+- PASS: moduleRouter rechaza accion no registrada en modulo registrado
+- PASS: actionExecutor despacha a handler notes.create y devuelve result
+- PASS: actionExecutor retorna skipped para accion no registrada en modulo con handler
+- PASS: actionExecutor no despacha si requiresConfirmation=true aunque haya handler
+- PASS: moduleIntentClassifier detecta nota: y extrae content
+- PASS: moduleIntentClassifier detecta guarda una nota:
+- PASS: moduleIntentClassifier detecta anota esto:
+- PASS: moduleIntentClassifier retorna missingData sin content
+- PASS: moduleIntentClassifier no detecta notes.create en modulo unknown
+- PASS: moduleIntentClassifier no detecta notes.create en daily-log
+- PASS: moduleIntentClassifier sin falso positivo en mensajes no-note
+- PASS: migrationGuard sigue pasando con nuevos objetos sara_events y sara_notes
+
 ## Evidencia local 2026-06-02
 - `npm run typecheck`: PASS
 - `npm test`: PASS (7 tests)
@@ -55,3 +80,6 @@
 - `npm run typecheck`: PASS (TASK-20260602-004)
 - `npm test`: PASS (33 tests, TASK-20260602-004)
 - `npm run build`: PASS (TASK-20260602-004)
+- `npm run typecheck`: PASS (TASK-20260602-005)
+- `npm test`: PASS (55 tests, TASK-20260602-005)
+- `npm run build`: PASS (TASK-20260602-005)
