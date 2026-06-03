@@ -120,3 +120,111 @@ Salida:
 - desvíos
 - riesgos
 - ajustes_sugeridos
+
+## Pipeline de comprension y respuesta (v0 - esqueleto)
+
+### coarse-classifier.classify
+Responsable: `coarse-classifier`
+
+Entrada (`CoarseClassificationInput`):
+- `schemaVersion`: `"coarse_classification_input.v1"`
+- `traceId`: string
+- `messages`: array de `{ id, content, createdAt }`
+- `sessionContext?`: contexto conversacional activo
+
+Salida (`CoarseClassificationResult`):
+- `schemaVersion`: `"coarse_classification_result.v1"`
+- `traceId`: string
+- `module`: `"notes"` | `"daily-log"` | `"session-context"` | `"unknown"`
+- `confidence`: number (0-1)
+- `missingData`: string[]
+- `reasoningSummary`: string
+
+Estado actual: esqueleto retorna modulo `"unknown"` con confianza 0.5.
+
+### module-intent-classifier.classify
+Responsable: `module-intent-classifier`
+
+Entrada (`ModuleIntentInput`):
+- `schemaVersion`: `"module_intent_input.v1"`
+- `traceId`: string
+- `module`: resultado del clasificador grueso
+- `messages`: mensajes consolidados
+- `sessionContext?`: contexto
+
+Salida (`ModuleIntentResult`):
+- `schemaVersion`: `"module_intent_result.v1"`
+- `traceId`: string
+- `module`: mismo que entrada
+- `action`: string
+- `confidence`: number
+- `entities`: Record<string, unknown>
+- `missingData`: string[]
+- `requiresConfirmation`: boolean
+- `reasoningSummary`: string
+
+Estado actual: esqueleto retorna accion `"none"` con confianza 0.1.
+
+### module-router.route
+Responsable: `module-router`
+
+Entrada: `ModuleIntentResult`
+Salida (`RouteResult`):
+- `schemaVersion`: `"route_result.v1"`
+- `traceId`: string
+- `module`: string
+- `action`: string
+- `executable`: boolean
+- `reason?`: string
+
+Regla: el router valida que el modulo y la accion existan en el registro. Sin modulos registrados, siempre retorna `executable: false`.
+
+### action-executor.execute
+Responsable: `action-executor`
+
+Entrada (`ActionExecutionInput`):
+- `schemaVersion`: `"action_execution_input.v1"`
+- `traceId`: string
+- `module`: string
+- `action`: string
+- `entities`: Record<string, unknown>
+- `requiresConfirmation`: boolean
+
+Salida (`ActionExecutionResult`):
+- `schemaVersion`: `"action_execution_result.v1"`
+- `traceId`: string
+- `status`: `"executed"` | `"failed"` | `"skipped"` | `"needs_confirmation"`
+- `evidence`: Record<string, unknown>
+- `stateChanges`: array de `{ entityType, entityId?, eventType, payload }`
+- `error?`: string
+
+Guardas:
+- Si `requiresConfirmation = true`, retorna `"needs_confirmation"`.
+- Si `intentConfidenceSufficient() = false`, no debe invocarse el executor.
+- Sin modulos de dominio registrados, retorna `"skipped"`.
+
+### response-composer.compose
+Responsable: `response-composer`
+
+Entrada (`ResponseCompositionInput`):
+- `schemaVersion`: `"response_composition_input.v1"`
+- `traceId`: string
+- `messages`: mensajes consolidados
+- `classification`: `{ coarse, intent }`
+- `actionResult`: resultado real del executor
+
+Salida (`ResponseCompositionResult`):
+- `schemaVersion`: `"response_composition_result.v1"`
+- `traceId`: string
+- `content`: string
+- `evidenceUsed`: Record<string, unknown>
+
+Regla: el compositor redacta segun el estado real (missingData, confidence baja, needs_confirmation, skipped, failed, executed). No confirma acciones no ejecutadas.
+
+### intentConfidenceSufficient (guard)
+Responsable: `action-executor`
+
+Entrada: `ModuleIntentResult`
+Salida: `boolean`
+
+Retorna `true` solo si `confidence >= 0.75` y `missingData` esta vacio.

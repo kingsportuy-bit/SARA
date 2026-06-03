@@ -13,3 +13,11 @@
 2026-06-02 | v0.2.3 | traceability | writer canonico extendido para registrar cada ejecucion del worker en `sara_processing_runs` con estados `started`, `completed` y `failed`
 2026-06-02 | v0.2.4 | hotfix | alias explicito agregado al `RETURNING` del writer trazable para evitar ambiguedad PostgreSQL durante el reclamo de buffers
 2026-06-02 | v0.2.5 | agents | protocolo operativo de opencode agregado como agente ejecutor sin decision propia
+2026-06-02 | v0.2.6 | analysis | informe integral de arquitectura, operativa y features preparado para revision experta
+2026-06-02 | v0.2.7 | analysis | correccion experta incorporada: session-context, daily-log, current_value por eventos, clasificador en dos pasos y Delta como bounded context separado
+2026-06-02 | v0.2.8 | agents | documentos previos a opencode completados: entity catalog Fase A, task TASK-20260602-004 y regla de revision Codex
+2026-06-02 | v0.2.9 | onboarding | INICIAL actualizado como puerta de entrada real para nuevos hilos y sesiones opencode
+2026-06-02 | v0.2.10 | analysis | informe actualizado para experto sobre cobertura documental pre-opencode
+2026-06-02 | v0.2.11 | agents | roles Codex Orquestador y opencode explicitados en INICIAL y AGENTS
+2026-06-02 | v0.2.12 | agents | regla anti-scope-creep agregada para revisar entregas de opencode
+2026-06-02 | v0.2.13 | pipeline | esqueleto modular de comprension y respuesta: contratos TypeScript (coarse-classifier, module-intent-classifier, module-router, action-executor, response-composer), 5 modulos skeleton con guardas `intentConfidenceSufficient`, 5 test suites (22 tests), bootstrap mantenido como fallback

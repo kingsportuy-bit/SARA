@@ -1,0 +1,46 @@
+import type { ResponseCompositionInput, ResponseCompositionResult } from "../contracts/pipeline.js";
+
+export interface ResponseComposer {
+  compose(input: ResponseCompositionInput): Promise<ResponseCompositionResult>;
+}
+
+export function createResponseComposer(): ResponseComposer {
+  return {
+    async compose(input) {
+      const { classification, actionResult } = input;
+      let content: string;
+
+      if (classification.intent.missingData.length > 0) {
+        content = "No tengo suficiente informacion para procesar tu mensaje. " + classification.intent.reasoningSummary;
+      } else if (classification.coarse.confidence < 0.75) {
+        content = "No estoy segura de haber entendido bien. " + classification.coarse.reasoningSummary;
+      } else if (actionResult.status === "needs_confirmation") {
+        content = "Esta accion requiere confirmacion explicita antes de ejecutarse.";
+      } else if (actionResult.status === "skipped") {
+        content = "El modulo solicitado aun no esta disponible. Estoy en fase de construccion.";
+      } else if (actionResult.status === "failed") {
+        content = actionResult.error
+          ? `La accion no pudo completarse: ${actionResult.error}`
+          : "La accion no pudo completarse por un error inesperado.";
+      } else if (actionResult.status === "executed") {
+        content = "Accion ejecutada correctamente.";
+      } else {
+        content = "Recibi tu mensaje pero no pude procesarlo en este momento.";
+      }
+
+      return {
+        schemaVersion: "response_composition_result.v1",
+        traceId: input.traceId,
+        content,
+        evidenceUsed: {
+          classification: {
+            module: classification.coarse.module,
+            action: classification.intent.action,
+            confidence: classification.intent.confidence,
+          },
+          actionStatus: actionResult.status,
+        },
+      };
+    },
+  };
+}
