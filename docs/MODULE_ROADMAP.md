@@ -136,7 +136,7 @@ No incluir todavia:
 - optimizacion inteligente de horarios.
 
 ### 5. `daily-log`
-Estado: IMPLEMENTED_PENDING_DEPLOY
+Estado: DONE + DEPLOYED + VALIDATED
 
 Proposito:
 - registrar estado diario, energia, foco, sueno, intencion y cierre del dia.
@@ -151,6 +151,13 @@ Tabla autorizable:
 
 Task:
 - `docs/TASKS/TASK-20260603-011.md`
+
+Resultado actual:
+- La prueba productiva por Chatwoot registro morning con energia `7`, sueno `6.5` e intencion `terminar propuestas`.
+- La prueba productiva por Chatwoot registro evening con cierre `termine propuestas y camine`.
+- `resumen del dia` respondio con los datos guardados.
+- DB dejo el registro en `sara_daily_log`.
+- `sara_events` registro `daily_log_created` y `daily_log_evening_updated`.
 
 No incluir todavia:
 - analitica avanzada;
@@ -237,8 +244,8 @@ No incluir todavia:
 2. `tasks` - listo.
 3. `session-context` - listo.
 4. `reminders` - listo.
-5. `daily-log` - siguiente recomendado.
-6. `areas` - agrupacion transversal.
+5. `daily-log` - listo.
+6. `areas` - siguiente recomendado.
 7. `objectives` - objetivos.
 8. `plans` - planes.
 9. `protocols` - reglas avanzadas.

@@ -388,7 +388,7 @@ Estado: DONE + DEPLOYED + VALIDATED
 
 ## Modulo daily-log (TASK-20260603-011)
 
-Estado: IMPLEMENTED
+Estado: DONE + DEPLOYED + VALIDATED
 
 ### DB / Migracion
 - PASS: migracion solo crea/modifica objetos `sara_`.
@@ -453,3 +453,18 @@ Estado: IMPLEMENTED
 - `npm run typecheck`: PASS (hardening parser/guardas TASK-20260603-011)
 - `npm test`: PASS (387 tests, hardening parser/guardas TASK-20260603-011)
 - `npm run build`: PASS (hardening parser/guardas TASK-20260603-011)
+
+## Evidencia productiva 2026-06-03 (TASK-20260603-011)
+- PASS: `GET https://sara.codexa.uy/health`
+- PASS: migracion `20260603_011_daily_log.sql` aplicada en VPS.
+- PASS: `sara_daily_log` existe en DB compartida.
+- PASS: RPCs `sara_upsert_daily_log_morning` y `sara_upsert_daily_log_evening` existen.
+- PASS: Chatwoot recibio `buen dia energia 7 dormi 6.5 foco terminar propuestas`.
+- PASS: SARA respondio `Registro de manana actualizado para 2026-06-03.`
+- PASS: Chatwoot recibio `cierre del dia avance termine propuestas y camine`.
+- PASS: SARA respondio `Cierre del dia actualizado para 2026-06-03.`
+- PASS: Chatwoot recibio `resumen del dia`.
+- PASS: SARA respondio con energia `7`, sueno `6.5`, intencion `terminar propuestas` y cierre `termine propuestas y camine`.
+- PASS: DB dejo el registro diario en `sara_daily_log`.
+- PASS: `sara_events` registro `daily_log_created` y `daily_log_evening_updated`.
+- PASS: `sara_session_contexts` quedo enfocado en `daily-log`.

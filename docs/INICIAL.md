@@ -2,7 +2,7 @@
 
 ## Estado del sistema (actualizado: 2026-06-03)
 - Produccion: worker post-buffer con pipeline modular operativo en VPS
-- En progreso: TASK-20260603-011 implementada y revisada localmente; pendiente deploy y validacion productiva
+- En progreso: preparar proxima task del roadmap (`areas`) cuando Codex Orquestador la apruebe
 - Bloqueos activos: activar firma HMAC de Chatwoot cuando se recupere `CHATWOOT_WEBHOOK_SECRET`
 - Primer flujo vertical: Chatwoot -> buffer durable -> DeepSeek bootstrap -> respuesta Chatwoot -> trazabilidad `sara_*`
 - Pipeline modular base: implementado y validado; DeepSeek queda como fallback solo para mensajes sin accion ejecutable.
@@ -10,7 +10,7 @@
 - Segundo modulo real: `tasks` implementado, conectado al worker, desplegado y probado en produccion con `create`, `list` y `complete`.
 - Tercer modulo interno: `session-context` implementado, conectado al worker, desplegado y probado en produccion resolviendo referencias simples como `completar esa`.
 - Cuarto modulo real: `reminders` implementado, conectado al worker/dispatcher, desplegado y probado en produccion con create, disparo automatico y evento `reminder_sent`.
-- Quinto modulo real: `daily-log` implementado y revisado localmente con morning, evening y summary; pendiente deploy y validacion productiva.
+- Quinto modulo real: `daily-log` implementado, conectado al worker, desplegado y probado en produccion con morning, evening y summary.
 
 ## Stack actual
 - Backend: Node.js 22 + TypeScript + Fastify
@@ -77,10 +77,10 @@ Reglas derivadas:
 - Codex revisa el diff completo y valida con `npm run typecheck`, `npm test` y `npm run build` antes de aprobar.
 
 ## Task activa o proxima
-- Task: `docs/TASKS/TASK-20260603-011.md`
-- Estado: IMPLEMENTED_REVIEWED_PENDING_DEPLOY
+- Task: proxima task a definir
+- Estado: ROADMAP_READY
 - Owner: Codex Orquestador
-- Objetivo: implementar modulo `daily-log` MVP para registrar check-in de manana, cierre de noche y resumen del dia desde Chatwoot, sin analitica avanzada.
+- Objetivo: preparar siguiente modulo del roadmap sin que opencode decida arquitectura ni alcance.
 
 ## Ultimo cierre de sesion
 - Fecha: 2026-06-02
