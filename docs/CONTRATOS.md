@@ -1067,3 +1067,232 @@ Reglas de respuesta:
 - Archivar: `"Area archivada: <name>"`
 - Asignar nota: `"Nota asociada al area <areaName>."`
 - Asignar tarea: `"Tarea asociada al area <areaName>: <title>"`
+
+## Modulo objectives (v0 MVP)
+
+### objectives.create
+Responsable: `objectives`
+
+Entrada (`CreateObjectiveInput`):
+- `schemaVersion`: `"objectives_create_input.v1"`
+- `traceId`: string
+- `title`: string (no vacio)
+- `slug`: string (no vacio, unico activo)
+- `description?`: string
+- `areaId?`: uuid
+- `areaSlug?`: string
+- `targetDate?`: string ISO `YYYY-MM-DD`
+- `successCriteria`: string[]
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+
+Salida (`CreateObjectiveResult`):
+- `schemaVersion`: `"objectives_create_result.v1"`
+- `traceId`: string
+- `status`: `"created"` | `"failed"`
+- `objectiveId?`: uuid
+- `eventId?`: uuid
+- `title?`: string
+- `slug?`: string
+- `areaId?`: uuid
+- `areaName?`: string
+- `evidence.objectiveId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"objective_created"`
+- `error?`: string
+
+Reglas:
+- `title` no puede ser vacio.
+- `slug` se genera de forma deterministica y ASCII-safe.
+- No se duplican slugs activos.
+- Si se informa area, debe existir y estar activa.
+- No genera plan.
+- No genera tareas.
+- Solo confirma con `objectiveId` y `eventId`.
+
+### objectives.list
+Responsable: `objectives`
+
+Entrada (`ListObjectivesInput`):
+- `schemaVersion`: `"objectives_list_input.v1"`
+- `traceId`: string
+- `status?`: `"active"` | `"achieved"` | `"archived"` (default `"active"`)
+- `areaId?`: uuid
+- `areaSlug?`: string
+- `limit?`: number (default 10, max 20)
+
+Salida (`ListObjectivesResult`):
+- `schemaVersion`: `"objectives_list_result.v1"`
+- `traceId`: string
+- `status`: `"success"` | `"failed"`
+- `objectives`: array de `{ id, title, slug, description?, areaId?, areaName?, status, targetDate?, successCriteria, createdAt, updatedAt, achievedAt?, archivedAt? }`
+- `count`: number
+- `error?`: string
+
+Consulta `sara_objectives` read-only, filtrada por estado y opcionalmente por area.
+
+### objectives.achieve
+Responsable: `objectives`
+
+Entrada (`AchieveObjectiveInput`):
+- `schemaVersion`: `"objectives_achieve_input.v1"`
+- `traceId`: string
+- `objectiveId?`: uuid
+- `slug?`: string
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+
+Salida (`AchieveObjectiveResult`):
+- `schemaVersion`: `"objectives_achieve_result.v1"`
+- `traceId`: string
+- `status`: `"achieved"` | `"failed"`
+- `objectiveId?`: uuid
+- `eventId?`: uuid
+- `title?`: string
+- `slug?`: string
+- `evidence.objectiveId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"objective_achieved"`
+- `error?`: string
+
+Reglas:
+- Requiere `objectiveId` o `slug`.
+- No borra datos.
+- Solo cambia `status` a `achieved` y setea `achieved_at`.
+- Solo confirma con `objectiveId` y `eventId`.
+
+### objectives.archive
+Responsable: `objectives`
+
+Entrada (`ArchiveObjectiveInput`):
+- `schemaVersion`: `"objectives_archive_input.v1"`
+- `traceId`: string
+- `objectiveId?`: uuid
+- `slug?`: string
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+
+Salida (`ArchiveObjectiveResult`):
+- `schemaVersion`: `"objectives_archive_result.v1"`
+- `traceId`: string
+- `status`: `"archived"` | `"failed"`
+- `objectiveId?`: uuid
+- `eventId?`: uuid
+- `title?`: string
+- `slug?`: string
+- `evidence.objectiveId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"objective_archived"`
+- `error?`: string
+
+Reglas:
+- Requiere `objectiveId` o `slug`.
+- No borra datos.
+- Solo cambia `status` a `archived` y setea `archived_at`.
+- Solo confirma con `objectiveId` y `eventId`.
+
+### objectives.assign-task
+Responsable: `objectives`
+
+Entrada (`AssignTaskObjectiveInput`):
+- `schemaVersion`: `"objectives_assign_task_input.v1"`
+- `traceId`: string
+- `taskId`: uuid
+- `objectiveId?`: uuid
+- `objectiveSlug?`: string
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+
+Salida (`AssignTaskObjectiveResult`):
+- `schemaVersion`: `"objectives_assign_task_result.v1"`
+- `traceId`: string
+- `status`: `"assigned"` | `"failed"`
+- `taskId?`: uuid
+- `taskTitle?`: string
+- `objectiveId?`: uuid
+- `objectiveTitle?`: string
+- `objectiveSlug?`: string
+- `eventId?`: uuid
+- `evidence.taskId?`: uuid
+- `evidence.objectiveId?`: uuid
+- `evidence.objectiveSlug?`: string
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"task_objective_assigned"`
+- `error?`: string
+
+Reglas:
+- Requiere tarea existente.
+- Requiere objetivo activo existente.
+- No crea tarea.
+- No crea objetivo implicitamente.
+- No crea plan.
+- Solo confirma con `taskId`, `objectiveId` y `eventId`.
+
+### RPC `sara_create_objective`
+Firma:
+```
+sara_create_objective(p_trace_id uuid, p_title text, p_slug text, p_description text, p_area_id uuid, p_area_slug text, p_target_date date, p_success_criteria jsonb, p_source text)
+```
+Retorna JSON con `objective_id`, `event_id`, `title`, `slug`, `area_id`, `area_name`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+### RPC `sara_achieve_objective`
+Firma:
+```
+sara_achieve_objective(p_trace_id uuid, p_objective_id uuid, p_slug text, p_source text)
+```
+Retorna JSON con `objective_id`, `event_id`, `title`, `slug`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+### RPC `sara_archive_objective`
+Firma:
+```
+sara_archive_objective(p_trace_id uuid, p_objective_id uuid, p_slug text, p_source text)
+```
+Retorna JSON con `objective_id`, `event_id`, `title`, `slug`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+### RPC `sara_assign_task_objective`
+Firma:
+```
+sara_assign_task_objective(p_trace_id uuid, p_task_id uuid, p_objective_id uuid, p_objective_slug text, p_source text)
+```
+Actualiza `sara_tasks.objective_id` y emite `task_objective_assigned`.
+Retorna JSON con `task_id`, `task_title`, `objective_id`, `objective_title`, `objective_slug`, `event_id`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+### Parseo MVP desde Chatwoot
+Responsable: `objectives-intent-parser`
+
+Soporta:
+- `crear objetivo mejorar mi energia`
+- `crear objetivo mejorar mi energia area salud`
+- `nuevo objetivo facturar mas`
+- `que objetivos tengo`
+- `listar objetivos`
+- `marcar objetivo mejorar mi energia como logrado`
+- `logre objetivo mejorar mi energia`
+- `archivar objetivo mejorar mi energia`
+- `asociar esa tarea al objetivo mejorar mi energia`
+- `asignar ultima tarea al objetivo mejorar mi energia`
+
+Reglas:
+- Si falta titulo de objetivo en create, `missingData=["objectiveTitle"]`.
+- Si falta objetivo en achieve/archive/assign, `missingData=["objective"]`.
+- Si falta tarea en assign, `missingData=["task"]`.
+- Para referencias como `esa tarea`, usar solo `session-context` seguro.
+- No usar LLM para ejecutar ni inventar datos faltantes.
+
+No soporta todavia:
+- planes;
+- proyectos;
+- OKRs avanzados;
+- scoring automatico;
+- recomendaciones;
+- tareas generadas automaticamente;
+- dependencias entre tareas;
+- reportes historicos.
+
+Reglas de respuesta:
+- Crear: `"Objetivo creado: <title>"`
+- Listar con resultados: `"Estos son tus objetivos activos:\n1. <title>"`
+- Listar sin resultados: `"No encontre objetivos activos."`
+- Lograr: `"Objetivo logrado: <title>"`
+- Archivar: `"Objetivo archivado: <title>"`
+- Asignar tarea: `"Tarea asociada al objetivo <objectiveTitle>: <taskTitle>"`

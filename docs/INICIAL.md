@@ -2,7 +2,7 @@
 
 ## Estado del sistema (actualizado: 2026-06-03)
 - Produccion: worker post-buffer con pipeline modular operativo en VPS
-- En progreso: preparar proxima task del roadmap (`objectives`) cuando Codex Orquestador la apruebe
+- En progreso: TASK-20260603-013 aprobada para opencode; pendiente implementacion local
 - Bloqueos activos: activar firma HMAC de Chatwoot cuando se recupere `CHATWOOT_WEBHOOK_SECRET`
 - Primer flujo vertical: Chatwoot -> buffer durable -> DeepSeek bootstrap -> respuesta Chatwoot -> trazabilidad `sara_*`
 - Pipeline modular base: implementado y validado; DeepSeek queda como fallback solo para mensajes sin accion ejecutable.
@@ -78,10 +78,10 @@ Reglas derivadas:
 - Codex revisa el diff completo y valida con `npm run typecheck`, `npm test` y `npm run build` antes de aprobar.
 
 ## Task activa o proxima
-- Task: `docs/TASKS/TASK-20260603-012.md`
-- Estado: DONE_DEPLOYED_VALIDATED
+- Task: `docs/TASKS/TASK-20260603-013.md`
+- Estado: APPROVED_PENDING_OPENCODE
 - Owner: Codex Orquestador
-- Objetivo: preparar siguiente modulo del roadmap sin que opencode decida arquitectura ni alcance.
+- Objetivo: implementar modulo `objectives` MVP para crear/listar/lograr/archivar objetivos y asociar tareas existentes, sin planes ni scoring.
 
 ## Ultimo cierre de sesion
 - Fecha: 2026-06-03

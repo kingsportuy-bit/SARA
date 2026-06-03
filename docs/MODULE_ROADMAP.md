@@ -197,7 +197,7 @@ No incluir todavia:
 - dashboards avanzados.
 
 ### 7. `objectives`
-Estado: FUTURE
+Estado: APPROVED_PENDING_OPENCODE
 
 Proposito:
 - manejar objetivos de mediano/largo plazo.
@@ -209,6 +209,16 @@ Depende de:
 
 Tabla autorizable:
 - `sara_objectives`
+
+Acciones MVP sugeridas:
+- `objectives.create`
+- `objectives.list`
+- `objectives.achieve`
+- `objectives.archive`
+- `objectives.assign-task`
+
+Task:
+- `docs/TASKS/TASK-20260603-013.md`
 
 No incluir todavia:
 - OKRs avanzados;

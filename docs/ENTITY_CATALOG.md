@@ -1,6 +1,6 @@
 # ENTITY_CATALOG.md - SARA
 
-Estado: FASE A MINIMA + TASKS MVP + SESSION CONTEXT MVP + REMINDERS MVP + DAILY LOG MVP + AREAS MVP AUTORIZADO
+Estado: FASE A MINIMA + TASKS MVP + SESSION CONTEXT MVP + REMINDERS MVP + DAILY LOG MVP + AREAS MVP + OBJECTIVES MVP AUTORIZADO
 Fecha: 2026-06-03
 
 ## Objetivo
@@ -210,6 +210,7 @@ Representar acciones pendientes simples capturadas desde Chatwoot.
 - `status text not null`
 - `source text not null`
 - `area_id uuid`
+- `objective_id uuid`
 - `due_at timestamptz`
 - `completed_at timestamptz`
 - `trace_id uuid`
@@ -286,9 +287,56 @@ Representar recordatorios simples que SARA debe avisar por Chatwoot en una fecha
 - `reminder_sent`
 - `reminder_failed`
 
+## 8. `sara_objectives`
+Estado: AUTORIZADA PARA TASK-20260603-013
+
+### Proposito
+Representar objetivos simples de mediano/largo plazo, opcionalmente vinculados a un area.
+
+### Owner
+`objectives`
+
+### Campos
+- `id uuid primary key`
+- `schema_version text not null`
+- `title text not null`
+- `slug text not null`
+- `description text`
+- `area_id uuid`
+- `status text not null`
+- `target_date date`
+- `success_criteria jsonb not null`
+- `trace_id uuid`
+- `created_at timestamptz not null`
+- `updated_at timestamptz not null`
+- `achieved_at timestamptz`
+- `archived_at timestamptz`
+
+### Estados
+- `active`
+- `achieved`
+- `archived`
+
+### Invariantes
+- `title` no puede estar vacio.
+- `slug` debe ser unico.
+- `status` debe estar dentro de los estados permitidos.
+- `success_criteria` debe ser array JSON.
+- `achieved_at` solo existe cuando `status = achieved`.
+- `archived_at` solo existe cuando `status = archived`.
+- Si existe `area_id`, debe apuntar a un area activa.
+- No hay scoring automatico en MVP.
+- No hay planes generados en MVP.
+- No se crean tareas automaticamente desde objetivos.
+
+### Eventos que emite
+- `objective_created`
+- `objective_achieved`
+- `objective_archived`
+- `task_objective_assigned`
+
 ## Decisiones pendientes fuera de Fase A
 - `sara_plans`
-- `sara_objectives`
 - `sara_protocols`
 - `sara_usage_metrics`
 - entidades de Delta, Gym, Finanzas, Salud y Barberox
