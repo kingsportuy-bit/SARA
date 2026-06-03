@@ -2,7 +2,7 @@
 
 ## Estado del sistema (actualizado: 2026-06-03)
 - Produccion: worker post-buffer con pipeline modular operativo en VPS
-- En progreso: TASK-20260603-012 implementada; pendiente revision de Codex Orquestador
+- En progreso: TASK-20260603-012 implementada y revisada localmente; pendiente deploy y validacion productiva
 - Bloqueos activos: activar firma HMAC de Chatwoot cuando se recupere `CHATWOOT_WEBHOOK_SECRET`
 - Primer flujo vertical: Chatwoot -> buffer durable -> DeepSeek bootstrap -> respuesta Chatwoot -> trazabilidad `sara_*`
 - Pipeline modular base: implementado y validado; DeepSeek queda como fallback solo para mensajes sin accion ejecutable.
@@ -79,7 +79,7 @@ Reglas derivadas:
 
 ## Task activa o proxima
 - Task: `docs/TASKS/TASK-20260603-012.md`
-- Estado: IMPLEMENTED_PENDING_REVIEW
+- Estado: IMPLEMENTED_REVIEWED_PENDING_DEPLOY
 - Owner: Codex Orquestador
 - Objetivo: implementar modulo `areas` MVP para crear/listar/archivar areas y asociar notas/tareas existentes, sin proyectos ni objetivos.
 

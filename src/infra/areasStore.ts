@@ -39,6 +39,7 @@ interface AssignNoteAreaRpcResult {
   note_id: string;
   area_id: string;
   area_name: string;
+  area_slug?: string;
   event_id: string;
   trace_id: string;
   schema_version: string;
@@ -50,6 +51,7 @@ interface AssignTaskAreaRpcResult {
   title: string;
   area_id: string;
   area_name: string;
+  area_slug?: string;
   event_id: string;
   trace_id: string;
   schema_version: string;
@@ -244,10 +246,12 @@ export function createAreasStore(supabase: SupabaseClient): AreasRepository {
         noteId: result.note_id,
         areaId: result.area_id,
         areaName: result.area_name,
+        areaSlug: result.area_slug,
         eventId: result.event_id,
         evidence: {
           noteId: result.note_id,
           areaId: result.area_id,
+          areaSlug: result.area_slug,
           eventId: result.event_id,
           eventType: "note_area_assigned",
         },
@@ -293,10 +297,12 @@ export function createAreasStore(supabase: SupabaseClient): AreasRepository {
         title: result.title,
         areaId: result.area_id,
         areaName: result.area_name,
+        areaSlug: result.area_slug,
         eventId: result.event_id,
         evidence: {
           taskId: result.task_id,
           areaId: result.area_id,
+          areaSlug: result.area_slug,
           eventId: result.event_id,
           eventType: "task_area_assigned",
         },

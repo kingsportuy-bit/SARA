@@ -647,6 +647,7 @@ function areasAssignNoteHandler(input: ActionExecutionInput): Promise<ActionExec
           noteId: result.noteId,
           areaId: result.areaId,
           areaName: result.areaName,
+          areaSlug: result.areaSlug,
           eventId: result.eventId,
         },
         stateChanges: [
@@ -690,6 +691,7 @@ function areasAssignTaskHandler(input: ActionExecutionInput): Promise<ActionExec
           title: result.title,
           areaId: result.areaId,
           areaName: result.areaName,
+          areaSlug: result.areaSlug,
           eventId: result.eventId,
         },
         stateChanges: [

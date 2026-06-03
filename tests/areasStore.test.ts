@@ -111,6 +111,7 @@ describe("areasStore", () => {
         note_id: "n1",
         area_id: "a1",
         area_name: "salud",
+        area_slug: "salud",
         event_id: "e1",
         trace_id: "trace-1",
         schema_version: "areas_assign_note_result.v1",
@@ -130,6 +131,7 @@ describe("areasStore", () => {
     expect(result.status).toBe("assigned");
     expect(result.noteId).toBe("n1");
     expect(result.areaName).toBe("salud");
+    expect(result.evidence.areaSlug).toBe("salud");
     expect(supabase.rpc).toHaveBeenCalledWith("sara_assign_note_area", {
       p_trace_id: "trace-1",
       p_note_id: "n1",
@@ -147,6 +149,7 @@ describe("areasStore", () => {
         title: "llamar al contador",
         area_id: "a1",
         area_name: "salud",
+        area_slug: "salud",
         event_id: "e1",
         trace_id: "trace-1",
         schema_version: "areas_assign_task_result.v1",
@@ -166,6 +169,7 @@ describe("areasStore", () => {
     expect(result.status).toBe("assigned");
     expect(result.taskId).toBe("t1");
     expect(result.title).toBe("llamar al contador");
+    expect(result.evidence.areaSlug).toBe("salud");
     expect(supabase.rpc).toHaveBeenCalledWith("sara_assign_task_area", {
       p_trace_id: "trace-1",
       p_task_id: "t1",

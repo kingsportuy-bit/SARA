@@ -91,10 +91,12 @@ export interface AssignNoteAreaResult {
   noteId?: string;
   areaId?: string;
   areaName?: string;
+  areaSlug?: string;
   eventId?: string;
   evidence: {
     noteId?: string;
     areaId?: string;
+    areaSlug?: string;
     eventId?: string;
     eventType?: "note_area_assigned";
   };
@@ -118,10 +120,12 @@ export interface AssignTaskAreaResult {
   title?: string;
   areaId?: string;
   areaName?: string;
+  areaSlug?: string;
   eventId?: string;
   evidence: {
     taskId?: string;
     areaId?: string;
+    areaSlug?: string;
     eventId?: string;
     eventType?: "task_area_assigned";
   };

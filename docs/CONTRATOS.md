@@ -946,9 +946,11 @@ Salida (`AssignNoteAreaResult`):
 - `noteId?`: uuid
 - `areaId?`: uuid
 - `areaName?`: string
+- `areaSlug?`: string
 - `eventId?`: uuid
 - `evidence.noteId?`: uuid
 - `evidence.areaId?`: uuid
+- `evidence.areaSlug?`: string
 - `evidence.eventId?`: uuid
 - `evidence.eventType?`: `"note_area_assigned"`
 - `error?`: string
@@ -979,9 +981,11 @@ Salida (`AssignTaskAreaResult`):
 - `title?`: string
 - `areaId?`: uuid
 - `areaName?`: string
+- `areaSlug?`: string
 - `eventId?`: uuid
 - `evidence.taskId?`: uuid
 - `evidence.areaId?`: uuid
+- `evidence.areaSlug?`: string
 - `evidence.eventId?`: uuid
 - `evidence.eventType?`: `"task_area_assigned"`
 - `error?`: string
@@ -1015,7 +1019,7 @@ Firma:
 sara_assign_note_area(p_trace_id uuid, p_note_id uuid, p_area_id uuid, p_area_slug text, p_source text)
 ```
 Actualiza `sara_notes.area_id` y emite `note_area_assigned`.
-Retorna JSON con `note_id`, `area_id`, `area_name`, `event_id`, `trace_id`, `schema_version`.
+Retorna JSON con `note_id`, `area_id`, `area_name`, `area_slug`, `event_id`, `trace_id`, `schema_version`.
 Ejecutable solo por `service_role`.
 
 ### RPC `sara_assign_task_area`
@@ -1024,7 +1028,7 @@ Firma:
 sara_assign_task_area(p_trace_id uuid, p_task_id uuid, p_area_id uuid, p_area_slug text, p_source text)
 ```
 Actualiza `sara_tasks.area_id` y emite `task_area_assigned`.
-Retorna JSON con `task_id`, `title`, `area_id`, `area_name`, `event_id`, `trace_id`, `schema_version`.
+Retorna JSON con `task_id`, `title`, `area_id`, `area_name`, `area_slug`, `event_id`, `trace_id`, `schema_version`.
 Ejecutable solo por `service_role`.
 
 ### Parseo MVP desde Chatwoot

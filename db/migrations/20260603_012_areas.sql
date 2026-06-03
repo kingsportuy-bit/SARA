@@ -249,6 +249,7 @@ begin
     'note_id', p_note_id,
     'area_id', v_area.id,
     'area_name', v_area.name,
+    'area_slug', v_area.slug,
     'event_id', v_event_id,
     'trace_id', p_trace_id,
     'schema_version', 'areas_assign_note_result.v1'
@@ -328,6 +329,7 @@ begin
     'title', v_task.title,
     'area_id', v_area.id,
     'area_name', v_area.name,
+    'area_slug', v_area.slug,
     'event_id', v_event_id,
     'trace_id', p_trace_id,
     'schema_version', 'areas_assign_task_result.v1'

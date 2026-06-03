@@ -488,6 +488,7 @@ Estado: DONE + DEPLOYED + VALIDATED
 - PASS: `areasStore.archiveArea` llama RPC `sara_archive_area`.
 - PASS: `areasStore.assignNoteArea` llama RPC `sara_assign_note_area`.
 - PASS: `areasStore.assignTaskArea` llama RPC `sara_assign_task_area`.
+- PASS: `areasStore` propaga `areaSlug` en evidencia de asignaciones.
 - PASS: `areasStore.listAreas` consulta `sara_areas`.
 
 ### Clasificadores
@@ -519,6 +520,9 @@ Estado: DONE + DEPLOYED + VALIDATED
 - `npm run typecheck`: PASS
 - `npm test`: PASS (460 tests)
 - `npm run build`: PASS
+- `npm run typecheck`: PASS (hardening areaSlug TASK-20260603-012)
+- `npm test`: PASS (460 tests, hardening areaSlug TASK-20260603-012)
+- `npm run build`: PASS (hardening areaSlug TASK-20260603-012)
 
 ## Evidencia productiva 2026-06-03 (TASK-20260603-011)
 - PASS: `GET https://sara.codexa.uy/health`
