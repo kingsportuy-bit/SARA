@@ -385,3 +385,23 @@ Estado: DONE + DEPLOYED + VALIDATED
 - `npm run typecheck`: PASS
 - `npm test`: PASS (295 tests)
 - `npm run build`: PASS
+
+## Modulo daily-log (TASK-20260603-011)
+
+Estado: SPEC APPROVED
+
+Tests requeridos para cerrar implementacion:
+- migracion solo crea/modifica objetos `sara_`.
+- `sara_daily_log` tiene unique por `date`.
+- `sara_daily_log` tiene RLS y anon/authenticated revocado.
+- `sara_daily_log` valida `wake_energy` entre 1 y 10.
+- `sara_daily_log` valida `sleep_hours >= 0`.
+- RPCs morning/evening crean o actualizan y emiten eventos.
+- parser detecta energia, sueno, intencion, cierre y fecha MVP.
+- `dailyLogModule` valida campos y no ejecuta sin datos actualizables.
+- `dailyLogStore` llama RPCs correctas y summary consulta read-only.
+- clasificadores detectan `daily-log.morning/evening/summary`.
+- `actionExecutor` despacha daily-log con guardas.
+- `responseComposer` confirma solo con evidencia y formatea summary.
+- `bufferProcessor` ejecuta daily-log y actualiza `session-context`.
+- regresion `notes`, `tasks`, `session-context`, `reminders` y Chatwoot scope sigue pasando.

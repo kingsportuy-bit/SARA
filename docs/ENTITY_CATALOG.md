@@ -1,6 +1,6 @@
 # ENTITY_CATALOG.md - SARA
 
-Estado: FASE A MINIMA + TASKS MVP + SESSION CONTEXT MVP + REMINDERS MVP AUTORIZADO
+Estado: FASE A MINIMA + TASKS MVP + SESSION CONTEXT MVP + REMINDERS MVP + DAILY LOG MVP AUTORIZADO
 Fecha: 2026-06-03
 
 ## Objetivo
@@ -84,6 +84,7 @@ Guardar contexto conversacional efimero para resolver referencias, confirmacione
 - `confirmation_resolved`
 
 ## 3. `sara_daily_log`
+Estado: AUTORIZADA PARA TASK-20260603-011
 
 ### Proposito
 Representar el dia operativo como unidad de analisis.
@@ -108,6 +109,7 @@ Representar el dia operativo como unidad de analisis.
 - Debe existir como maximo un daily log por `date`.
 - `wake_energy`, si existe, debe estar en rango 1 a 10.
 - `sleep_hours`, si existe, no puede ser negativo.
+- `date` se interpreta en timezone operativa `America/Montevideo`.
 - No debe calcular metricas complejas; solo registrar datos del dia.
 
 ### Eventos que emite

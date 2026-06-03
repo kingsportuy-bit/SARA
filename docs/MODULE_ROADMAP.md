@@ -136,7 +136,7 @@ No incluir todavia:
 - optimizacion inteligente de horarios.
 
 ### 5. `daily-log`
-Estado: PLANNED
+Estado: APPROVED_FOR_OPENCODE
 
 Proposito:
 - registrar estado diario, energia, foco, sueno, intencion y cierre del dia.
@@ -148,6 +148,9 @@ Acciones MVP sugeridas:
 
 Tabla autorizable:
 - `sara_daily_log`
+
+Task:
+- `docs/TASKS/TASK-20260603-011.md`
 
 No incluir todavia:
 - analitica avanzada;

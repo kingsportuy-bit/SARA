@@ -718,3 +718,131 @@ Reglas de respuesta:
 - Listar sin resultados: `"No encontre recordatorios pendientes."`
 - Cancelar: `"Recordatorio cancelado: <title>"`
 - Disparo: `"Recordatorio: <title>"`
+
+## Modulo daily-log (v0 MVP)
+
+### daily-log.morning
+Responsable: `daily-log`
+
+Entrada (`DailyLogMorningInput`):
+- `schemaVersion`: `"daily_log_morning_input.v1"`
+- `traceId`: string
+- `date`: string ISO `YYYY-MM-DD` en timezone `America/Montevideo`
+- `wakeEnergy?`: number entero 1-10
+- `sleepHours?`: number >= 0
+- `morningIntention?`: string
+- `mood?`: string
+- `notes?`: string[]
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+
+Salida (`DailyLogMorningResult`):
+- `schemaVersion`: `"daily_log_morning_result.v1"`
+- `traceId`: string
+- `status`: `"updated"` | `"failed"`
+- `dailyLogId?`: uuid
+- `eventId?`: uuid
+- `date?`: string
+- `evidence.dailyLogId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"daily_log_created"` | `"daily_log_morning_updated"`
+- `error?`: string
+
+Reglas:
+- Si no existe log para la fecha, lo crea.
+- Si existe, actualiza solo campos de mañana provistos.
+- No borra campos no provistos.
+- `wakeEnergy` debe estar entre 1 y 10.
+- `sleepHours` no puede ser negativo.
+- Solo confirma con `dailyLogId` y `eventId`.
+
+### daily-log.evening
+Responsable: `daily-log`
+
+Entrada (`DailyLogEveningInput`):
+- `schemaVersion`: `"daily_log_evening_input.v1"`
+- `traceId`: string
+- `date`: string ISO `YYYY-MM-DD` en timezone `America/Montevideo`
+- `eveningReview?`: string
+- `mood?`: string
+- `notes?`: string[]
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+
+Salida (`DailyLogEveningResult`):
+- `schemaVersion`: `"daily_log_evening_result.v1"`
+- `traceId`: string
+- `status`: `"updated"` | `"failed"`
+- `dailyLogId?`: uuid
+- `eventId?`: uuid
+- `date?`: string
+- `evidence.dailyLogId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"daily_log_created"` | `"daily_log_evening_updated"`
+- `error?`: string
+
+Reglas:
+- Si no existe log para la fecha, lo crea.
+- Si existe, actualiza solo campos de noche provistos.
+- No borra campos no provistos.
+- Solo confirma con `dailyLogId` y `eventId`.
+
+### daily-log.summary
+Responsable: `daily-log`
+
+Entrada (`DailyLogSummaryInput`):
+- `schemaVersion`: `"daily_log_summary_input.v1"`
+- `traceId`: string
+- `date`: string ISO `YYYY-MM-DD` en timezone `America/Montevideo`
+
+Salida (`DailyLogSummaryResult`):
+- `schemaVersion`: `"daily_log_summary_result.v1"`
+- `traceId`: string
+- `status`: `"success"` | `"failed"`
+- `dailyLog?`: `{ id, date, wakeEnergy?, sleepHours?, morningIntention?, eveningReview?, mood?, notes, createdAt, updatedAt }`
+- `error?`: string
+
+Consulta `sara_daily_log` read-only para una fecha.
+
+### RPC `sara_upsert_daily_log_morning`
+Firma:
+```
+sara_upsert_daily_log_morning(p_trace_id uuid, p_date date, p_wake_energy int, p_sleep_hours numeric, p_morning_intention text, p_mood text, p_notes jsonb, p_source text)
+```
+Retorna JSON con `daily_log_id`, `event_id`, `event_type`, `date`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+### RPC `sara_upsert_daily_log_evening`
+Firma:
+```
+sara_upsert_daily_log_evening(p_trace_id uuid, p_date date, p_evening_review text, p_mood text, p_notes jsonb, p_source text)
+```
+Retorna JSON con `daily_log_id`, `event_id`, `event_type`, `date`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+### Parseo MVP desde Chatwoot
+Responsable: `daily-log-intent-parser`
+
+Soporta:
+- `buen dia energia 7 dormi 6.5 foco terminar propuestas`
+- `checkin manana energia 8 dormi 7 intencion ordenar agenda`
+- `cierre del dia avance termine propuestas`
+- `resumen del dia`
+- `como estuvo mi dia`
+
+Reglas:
+- Si no se especifica fecha, usar fecha actual en `America/Montevideo`.
+- No usar LLM para ejecutar ni inventar datos faltantes.
+- Si faltan todos los campos actualizables en morning/evening, responder con missingData y no ejecutar.
+
+No soporta todavia:
+- analitica avanzada;
+- recomendaciones medicas;
+- score complejo de productividad;
+- correlaciones historicas;
+- reportes semanales;
+- integracion con areas/objetivos.
+
+Reglas de respuesta:
+- Morning: `"Registro de manana actualizado para <date>."`
+- Evening: `"Cierre del dia actualizado para <date>."`
+- Summary con datos: `"Resumen de <date>:\nEnergia: ...\nSueno: ...\nIntencion: ...\nCierre: ..."`
+- Summary sin datos: `"No encontre registro diario para <date>."`
