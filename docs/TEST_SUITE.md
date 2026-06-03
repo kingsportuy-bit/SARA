@@ -8,7 +8,7 @@
 - Toda migracion valida que solo afecta objetos con prefijo `sara_`.
 
 ## Inventario inicial
-- PASS: webhook Chatwoot acepta solo cuenta `6`, inbox `44`, conversacion `20`
+- PASS: webhook Chatwoot acepta solo account `7`, inbox `45`, conversation `85`
 - PASS: webhook Chatwoot rechaza firma invalida o vencida
 - PENDING: idempotencia por delivery ID y message ID
 - PENDING: buffer extiende `process_after` por cada mensaje entrante valido
