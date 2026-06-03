@@ -1,4 +1,5 @@
 import type { ResponseCompositionInput, ResponseCompositionResult } from "../contracts/pipeline.js";
+import { formatDueAt } from "./reminders/reminderTimeParser.js";
 
 export interface ResponseComposer {
   compose(input: ResponseCompositionInput): Promise<ResponseCompositionResult>;
@@ -60,6 +61,44 @@ export function createResponseComposer(): ResponseComposer {
             const title = actionResult.evidence?.title;
             if (taskId && eventId) {
               content = title ? `Tarea completada: ${title}` : "Tarea completada.";
+            } else {
+              content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+            }
+          } else {
+            content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          }
+        } else if (module === "reminders") {
+          if (action === "create") {
+            const reminderId = actionResult.evidence?.reminderId;
+            const eventId = actionResult.evidence?.eventId;
+            const title = actionResult.evidence?.title ?? classification.intent.entities?.title;
+            const dueAt = actionResult.evidence?.dueAt ?? classification.intent.entities?.dueAt;
+            if (reminderId && eventId) {
+              const formattedDue = dueAt ? formatDueAt(String(dueAt)) : "fecha pendiente";
+              content = title
+                ? `Recordatorio creado para ${formattedDue}: ${title}`
+                : `Recordatorio creado para ${formattedDue}.`;
+            } else {
+              content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+            }
+          } else if (action === "list") {
+            const reminders = actionResult.evidence?.reminders as Array<{ title: string; dueAt: string }> | undefined;
+            const count = actionResult.evidence?.count as number | undefined;
+            if (!reminders || count === 0) {
+              content = "No encontre recordatorios pendientes.";
+            } else {
+              const lines = reminders.map((r, i) => {
+                const formattedDue = r.dueAt ? formatDueAt(r.dueAt) : "fecha pendiente";
+                return `${i + 1}. ${formattedDue} - ${r.title}`;
+              }).join("\n");
+              content = `Estos son tus recordatorios pendientes:\n${lines}`;
+            }
+          } else if (action === "cancel") {
+            const reminderId = actionResult.evidence?.reminderId;
+            const eventId = actionResult.evidence?.eventId;
+            const title = actionResult.evidence?.title;
+            if (reminderId && eventId) {
+              content = title ? `Recordatorio cancelado: ${title}` : "Recordatorio cancelado.";
             } else {
               content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
             }

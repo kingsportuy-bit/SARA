@@ -283,29 +283,86 @@
 
 ## Modulo reminders (TASK-20260603-010)
 
-Estado: SPEC APPROVED
+Estado: DONE - Implementado
 
-Tests requeridos para cerrar implementacion:
-- migracion solo crea/modifica objetos `sara_`.
-- `sara_reminders` tiene RLS y anon/authenticated revocado.
-- `sara_reminders` valida estados permitidos.
-- `sara_create_reminder` rechaza title vacio.
-- `sara_create_reminder` rechaza `due_at` pasado.
-- `sara_create_reminder` emite `reminder_created`.
-- `sara_cancel_reminder` cancela por id.
-- `sara_cancel_reminder` cancela por posicion.
-- `sara_cancel_reminder` falla si `titleMatch` es ambiguo.
-- `sara_claim_due_reminders` reclama solo vencidos pending y los pasa a processing.
-- `sara_mark_reminder_sent` marca sent y emite `reminder_sent`.
-- `sara_mark_reminder_failed` marca failed y emite `reminder_failed`.
-- `reminderTimeParser` parsea tiempos MVP y rechaza texto ambiguo.
-- `remindersModule` valida create/list/cancel.
-- `remindersStore` llama RPCs correctas.
-- clasificadores detectan `reminders.create/list/cancel`.
-- `actionExecutor` despacha reminders con guardas de confianza/missingData.
-- `responseComposer` confirma solo con evidencia.
-- dispatcher envia Chatwoot con fake exitoso y marca sent.
-- dispatcher marca failed con fake fallido.
-- dispatcher ignora recordatorios fuera de scope `7/45/85`.
-- `bufferProcessor` ejecuta create/list/cancel y actualiza `session-context`.
-- regresion `notes`, `tasks`, `session-context` y Chatwoot scope sigue pasando.
+### Migracion y DB
+- PASS: migracion solo crea/modifica objetos `sara_`
+- PASS: `sara_reminders` tiene RLS y anon/authenticated revocado
+- PASS: `sara_reminders` valida estados permitidos (pending, processing, sent, canceled, failed)
+- PASS: `sara_create_reminder` rechaza title vacio
+- PASS: `sara_create_reminder` rechaza `due_at` pasado
+- PASS: `sara_create_reminder` emite `reminder_created`
+- PASS: `sara_cancel_reminder` cancela por id
+- PASS: `sara_cancel_reminder` cancela por posicion
+- PASS: `sara_cancel_reminder` falla si `titleMatch` es ambiguo
+- PASS: `sara_claim_due_reminders` reclama solo vencidos pending y los pasa a processing
+- PASS: `sara_mark_reminder_sent` marca sent y emite `reminder_sent` (solo en processing)
+- PASS: `sara_mark_reminder_failed` marca failed y emite `reminder_failed`
+
+### Reminders Module
+- PASS: remindersModule.create acepta input valido con reminderId y eventId
+- PASS: remindersModule.create rechaza title vacio
+- PASS: remindersModule.create rechaza title solo espacios
+- PASS: remindersModule.create rechaza dueAt pasado
+- PASS: remindersModule.create rechaza dueAt faltante
+- PASS: remindersModule.list retorna recordatorios pendientes por conversacion
+- PASS: remindersModule.cancel completa con evidencia (reminderId, eventId, title)
+- PASS: remindersModule.cancel completa por titleMatch
+- PASS: remindersModule.cancel completa por position
+- PASS: remindersModule.cancel falla sin identificador
+- PASS: remindersModule.cancel falla con position 0
+
+### Reminders Store
+- PASS: remindersStore.createReminder llama RPC `sara_create_reminder`
+- PASS: remindersStore.createReminder retorna failed en error de RPC
+- PASS: remindersStore.listReminders consulta `sara_reminders` filtrado por conversacion
+- PASS: remindersStore.listReminders mapea campos correctamente
+- PASS: remindersStore.cancelReminder llama RPC `sara_cancel_reminder`
+- PASS: remindersStore.cancelReminder retorna failed en error de RPC
+- PASS: remindersStore.claimDueReminders llama RPC `sara_claim_due_reminders`
+- PASS: remindersStore.markReminderSent llama RPC `sara_mark_reminder_sent`
+- PASS: remindersStore.markReminderFailed llama RPC `sara_mark_reminder_failed`
+
+### Time Parser
+- PASS: reminderTimeParser parsea `en N minutos`
+- PASS: reminderTimeParser parsea `en N horas`
+- PASS: reminderTimeParser parsea `en N dias`
+- PASS: reminderTimeParser parsea `manana a las HH`
+- PASS: reminderTimeParser parsea `manana a las HH:MM`
+- PASS: reminderTimeParser parsea `hoy a las HH`
+- PASS: reminderTimeParser parsea `hoy a las HH:MM`
+- PASS: reminderTimeParser rechaza texto ambiguo sin tiempo
+- PASS: reminderTimeParser rechaza zero/negativo minutos
+- PASS: formatDueAt formatea ISO a dd/mm/yyyy HH:MM
+
+### Classifiers
+- PASS: coarseClassifier detecta modulo `reminders` para recordame, recuerdame
+- PASS: coarseClassifier detecta modulo `reminders` para crear recordatorio, agendar recordatorio
+- PASS: coarseClassifier detecta modulo `reminders` para que recordatorios tengo, listar recordatorios
+- PASS: coarseClassifier detecta modulo `reminders` para cancelar recordatorio, eliminar recordatorio
+- PASS: moduleIntentClassifier detecta reminders.create y extrae title y dueAt
+- PASS: moduleIntentClassifier detecta reminders.list
+- PASS: moduleIntentClassifier detecta reminders.cancel con position, titleMatch, reminderId
+- PASS: moduleIntentClassifier retorna missingData cuando no se puede parsear tiempo
+- PASS: moduleIntentClassifier retorna missingData cuando no hay title
+- PASS: moduleIntentClassifier resuelve referencias con sessionContext (cancelar ese)
+- PASS: moduleIntentClassifier no resuelve referencia ambigua sin sessionContext
+
+### Response Composer
+- PASS: responseComposer confirma reminder create solo con reminderId y eventId
+- PASS: responseComposer no confirma reminder create sin evidencia
+- PASS: responseComposer confirma reminder cancel solo con reminderId y eventId
+- PASS: responseComposer no confirma reminder cancel sin evidencia
+- PASS: responseComposer formatea reminder list desde indice 1 con fecha/hora
+- PASS: responseComposer muestra mensaje vacio para reminder list sin resultados
+
+### Regresion
+- PASS: notes.create/list/search sigue pasando
+- PASS: tasks.create/list/complete sigue pasando
+- PASS: session-context sigue pasando
+- PASS: Chatwoot scope 7/45/85 sigue pasando
+
+## Evidencia local 2026-06-03 (TASK-20260603-010)
+- `npm run typecheck`: PASS
+- `npm test`: PASS (295 tests)
+- `npm run build`: PASS

@@ -1,5 +1,5 @@
 import type { CoarseClassificationInput, CoarseClassificationResult } from "../contracts/pipeline.js";
-import { matchesNotePrefix, matchesNoteListQuery, matchesNoteSearchQuery, matchesTaskCreate, matchesTaskListQuery, matchesTaskComplete } from "./patterns.js";
+import { matchesNotePrefix, matchesNoteListQuery, matchesNoteSearchQuery, matchesTaskCreate, matchesTaskListQuery, matchesTaskComplete, matchesReminderCreate, matchesReminderListQuery, matchesReminderCancel } from "./patterns.js";
 
 export interface CoarseClassifier {
   classify(input: CoarseClassificationInput): Promise<CoarseClassificationResult>;
@@ -29,6 +29,17 @@ export function createCoarseClassifier(): CoarseClassifier {
           confidence: 0.9,
           missingData: [],
           reasoningSummary: "Task module detected from explicit match.",
+        };
+      }
+
+      if (matchesReminderCreate(text) || matchesReminderListQuery(text) || matchesReminderCancel(text)) {
+        return {
+          schemaVersion: "coarse_classification_result.v1",
+          traceId: input.traceId,
+          module: "reminders",
+          confidence: 0.9,
+          missingData: [],
+          reasoningSummary: "Reminder module detected from explicit match.",
         };
       }
 

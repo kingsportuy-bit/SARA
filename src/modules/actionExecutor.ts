@@ -37,6 +37,33 @@ function validateCompleteIdentifier(input: ActionExecutionInput): string | null 
   return null;
 }
 
+function validateReminderCreate(input: ActionExecutionInput): string | null {
+  const title = input.entities?.title;
+  if (!title || typeof title !== "string" || String(title).trim().length === 0) {
+    return "title is required for reminders.create";
+  }
+  const dueAt = input.entities?.dueAt;
+  if (!dueAt || typeof dueAt !== "string") {
+    return "dueAt is required for reminders.create";
+  }
+  const dueDate = new Date(dueAt as string);
+  if (isNaN(dueDate.getTime()) || dueDate <= new Date()) {
+    return "dueAt must be in the future for reminders.create";
+  }
+  return null;
+}
+
+function validateReminderCancel(input: ActionExecutionInput): string | null {
+  const hasReminderId = input.entities?.reminderId;
+  const hasTitleMatch = input.entities?.titleMatch && typeof input.entities.titleMatch === "string" && input.entities.titleMatch.trim().length > 0;
+  const position = Number(input.entities?.position);
+  const hasPosition = !isNaN(position) && position > 0;
+  if (!hasReminderId && !hasTitleMatch && !hasPosition) {
+    return "reminderId, titleMatch, or positive position required for reminders.cancel";
+  }
+  return null;
+}
+
 function guardConfidenceAndMissing(input: ActionExecutionInput): string | null {
   if (input.intentConfidence === undefined || input.intentConfidence < 0.75) {
     return `confidence insufficient for ${input.module}.${input.action}`;
@@ -65,6 +92,14 @@ function guardAction(input: ActionExecutionInput): string | null {
 
   if (input.module === "tasks" && input.action === "complete") {
     return validateCompleteIdentifier(input);
+  }
+
+  if (input.module === "reminders" && input.action === "create") {
+    return validateReminderCreate(input);
+  }
+
+  if (input.module === "reminders" && input.action === "cancel") {
+    return validateReminderCancel(input);
   }
 
   return null;

@@ -2,13 +2,14 @@
 
 ## Estado del sistema (actualizado: 2026-06-03)
 - Produccion: worker post-buffer con pipeline modular operativo en VPS
-- En progreso: TASK-20260603-010 aprobada para opencode (`reminders` MVP)
+- En progreso: TASK-20260603-010 implementada por opencode (reminders MVP)
 - Bloqueos activos: activar firma HMAC de Chatwoot cuando se recupere `CHATWOOT_WEBHOOK_SECRET`
 - Primer flujo vertical: Chatwoot -> buffer durable -> DeepSeek bootstrap -> respuesta Chatwoot -> trazabilidad `sara_*`
 - Pipeline modular base: implementado y validado; DeepSeek queda como fallback solo para mensajes sin accion ejecutable.
 - Primer modulo real: `notes` implementado, conectado al worker, desplegado y probado en produccion con `create`, `list` y `search`.
 - Segundo modulo real: `tasks` implementado, conectado al worker, desplegado y probado en produccion con `create`, `list` y `complete`.
 - Tercer modulo interno: `session-context` implementado, conectado al worker, desplegado y probado en produccion resolviendo referencias simples como `completar esa`.
+- Cuarto modulo real: `reminders` implementado con migracion `sara_reminders`, parser temporal deterministico (America/Montevideo), create/list/cancel via Chatwoot, dispatcher de vencidos, integracion con session-context.
 
 ## Stack actual
 - Backend: Node.js 22 + TypeScript + Fastify
@@ -76,9 +77,8 @@ Reglas derivadas:
 
 ## Task activa o proxima
 - Task: `docs/TASKS/TASK-20260603-010.md`
-- Estado: APPROVED_FOR_OPENCODE
-- Owner: Codex Orquestador
-- Objetivo: implementar modulo `reminders` MVP para crear, listar, cancelar y disparar recordatorios simples por Chatwoot, sin recurrencias ni calendario externo.
+- Estado: IMPLEMENTED (pendiente revision y deploy por Codex Orquestador)
+- Owner: opencode (implementacion) / Codex Orquestador (revision)
 
 ## Ultimo cierre de sesion
 - Fecha: 2026-06-02

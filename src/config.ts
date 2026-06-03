@@ -30,6 +30,7 @@ export interface AppConfig {
   port: number;
   bufferSeconds: number;
   workerIntervalMs: number;
+  remindersDispatcherIntervalMs: number;
   chatwoot: {
     url: string;
     accountId: number;
@@ -60,6 +61,7 @@ export function loadConfig(): AppConfig {
     port: integer("PORT", 3000),
     bufferSeconds: integer("SARA_BUFFER_SECONDS", 20),
     workerIntervalMs: integer("SARA_WORKER_INTERVAL_MS", 2000),
+    remindersDispatcherIntervalMs: integer("SARA_REMINDERS_DISPATCHER_INTERVAL_MS", 30000),
     chatwoot: {
       url: required("CHATWOOT_URL").replace(/\/$/, ""),
       accountId: integer("CHATWOOT_ACCOUNT_ID"),

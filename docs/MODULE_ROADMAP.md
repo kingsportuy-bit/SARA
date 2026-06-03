@@ -102,7 +102,7 @@ No incluye todavia:
 - RAG.
 
 ### 4. `reminders`
-Estado: APPROVED_FOR_OPENCODE
+Estado: DONE
 
 Proposito:
 - convertir tareas o mensajes en recordatorios temporales.

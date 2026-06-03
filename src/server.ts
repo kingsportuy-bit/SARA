@@ -6,9 +6,12 @@ import { createSupabaseClient, createSupabaseStore } from "./infra/supabaseStore
 import { createNotesStore } from "./infra/notesStore.js";
 import { createTasksStore } from "./infra/tasksStore.js";
 import { createSessionContextStore } from "./infra/sessionContextStore.js";
+import { createRemindersStore } from "./infra/remindersStore.js";
 import { createNotesModule } from "./modules/notes/notesModule.js";
 import { createTasksModule } from "./modules/tasks/tasksModule.js";
 import { createSessionContextModule } from "./modules/sessionContext/sessionContextModule.js";
+import { createRemindersModule } from "./modules/reminders/remindersModule.js";
+import { createRemindersDispatcher } from "./modules/reminders/remindersDispatcher.js";
 import { createCoarseClassifier } from "./modules/coarseClassifier.js";
 import { createModuleIntentClassifier } from "./modules/moduleIntentClassifier.js";
 import { createModuleRouter, registerModule } from "./modules/moduleRouter.js";
@@ -18,6 +21,7 @@ import { createBufferProcessor } from "./modules/bufferProcessor.js";
 import { createMessageNormalizer } from "./modules/messageNormalizer.js";
 import type { CreateNoteInput, ListNotesInput, SearchNotesInput } from "./contracts/notes.js";
 import type { CreateTaskInput, ListTasksInput, CompleteTaskInput } from "./contracts/tasks.js";
+import type { CreateReminderInput, ListRemindersInput, CancelReminderInput } from "./contracts/reminders.js";
 import type { ActionExecutionInput, ActionExecutionResult } from "./contracts/pipeline.js";
 
 const config = loadConfig();
@@ -34,8 +38,12 @@ const tasksModule = createTasksModule(tasksStore);
 const sessionContextStore = createSessionContextStore(supabase);
 const sessionContextModule = createSessionContextModule(sessionContextStore);
 
+const remindersStore = createRemindersStore(supabase);
+const remindersModule = createRemindersModule(remindersStore);
+
 registerModule("notes", ["create", "list", "search"]);
 registerModule("tasks", ["create", "list", "complete"]);
+registerModule("reminders", ["create", "list", "cancel"]);
 
 function notesCreateHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
   const createInput: CreateNoteInput = {
@@ -249,6 +257,129 @@ function tasksCompleteHandler(input: ActionExecutionInput): Promise<ActionExecut
   });
 }
 
+function remindersCreateHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const createInput: CreateReminderInput = {
+    schemaVersion: "reminders_create_input.v1",
+    traceId: input.traceId,
+    title: String(input.entities.title ?? ""),
+    dueAt: String(input.entities.dueAt ?? ""),
+    source: "chatwoot",
+    accountId: 7,
+    inboxId: 45,
+    conversationId: 85,
+  };
+  return remindersModule.create(createInput).then((result) => {
+    if (result.status === "created") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: {
+          reminderId: result.reminderId,
+          eventId: result.eventId,
+          title: result.title,
+          dueAt: result.dueAt,
+        },
+        stateChanges: [
+          {
+            entityType: "reminder",
+            entityId: result.reminderId,
+            eventType: "reminder_created",
+            payload: {},
+          },
+        ],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: result.error,
+    };
+  });
+}
+
+function remindersListHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const listInput: ListRemindersInput = {
+    schemaVersion: "reminders_list_input.v1",
+    traceId: input.traceId,
+    limit: typeof input.entities.limit === "number" ? input.entities.limit : 5,
+    accountId: 7,
+    inboxId: 45,
+    conversationId: 85,
+  };
+  return remindersModule.list(listInput).then((listResult) => {
+    if (listResult.status === "success") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: {
+          reminders: listResult.reminders,
+          count: listResult.count,
+        },
+        stateChanges: [],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: listResult.error,
+    };
+  });
+}
+
+function remindersCancelHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const cancelInput: CancelReminderInput = {
+    schemaVersion: "reminders_cancel_input.v1",
+    traceId: input.traceId,
+    reminderId: input.entities.reminderId as string | undefined,
+    titleMatch: input.entities.titleMatch as string | undefined,
+    position: typeof input.entities.position === "number" ? input.entities.position : undefined,
+    source: "chatwoot",
+    accountId: 7,
+    inboxId: 45,
+    conversationId: 85,
+  };
+  return remindersModule.cancel(cancelInput).then((result) => {
+    if (result.status === "canceled") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: {
+          reminderId: result.reminderId,
+          eventId: result.eventId,
+          title: result.title,
+        },
+        stateChanges: [
+          {
+            entityType: "reminder",
+            entityId: result.reminderId,
+            eventType: "reminder_canceled",
+            payload: {},
+          },
+        ],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: result.error,
+    };
+  });
+}
+
+const outboundClient = createChatwootClient(config.chatwoot.url, config.chatwoot.accountId, config.chatwoot.userToken);
+
 const processor = createBufferProcessor({
   store,
   normalizer: createMessageNormalizer(),
@@ -266,14 +397,22 @@ const processor = createBufferProcessor({
       list: tasksListHandler,
       complete: tasksCompleteHandler,
     },
+    reminders: {
+      create: remindersCreateHandler,
+      list: remindersListHandler,
+      cancel: remindersCancelHandler,
+    },
   }),
   composer: createResponseComposer(),
   fallbackGenerator: createDeepseekClient(config.deepseek.apiKey, config.deepseek.model),
-  outbound: createChatwootClient(config.chatwoot.url, config.chatwoot.accountId, config.chatwoot.userToken),
+  outbound: outboundClient,
   logger: app.log,
   sessionContextModule,
 });
 
 setInterval(() => void processor.processDue(), config.workerIntervalMs).unref();
+
+const dispatcher = createRemindersDispatcher(remindersStore, outboundClient, app.log);
+setInterval(() => void dispatcher.processDue(), config.remindersDispatcherIntervalMs).unref();
 
 await app.listen({ host: "0.0.0.0", port: config.port });

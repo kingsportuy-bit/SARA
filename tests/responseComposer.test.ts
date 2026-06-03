@@ -482,3 +482,131 @@ describe("responseComposer", () => {
     expect(result.content).toContain("No encontre tareas pendientes");
   });
 });
+
+describe("responseComposer reminders", () => {
+  it("confirms reminder create with reminderId and eventId", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "reminders" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "create", confidence: 0.85, entities: { title: "llamar al contador", dueAt: "2026-06-10T10:00:00Z" } },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: { reminderId: "r1", eventId: "e1", title: "llamar al contador", dueAt: "2026-06-10T10:00:00Z" },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("Recordatorio creado");
+    expect(result.content).toContain("llamar al contador");
+  });
+
+  it("does not confirm reminder create without evidence", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "reminders" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "create", confidence: 0.85 },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: {},
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("no se puede verificar la evidencia");
+  });
+
+  it("confirms reminder cancel with reminderId and eventId", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "reminders" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "cancel", confidence: 0.85 },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: { reminderId: "r1", eventId: "e1", title: "llamar al contador" },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("Recordatorio cancelado:");
+    expect(result.content).toContain("llamar al contador");
+  });
+
+  it("does not confirm reminder cancel without evidence", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "reminders" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "cancel", confidence: 0.85 },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: {},
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("no se puede verificar la evidencia");
+  });
+
+  it("formats reminder list results", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "reminders" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "list", confidence: 0.85 },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: {
+          reminders: [
+            { title: "llamar al contador", dueAt: "2026-06-10T10:00:00Z" },
+            { title: "revisar facturas", dueAt: "2026-06-11T15:00:00Z" },
+          ],
+          count: 2,
+        },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("Estos son tus recordatorios pendientes:");
+    expect(result.content).toContain("1.");
+    expect(result.content).toContain("2.");
+    expect(result.content).toContain("llamar al contador");
+    expect(result.content).toContain("revisar facturas");
+  });
+
+  it("shows empty message for reminder list with no results", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "reminders" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "list", confidence: 0.85 },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: { reminders: [], count: 0 },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("No encontre recordatorios pendientes");
+  });
+});

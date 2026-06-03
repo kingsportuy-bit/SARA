@@ -180,6 +180,79 @@ describe("coarseClassifier", () => {
   });
 });
 
+describe("coarseClassifier reminders detection", () => {
+  it("detects reminders module from recordame", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-rm1",
+      messages: [{ id: 1, content: "recordame en 5 minutos llamar al contador", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("reminders");
+    expect(result.confidence).toBe(0.9);
+  });
+
+  it("detects reminders module from recuerdame", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-rm2",
+      messages: [{ id: 1, content: "recuerdame en 2 horas comprar pan", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("reminders");
+  });
+
+  it("detects reminders module from crear recordatorio", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-rm3",
+      messages: [{ id: 1, content: "crear recordatorio en 1 dia revisar presupuesto", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("reminders");
+  });
+
+  it("detects reminders module from agendar recordatorio", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-rm4",
+      messages: [{ id: 1, content: "agendar recordatorio manana a las 9", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("reminders");
+  });
+
+  it("detects reminders module from que recordatorios tengo", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-rm5",
+      messages: [{ id: 1, content: "que recordatorios tengo", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("reminders");
+  });
+
+  it("detects reminders module from listar recordatorios", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-rm6",
+      messages: [{ id: 1, content: "listar recordatorios", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("reminders");
+  });
+
+  it("detects reminders module from cancelar recordatorio", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-rm7",
+      messages: [{ id: 1, content: "cancelar recordatorio 1", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("reminders");
+  });
+});
+
 describe("coarseClassifier tasks detection", () => {
   it("detects tasks module from tarea: prefix", async () => {
     const result = await classifier.classify({

@@ -576,3 +576,202 @@ describe("moduleIntentClassifier tasks.complete reference resolution", () => {
     expect(result.entities).toHaveProperty("taskId", "task-x7");
   });
 });
+
+describe("moduleIntentClassifier reminders.create detection", () => {
+  it("detects recordame en N minutos and extracts title and dueAt", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-rc1",
+      module: "reminders",
+      messages: [{ id: 1, content: "recordame en 5 minutos llamar al contador", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("reminders");
+    expect(result.action).toBe("create");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+    expect(result.missingData).toEqual([]);
+    expect(result.entities).toHaveProperty("title", "llamar al contador");
+    expect(result.entities).toHaveProperty("dueAt");
+  });
+
+  it("detects recordame en N horas", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-rc2",
+      module: "reminders",
+      messages: [{ id: 1, content: "recordame en 2 horas revisar facturas", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("create");
+    expect(result.entities).toHaveProperty("dueAt");
+  });
+
+  it("detects recordame manana a las 9", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-rc3",
+      module: "reminders",
+      messages: [{ id: 1, content: "recordame manana a las 9 llamar al banco", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("create");
+    expect(result.entities).toHaveProperty("dueAt");
+    expect(result.entities).toHaveProperty("title", "llamar al banco");
+  });
+
+  it("returns missingData when time cannot be parsed", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-rc4",
+      module: "reminders",
+      messages: [{ id: 1, content: "recordame llamar al contador", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("create");
+    expect(result.confidence).toBeLessThan(0.75);
+    expect(result.missingData).toContain("dueAt");
+  });
+
+  it("returns missingData when title is empty", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-rc5",
+      module: "reminders",
+      messages: [{ id: 1, content: "recordame en 5 minutos", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("create");
+    expect(result.confidence).toBeLessThan(0.75);
+    expect(result.missingData).toContain("title");
+  });
+});
+
+describe("moduleIntentClassifier reminders.list detection", () => {
+  it("detects list intent from que recordatorios tengo", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-rl1",
+      module: "reminders",
+      messages: [{ id: 1, content: "que recordatorios tengo", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("reminders");
+    expect(result.action).toBe("list");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+    expect(result.missingData).toEqual([]);
+  });
+
+  it("detects list intent from listar recordatorios", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-rl2",
+      module: "reminders",
+      messages: [{ id: 1, content: "listar recordatorios", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("list");
+  });
+
+  it("detects list intent from mis recordatorios", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-rl3",
+      module: "reminders",
+      messages: [{ id: 1, content: "mis recordatorios", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("list");
+  });
+});
+
+describe("moduleIntentClassifier reminders.cancel detection", () => {
+  it("detects cancel with position from cancelar recordatorio N", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-rx1",
+      module: "reminders",
+      messages: [{ id: 1, content: "cancelar recordatorio 1", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("reminders");
+    expect(result.action).toBe("cancel");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+    expect(result.entities).toHaveProperty("position", 1);
+  });
+
+  it("detects cancel with titleMatch", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-rx2",
+      module: "reminders",
+      messages: [{ id: 1, content: "cancelar recordatorio llamar al contador", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("cancel");
+    expect(result.entities).toHaveProperty("titleMatch", "llamar al contador");
+  });
+
+  it("detects eliminar recordatorio N", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-rx3",
+      module: "reminders",
+      messages: [{ id: 1, content: "eliminar recordatorio 2", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("cancel");
+    expect(result.entities).toHaveProperty("position", 2);
+  });
+});
+
+describe("moduleIntentClassifier reminders.cancel reference resolution", () => {
+  it("resolves cancelar ese with focused reminder in session context", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-rr1",
+      module: "reminders",
+      messages: [{ id: 1, content: "cancelar ese", createdAt: "now" }],
+      sessionContext: {
+        focusedEntityType: "reminder",
+        focusedEntityId: "reminder-focused-1",
+        context: { lastReminderTitle: "llamar al banco" },
+      },
+    });
+
+    expect(result.action).toBe("cancel");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+    expect(result.entities).toHaveProperty("reminderId", "reminder-focused-1");
+    expect(result.missingData).toEqual([]);
+  });
+
+  it("resolves cancelar el ultimo recordatorio from lastReminderList with single entry", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-rr2",
+      module: "reminders",
+      messages: [{ id: 1, content: "cancelar el ultimo recordatorio", createdAt: "now" }],
+      sessionContext: {
+        context: {
+          lastReminderList: [{ position: 1, id: "rem-abc", title: "llamar al banco", dueAt: "2026-06-10T10:00:00Z" }],
+        },
+      },
+    });
+
+    expect(result.action).toBe("cancel");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+    expect(result.entities).toHaveProperty("reminderId", "rem-abc");
+  });
+
+  it("returns missingData when session context is undefined (ambiguous cancel)", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-rr3",
+      module: "reminders",
+      messages: [{ id: 1, content: "cancelar ese", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("cancel");
+    expect(result.confidence).toBeLessThan(0.75);
+    expect(result.missingData).toContain("reminder");
+  });
+});

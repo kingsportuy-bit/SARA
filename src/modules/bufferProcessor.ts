@@ -181,6 +181,87 @@ export function createBufferProcessor(ctx: PipelineContext) {
             ctx.logger.info({ bufferId: buffer.buffer_id }, "session context focused on single note result");
           }
         }
+      } else if (module === "reminders") {
+        if (action === "create" && actionResult.status === "executed") {
+          const reminderId = actionResult.evidence?.reminderId as string | undefined;
+          const title = actionResult.evidence?.title as string | undefined;
+          const dueAt = actionResult.evidence?.dueAt as string | undefined;
+          if (reminderId) {
+            const ctxPayload: Record<string, unknown> = {};
+            if (title) ctxPayload.lastReminderTitle = title;
+            if (dueAt) ctxPayload.lastReminderDueAt = dueAt;
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "reminders",
+              activeFlow: "reminder_created",
+              focusedEntityType: "reminder",
+              focusedEntityId: reminderId,
+              context: ctxPayload,
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, reminderId }, "session context updated for reminders.create");
+          }
+        } else if (action === "list" && actionResult.status === "executed") {
+          const reminders = actionResult.evidence?.reminders as Array<{ id: string; title: string; dueAt: string }> | undefined;
+          const count = actionResult.evidence?.count as number | undefined;
+
+          if (reminders && count === 1 && reminders.length === 1) {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "reminders",
+              activeFlow: "reminder_listed",
+              focusedEntityType: "reminder",
+              focusedEntityId: reminders[0].id,
+              context: {
+                lastReminderTitle: reminders[0].title,
+                lastReminderDueAt: reminders[0].dueAt,
+                lastReminderList: [{ position: 1, id: reminders[0].id, title: reminders[0].title, dueAt: reminders[0].dueAt }],
+              },
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id }, "session context focused on single pending reminder");
+          } else if (reminders && count && count > 1) {
+            const reminderList = reminders.map((r, i) => ({ position: i + 1, id: r.id, title: r.title, dueAt: r.dueAt }));
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "reminders",
+              focusedEntityType: undefined,
+              focusedEntityId: undefined,
+              context: { lastReminderList: reminderList },
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, count }, "session context saved lastReminderList");
+          }
+        } else if (action === "cancel" && actionResult.status === "executed") {
+          const canceledReminderId = actionResult.evidence?.reminderId as string | undefined;
+          const canceledTitle = actionResult.evidence?.title as string | undefined;
+
+          const existingCtx = await ctx.sessionContextModule.get({
+            accountId: buffer.account_id,
+            inboxId: buffer.inbox_id,
+            conversationId: buffer.conversation_id,
+          });
+
+          const focusedId = existingCtx.context?.focusedEntityId;
+          const shouldClearFocus = canceledReminderId && focusedId === canceledReminderId;
+
+          if (shouldClearFocus) {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "reminders",
+              activeFlow: "reminder_canceled",
+              focusedEntityType: undefined,
+              focusedEntityId: undefined,
+              context: canceledTitle ? { lastCanceledTitle: canceledTitle } : {},
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, reminderId: canceledReminderId }, "session context cleared focus after reminders.cancel of focused reminder");
+          } else {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "reminders",
+              activeFlow: "reminder_canceled",
+              context: canceledTitle ? { lastCanceledTitle: canceledTitle } : {},
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, reminderId: canceledReminderId }, "session context updated for reminders.cancel");
+          }
+        }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

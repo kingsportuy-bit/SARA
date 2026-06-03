@@ -38,4 +38,42 @@ describe("migration guard", () => {
     expect(sql).toContain("focused_entity_id = p_focused_entity_id");
     expect(sql).toContain("expires_at = now() + (coalesce(p_ttl_minutes, 30) || ' minutes')::interval");
   });
+
+  it("sara_reminders has RLS enabled and anon/authenticated access revoked", () => {
+    const sql = readFileSync("db/migrations/20260603_010_reminders.sql", "utf8");
+    expect(sql).toContain("enable row level security");
+    expect(sql).toContain("revoke all on sara_reminders from anon, authenticated");
+  });
+
+  it("sara_reminders has status check constraint", () => {
+    const sql = readFileSync("db/migrations/20260603_010_reminders.sql", "utf8");
+    expect(sql).toContain("sara_reminders_status_check");
+    expect(sql).toContain("status in ('pending', 'processing', 'sent', 'canceled', 'failed')");
+  });
+
+  it("sara_create_reminder rejects empty title", () => {
+    const sql = readFileSync("db/migrations/20260603_010_reminders.sql", "utf8");
+    expect(sql).toContain("title cannot be empty");
+  });
+
+  it("sara_create_reminder rejects past due_at", () => {
+    const sql = readFileSync("db/migrations/20260603_010_reminders.sql", "utf8");
+    expect(sql).toContain("due_at must be in the future");
+  });
+
+  it("sara_cancel_reminder fails when titleMatch is ambiguous", () => {
+    const sql = readFileSync("db/migrations/20260603_010_reminders.sql", "utf8");
+    expect(sql).toContain("multiple matching pending reminders found");
+  });
+
+  it("sara_claim_due_reminders claims only pending with due_at <= now", () => {
+    const sql = readFileSync("db/migrations/20260603_010_reminders.sql", "utf8");
+    expect(sql).toContain("status = 'pending' and due_at <= now()");
+    expect(sql).toContain("status = 'processing'");
+  });
+
+  it("sara_mark_reminder_sent only works on processing status", () => {
+    const sql = readFileSync("db/migrations/20260603_010_reminders.sql", "utf8");
+    expect(sql).toContain("status = 'processing'");
+  });
 });

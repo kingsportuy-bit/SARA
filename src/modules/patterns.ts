@@ -171,6 +171,120 @@ export interface ResolvedTaskReference {
   title?: string;
 }
 
+export const REMINDER_CREATE_PATTERNS = [
+  /recordame\b/i,
+  /recuerdame\b/i,
+  /crear\s+recordatorio\b/i,
+  /agendar\s+recordatorio\b/i,
+  /crea\s+un\s+recordatorio\b/i,
+  /agenda\s+un\s+recordatorio\b/i,
+];
+
+export const REMINDER_LIST_PATTERNS = [
+  /que\s+recordatorios\s+(tengo|hay|tienes|existen)/i,
+  /listar?\s*recordatorios/i,
+  /lista\s*(mis\s*)?recordatorios/i,
+  /mis\s*recordatorios/i,
+  /recordatorios\s*pendientes/i,
+  /ver\s*recordatorios/i,
+];
+
+export const REMINDER_CANCEL_PATTERNS = [
+  /cancelar\s*recordatorio\s*(\d+|.+)/i,
+  /eliminar\s*recordatorio\s*(\d+|.+)/i,
+  /borrar\s*recordatorio\s*(\d+|.+)/i,
+  /quitar\s*recordatorio\s*(\d+|.+)/i,
+];
+
+export const REMINDER_REFERENCE_PATTERNS = [
+  /^(?:cancelar|eliminar|borrar)\s+(?:el\s+)?(?:ultimo|ese|aquel|aquel)\s*(?:recordatorio)?$/i,
+];
+
+export function matchesReminderCreate(text: string): boolean {
+  if (!text) return false;
+  return REMINDER_CREATE_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesReminderListQuery(text: string): boolean {
+  if (!text) return false;
+  return REMINDER_LIST_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesReminderCancel(text: string): boolean {
+  if (!text) return false;
+  return REMINDER_CANCEL_PATTERNS.some((pattern) => pattern.test(text)) ||
+    REMINDER_REFERENCE_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesReminderReference(text: string): boolean {
+  if (!text) return false;
+  return REMINDER_REFERENCE_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function extractCancelReminderIdentifier(text: string): { position?: number; titleMatch?: string } | null {
+  for (const pattern of REMINDER_CANCEL_PATTERNS) {
+    const match = pattern.exec(text);
+    if (match && match[1] && match[1].trim()) {
+      const raw = match[1].trim();
+      const num = Number(raw);
+      if (!isNaN(num) && num > 0) {
+        return { position: num };
+      }
+      return { titleMatch: raw };
+    }
+  }
+  return null;
+}
+
+export interface ResolvedReminderReference {
+  reminderId?: string;
+  position?: number;
+  title?: string;
+}
+
+export function resolveReminderReference(
+  sessionContext: {
+    focusedEntityType?: string;
+    focusedEntityId?: string;
+    context?: Record<string, unknown>;
+  } | undefined,
+): ResolvedReminderReference | null {
+  if (!sessionContext) return null;
+
+  if (sessionContext.focusedEntityType === "reminder" && sessionContext.focusedEntityId) {
+    return { reminderId: sessionContext.focusedEntityId };
+  }
+
+  const lastReminderList = sessionContext.context?.lastReminderList as Array<{ position: number; id: string; title: string }> | undefined;
+  if (lastReminderList && Array.isArray(lastReminderList)) {
+    if (lastReminderList.length === 1) {
+      return { reminderId: lastReminderList[0].id };
+    }
+  }
+
+  return null;
+}
+
+export function extractReminderTitle(text: string): string {
+  for (const pattern of REMINDER_CREATE_PATTERNS) {
+    const m = pattern.exec(text);
+    if (m) {
+      const after = text.slice(m[0].length).trim();
+      if (!after) return "";
+
+      const timeMin = after.match(/(?:^|\s)en\s+\d+\s*(?:minutos?|horas?|dias?)\s*/i);
+      const timeHoy = after.match(/(?:^|\s)hoy\s+a\s+las\s+\d{1,2}(?::\d{2})?\s*/i);
+      const timeManana = after.match(/(?:^|\s)(?:mañana|manana)\s+a\s+las\s+\d{1,2}(?::\d{2})?\s*/i);
+      let result = after;
+      if (timeMin) result = after.slice(timeMin[0].length).trim();
+      else if (timeHoy) result = after.slice(timeHoy[0].length).trim();
+      else if (timeManana) result = after.slice(timeManana[0].length).trim();
+      return result || "";
+    }
+  }
+  return text;
+}
+
 export function resolveTaskReference(
   sessionContext: {
     focusedEntityType?: string;
