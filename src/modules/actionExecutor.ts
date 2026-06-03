@@ -54,6 +54,26 @@ export function createActionExecutor(handlers: HandlerRegistry = {}): ActionExec
       }
 
       if (input.module === "notes" && input.action === "create") {
+        if (input.intentConfidence === undefined || input.intentConfidence < 0.75) {
+          return {
+            schemaVersion: "action_execution_result.v1",
+            traceId: input.traceId,
+            status: "failed",
+            evidence: { reason: "confidence insufficient for notes.create" },
+            stateChanges: [],
+            error: "confidence insufficient for notes.create",
+          };
+        }
+        if (input.intentMissingData && input.intentMissingData.length > 0) {
+          return {
+            schemaVersion: "action_execution_result.v1",
+            traceId: input.traceId,
+            status: "failed",
+            evidence: { reason: "missing data prevents notes.create" },
+            stateChanges: [],
+            error: "missing data prevents notes.create",
+          };
+        }
         const contentError = validateContent(input);
         if (contentError) {
           return {

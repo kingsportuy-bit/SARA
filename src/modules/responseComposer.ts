@@ -25,7 +25,7 @@ export function createResponseComposer(): ResponseComposer {
       } else if (actionResult.status === "executed") {
         const noteId = actionResult.evidence?.noteId;
         const eventId = actionResult.evidence?.eventId;
-        if (noteId || eventId) {
+        if (noteId && eventId) {
           content = "Accion ejecutada correctamente.";
         } else {
           content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";

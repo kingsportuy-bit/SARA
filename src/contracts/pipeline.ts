@@ -60,6 +60,10 @@ export interface ActionExecutionInput {
   action: string;
   entities: Record<string, unknown>;
   requiresConfirmation: boolean;
+  /** Confidence from ModuleIntentResult. Required guard for execution. */
+  intentConfidence?: number;
+  /** Missing data from ModuleIntentResult. Required guard for execution. */
+  intentMissingData?: string[];
 }
 
 export interface ActionExecutionResult {

@@ -61,6 +61,8 @@ describe("actionExecutor with notes handler", () => {
     const exec = createActionExecutor({ notes: { create: handler } });
     const result = await exec.execute(execInput({
       entities: { content: "nota de prueba", noteType: "observacion" },
+      intentConfidence: 0.9,
+      intentMissingData: [],
     }));
 
     expect(result.status).toBe("executed");
@@ -100,7 +102,11 @@ describe("actionExecutor with notes handler", () => {
     const handler = vi.fn();
     const exec = createActionExecutor({ notes: { create: handler } });
 
-    const result = await exec.execute(execInput({ entities: {} }));
+    const result = await exec.execute(execInput({
+      entities: {},
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    }));
 
     expect(result.status).toBe("failed");
     expect(result.error).toContain("content is required");
@@ -111,7 +117,11 @@ describe("actionExecutor with notes handler", () => {
     const handler = vi.fn();
     const exec = createActionExecutor({ notes: { create: handler } });
 
-    const result = await exec.execute(execInput({ entities: { content: "" } }));
+    const result = await exec.execute(execInput({
+      entities: { content: "" },
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    }));
 
     expect(result.status).toBe("failed");
     expect(result.error).toContain("content is required");
@@ -122,7 +132,11 @@ describe("actionExecutor with notes handler", () => {
     const handler = vi.fn();
     const exec = createActionExecutor({ notes: { create: handler } });
 
-    const result = await exec.execute(execInput({ entities: { content: "   " } }));
+    const result = await exec.execute(execInput({
+      entities: { content: "   " },
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    }));
 
     expect(result.status).toBe("failed");
     expect(handler).not.toHaveBeenCalled();
@@ -132,7 +146,11 @@ describe("actionExecutor with notes handler", () => {
     const handler = vi.fn();
     const exec = createActionExecutor({ notes: { create: handler } });
 
-    const result = await exec.execute(execInput({ entities: { content: 123 } }));
+    const result = await exec.execute(execInput({
+      entities: { content: 123 },
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    }));
 
     expect(result.status).toBe("failed");
     expect(handler).not.toHaveBeenCalled();
@@ -149,6 +167,69 @@ describe("actionExecutor with notes handler", () => {
     const exec = createActionExecutor({ "daily-log": { checkin: handler } });
 
     const result = await exec.execute(execInput({ module: "daily-log", action: "checkin", entities: {} }));
+
+    expect(result.status).toBe("executed");
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("blocks notes.create when intentConfidence is undefined", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ notes: { create: handler } });
+
+    const result = await exec.execute(execInput({
+      entities: { content: "nota content" },
+    }));
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toContain("confidence insufficient");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("blocks notes.create when intentConfidence is below 0.75", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ notes: { create: handler } });
+
+    const result = await exec.execute(execInput({
+      entities: { content: "nota content" },
+      intentConfidence: 0.5,
+      intentMissingData: [],
+    }));
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toContain("confidence insufficient");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("blocks notes.create when intentMissingData is not empty", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ notes: { create: handler } });
+
+    const result = await exec.execute(execInput({
+      entities: { content: "nota content" },
+      intentConfidence: 0.9,
+      intentMissingData: ["content"],
+    }));
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toContain("missing data prevents");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("blocks notes.create when confidence 0.75 exactly passes", async () => {
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { noteId: "n1", eventId: "e1" },
+      stateChanges: [],
+    }));
+
+    const exec = createActionExecutor({ notes: { create: handler } });
+    const result = await exec.execute(execInput({
+      entities: { content: "nota content" },
+      intentConfidence: 0.75,
+      intentMissingData: [],
+    }));
 
     expect(result.status).toBe("executed");
     expect(handler).toHaveBeenCalledTimes(1);
