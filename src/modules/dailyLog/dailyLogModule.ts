@@ -20,7 +20,8 @@ export function createDailyLogModule(repository: DailyLogRepository): DailyLogMo
       const hasField =
         input.wakeEnergy !== undefined ||
         input.sleepHours !== undefined ||
-        (input.morningIntention && input.morningIntention.trim().length > 0);
+        (input.morningIntention && input.morningIntention.trim().length > 0) ||
+        (Array.isArray(input.notes) && input.notes.length > 0);
 
       if (!hasField) {
         return {
@@ -58,7 +59,8 @@ export function createDailyLogModule(repository: DailyLogRepository): DailyLogMo
     async evening(input) {
       const hasField =
         (input.eveningReview && input.eveningReview.trim().length > 0) ||
-        (input.mood && input.mood.trim().length > 0);
+        (input.mood && input.mood.trim().length > 0) ||
+        (Array.isArray(input.notes) && input.notes.length > 0);
 
       if (!hasField) {
         return {

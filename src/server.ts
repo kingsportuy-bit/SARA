@@ -393,6 +393,8 @@ function dailyLogMorningHandler(input: ActionExecutionInput): Promise<ActionExec
     wakeEnergy: input.entities.wakeEnergy != null ? Number(input.entities.wakeEnergy) : undefined,
     sleepHours: input.entities.sleepHours != null ? Number(input.entities.sleepHours) : undefined,
     morningIntention: input.entities.morningIntention as string | undefined,
+    mood: input.entities.mood as string | undefined,
+    notes: Array.isArray(input.entities.notes) ? (input.entities.notes as string[]) : undefined,
     source: "chatwoot",
   };
   return dailyLogModule.morning(morningInput).then((result) => {
@@ -434,6 +436,8 @@ function dailyLogEveningHandler(input: ActionExecutionInput): Promise<ActionExec
     traceId: input.traceId,
     date: String(input.entities.date ?? ""),
     eveningReview: input.entities.eveningReview as string | undefined,
+    mood: input.entities.mood as string | undefined,
+    notes: Array.isArray(input.entities.notes) ? (input.entities.notes as string[]) : undefined,
     source: "chatwoot",
   };
   return dailyLogModule.evening(eveningInput).then((result) => {

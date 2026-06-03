@@ -68,9 +68,10 @@ function validateDailyLogMorning(input: ActionExecutionInput): string | null {
   const hasWakeEnergy = input.entities?.wakeEnergy !== undefined && input.entities?.wakeEnergy !== null;
   const hasSleepHours = input.entities?.sleepHours !== undefined && input.entities?.sleepHours !== null;
   const hasIntention = input.entities?.morningIntention && typeof input.entities.morningIntention === "string" && input.entities.morningIntention.trim().length > 0;
+  const hasNotes = Array.isArray(input.entities?.notes) && input.entities.notes.length > 0;
 
-  if (!hasWakeEnergy && !hasSleepHours && !hasIntention) {
-    return "wakeEnergy, sleepHours, or morningIntention required for daily-log.morning";
+  if (!hasWakeEnergy && !hasSleepHours && !hasIntention && !hasNotes) {
+    return "wakeEnergy, sleepHours, morningIntention, or notes required for daily-log.morning";
   }
 
   if (hasWakeEnergy) {
@@ -93,9 +94,10 @@ function validateDailyLogMorning(input: ActionExecutionInput): string | null {
 function validateDailyLogEvening(input: ActionExecutionInput): string | null {
   const hasReview = input.entities?.eveningReview && typeof input.entities.eveningReview === "string" && input.entities.eveningReview.trim().length > 0;
   const hasMood = input.entities?.mood && typeof input.entities.mood === "string" && input.entities.mood.trim().length > 0;
+  const hasNotes = Array.isArray(input.entities?.notes) && input.entities.notes.length > 0;
 
-  if (!hasReview && !hasMood) {
-    return "eveningReview or mood required for daily-log.evening";
+  if (!hasReview && !hasMood && !hasNotes) {
+    return "eveningReview, mood, or notes required for daily-log.evening";
   }
 
   return null;
@@ -112,9 +114,15 @@ function guardConfidenceAndMissing(input: ActionExecutionInput): string | null {
 }
 
 function guardAction(input: ActionExecutionInput): string | null {
-  const writingActions = ["create", "complete"];
+  const mutatingActions = new Set([
+    "create",
+    "complete",
+    "cancel",
+    "morning",
+    "evening",
+  ]);
 
-  if (writingActions.includes(input.action)) {
+  if (mutatingActions.has(input.action)) {
     const cm = guardConfidenceAndMissing(input);
     if (cm) return cm;
   }

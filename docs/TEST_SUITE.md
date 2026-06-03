@@ -445,3 +445,11 @@ Estado: IMPLEMENTED
 - PASS: `session-context` sigue pasando.
 - PASS: `reminders` sigue pasando.
 - PASS: Chatwoot scope `7/45/85` sigue pasando.
+
+## Evidencia local 2026-06-03 (TASK-20260603-011)
+- `npm run typecheck`: PASS
+- `npm test`: PASS (380 tests)
+- `npm run build`: PASS
+- `npm run typecheck`: PASS (hardening parser/guardas TASK-20260603-011)
+- `npm test`: PASS (387 tests, hardening parser/guardas TASK-20260603-011)
+- `npm run build`: PASS (hardening parser/guardas TASK-20260603-011)

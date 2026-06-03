@@ -157,6 +157,20 @@ describe("dailyLogModule.morning", () => {
 
     expect(result.status).toBe("updated");
   });
+
+  it("accepts notes only", async () => {
+    const repo = fakeRepo();
+    const mod = createDailyLogModule(repo);
+    const result = await mod.morning({
+      schemaVersion: "daily_log_morning_input.v1",
+      traceId: "trace-notes-morning",
+      date: "2026-06-03",
+      notes: ["arranque tranquilo"],
+      source: "chatwoot",
+    });
+
+    expect(result.status).toBe("updated");
+  });
 });
 
 describe("dailyLogModule.evening", () => {
@@ -198,6 +212,20 @@ describe("dailyLogModule.evening", () => {
       traceId: "trace-9",
       date: "2026-06-03",
       mood: "bueno",
+      source: "chatwoot",
+    });
+
+    expect(result.status).toBe("updated");
+  });
+
+  it("accepts notes only", async () => {
+    const repo = fakeRepo();
+    const mod = createDailyLogModule(repo);
+    const result = await mod.evening({
+      schemaVersion: "daily_log_evening_input.v1",
+      traceId: "trace-notes-evening",
+      date: "2026-06-03",
+      notes: ["dia liviano"],
       source: "chatwoot",
     });
 

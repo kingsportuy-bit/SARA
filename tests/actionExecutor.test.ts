@@ -491,6 +491,26 @@ describe("actionExecutor with daily-log handler", () => {
     expect(handler).not.toHaveBeenCalled();
   });
 
+  it("blocks daily-log.morning when confidence is low", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ "daily-log": { morning: handler } });
+
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-dl-low-confidence",
+      module: "daily-log",
+      action: "morning",
+      entities: { wakeEnergy: 7, date: "2026-06-03" },
+      requiresConfirmation: false,
+      intentConfidence: 0.4,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toContain("confidence insufficient");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
   it("blocks daily-log.morning when no fields are provided", async () => {
     const handler = vi.fn();
     const exec = createActionExecutor({ "daily-log": { morning: handler } });
@@ -508,6 +528,31 @@ describe("actionExecutor with daily-log handler", () => {
 
     expect(result.status).toBe("failed");
     expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("dispatches daily-log.morning with notes only", async () => {
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { dailyLogId: "dl-notes", eventId: "e-notes", date: "2026-06-03" },
+      stateChanges: [],
+    }));
+    const exec = createActionExecutor({ "daily-log": { morning: handler } });
+
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-dl-notes",
+      module: "daily-log",
+      action: "morning",
+      entities: { notes: ["arranque tranquilo"], date: "2026-06-03" },
+      requiresConfirmation: false,
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("executed");
+    expect(handler).toHaveBeenCalledTimes(1);
   });
 
   it("blocks daily-log.evening when no fields are provided", async () => {

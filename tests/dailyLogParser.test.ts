@@ -54,6 +54,22 @@ describe("dailyLogParser - morning", () => {
     }
   });
 
+  it("parses accented morning text", () => {
+    const accentedText = [
+      "buen d", String.fromCharCode(0x00ed), "a energ", String.fromCharCode(0x00ed),
+      "a 7 dorm", String.fromCharCode(0x00ed), " 6,5 intenci", String.fromCharCode(0x00f3),
+      "n ordenar agenda",
+    ].join("");
+    const result = parseDailyLog(accentedText);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.parsed.intent).toBe("morning");
+      expect(result.parsed.wakeEnergy).toBe(7);
+      expect(result.parsed.sleepHours).toBe(6.5);
+      expect(result.parsed.morningIntention).toBe("ordenar agenda");
+    }
+  });
+
   it("parses morning from buenas pattern", () => {
     const result = parseDailyLog("buenas dormi 8");
     expect(result.success).toBe(true);
@@ -132,6 +148,19 @@ describe("dailyLogParser - evening", () => {
       expect(result.parsed.eveningReview).toBe("fue un buen dia");
     }
   });
+
+  it("parses accented evening text", () => {
+    const accentedText = [
+      "cierre del d", String.fromCharCode(0x00ed), "a reflexi", String.fromCharCode(0x00f3),
+      "n logr", String.fromCharCode(0x00e9), " terminar propuestas",
+    ].join("");
+    const result = parseDailyLog(accentedText);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.parsed.intent).toBe("evening");
+      expect(result.parsed.eveningReview).toBe(`logr${String.fromCharCode(0x00e9)} terminar propuestas`);
+    }
+  });
 });
 
 describe("dailyLogParser - summary", () => {
@@ -141,6 +170,14 @@ describe("dailyLogParser - summary", () => {
     if (result.success) {
       expect(result.parsed.intent).toBe("summary");
       expect(result.parsed.date).toBe(getTodayDisplay());
+    }
+  });
+
+  it("parses accented summary text", () => {
+    const result = parseDailyLog(`resumen del d${String.fromCharCode(0x00ed)}a`);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.parsed.intent).toBe("summary");
     }
   });
 
