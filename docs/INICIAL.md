@@ -2,12 +2,13 @@
 
 ## Estado del sistema (actualizado: 2026-06-03)
 - Produccion: worker post-buffer con pipeline modular operativo en VPS
-- En progreso: deploy y validacion productiva del modulo interno `session-context` MVP
+- En progreso: definicion de la proxima task modular segun `docs/MODULE_ROADMAP.md`
 - Bloqueos activos: activar firma HMAC de Chatwoot cuando se recupere `CHATWOOT_WEBHOOK_SECRET`
 - Primer flujo vertical: Chatwoot -> buffer durable -> DeepSeek bootstrap -> respuesta Chatwoot -> trazabilidad `sara_*`
 - Pipeline modular base: implementado y validado; DeepSeek queda como fallback solo para mensajes sin accion ejecutable.
 - Primer modulo real: `notes` implementado, conectado al worker, desplegado y probado en produccion con `create`, `list` y `search`.
 - Segundo modulo real: `tasks` implementado, conectado al worker, desplegado y probado en produccion con `create`, `list` y `complete`.
+- Tercer modulo interno: `session-context` implementado, conectado al worker, desplegado y probado en produccion resolviendo referencias simples como `completar esa`.
 
 ## Stack actual
 - Backend: Node.js 22 + TypeScript + Fastify
@@ -75,9 +76,9 @@ Reglas derivadas:
 
 ## Task activa o proxima
 - Task: pendiente de definir
-- Estado: READY_FOR_DEPLOY_VALIDATION
+- Estado: READY_FOR_NEXT_MODULE
 - Owner: Codex Orquestador
-- Objetivo: desplegar y validar `session-context` en produccion; luego definir siguiente task segun `docs/MODULE_ROADMAP.md`.
+- Objetivo: definir la siguiente task modular. Recomendacion actual: `reminders` segun `docs/MODULE_ROADMAP.md`.
 
 ## Ultimo cierre de sesion
 - Fecha: 2026-06-02

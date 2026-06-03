@@ -68,8 +68,8 @@ Tablas/eventos:
 
 ## Proximo orden recomendado
 
-### 3. `session-context`
-Estado: IMPLEMENTED_PENDING_DEPLOY
+### 3. `session-context` - productivo
+Estado: DONE + DEPLOYED + VALIDATED
 
 Proposito:
 - recordar contexto conversacional efimero;
@@ -77,37 +77,32 @@ Proposito:
 - manejar confirmaciones pendientes;
 - mejorar acciones que dependen del turno anterior.
 
-Por que va ahora:
+Resultado actual:
 - `notes` y `tasks` ya funcionan.
-- `tasks.complete` por posicion usa lista actual, pero no memoria conversacional.
-- Antes de recordatorios o flujos mas largos conviene tener contexto seguro.
+- `tasks.complete` ya puede resolver referencias simples como "esa" usando foco conversacional.
+- Despues de completar una accion, el foco se limpia para no arrastrar acciones viejas.
+- La prueba productiva por Chatwoot creo una tarea y luego la completo con "completar esa".
 
-Acciones/funciones MVP sugeridas:
+Acciones/funciones MVP:
 - `session-context.get`
 - `session-context.set-focus`
 - `session-context.clear`
-- `confirmation.request`
-- `confirmation.resolve`
 
-Tabla autorizable:
+Tabla:
 - `sara_session_contexts`
 
-Eventos esperados:
+Eventos:
 - `session_context_started`
 - `session_context_updated`
-- `session_context_cleared`
-- `confirmation_requested`
-- `confirmation_resolved`
 
-No incluir todavia:
+No incluye todavia:
 - memoria permanente;
-- preferencias complejas;
-- resumen automatico largo;
+- confirmaciones pendientes avanzadas;
 - embeddings;
 - RAG.
 
 ### 4. `reminders`
-Estado: PLANNED_AFTER_SESSION_CONTEXT
+Estado: NEXT_RECOMMENDED
 
 Proposito:
 - convertir tareas o mensajes en recordatorios temporales.
@@ -228,8 +223,8 @@ No incluir todavia:
 ## Orden resumido
 1. `notes` - listo.
 2. `tasks` - listo.
-3. `session-context` - implementado, pendiente de deploy/validacion.
-4. `reminders` - despues de contexto.
+3. `session-context` - listo.
+4. `reminders` - siguiente recomendado.
 5. `daily-log` - registro diario.
 6. `areas` - agrupacion transversal.
 7. `objectives` - objetivos.
