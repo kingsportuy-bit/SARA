@@ -86,6 +86,15 @@
 - PASS: actionExecutor bloquea notes.create con intentMissingData undefined
 - PASS: actionExecutor bloquea notes.create con intentMissingData no-array
 - PASS: actionExecutor permite notes.create con confidence 0.75 exacto
+- PASS: coarseClassifier detecta modulo notes con nota:, guarda una nota:, anota esto, crea una nota
+- PASS: coarseClassifier detecta notes con prefijos de tipo (aprendizaje:, idea:, etc.)
+- PASS: coarseClassifier mantiene unknown para mensaje normal sin prefijo
+- PASS: bufferProcessor usa DeepSeek fallback para mensaje no-note
+- PASS: bufferProcessor ejecuta notes.create completo con handler y responseComposer
+- PASS: bufferProcessor bloquea ejecucion cuando nota no tiene contenido (missingData)
+- PASS: bufferProcessor completa buffer con respuesta compuesta tras accion ejecutada
+- PASS: bufferProcessor no confirma nota sin noteId y eventId en evidencia
+- PASS: Chatwoot scope 7/45/85 intacto (regresion)
 
 ## Evidencia local 2026-06-02
 - `npm run typecheck`: PASS
@@ -102,3 +111,6 @@
 - `npm run typecheck`: PASS (fix 3 TASK-20260602-005)
 - `npm test`: PASS (71 tests, fix 3 TASK-20260602-005)
 - `npm run build`: PASS (fix 3 TASK-20260602-005)
+- `npm run typecheck`: PASS (TASK-20260603-006)
+- `npm test`: PASS (82 tests, TASK-20260603-006)
+- `npm run build`: PASS (TASK-20260603-006)

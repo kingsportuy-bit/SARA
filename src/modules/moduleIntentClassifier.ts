@@ -1,24 +1,17 @@
 import type { ModuleIntentInput, ModuleIntentResult } from "../contracts/pipeline.js";
+import { matchesNotePrefix, extractNoteContent } from "./patterns.js";
 
 export interface ModuleIntentClassifier {
   classify(input: ModuleIntentInput): Promise<ModuleIntentResult>;
 }
 
-const NOTE_PATTERNS = [
-  /^(?:nota|guarda una nota|anota esto|anotar|guardar nota|crea una nota|crear nota)[\s:]+(.*)/i,
-  /^(?:aprendizaje|idea|problema|riesgo|mejora|observacion)[\s:]+(.*)/i,
-];
-
-const NOTE_PREFIX_REMOVE = /^(?:nota|guarda una nota|anota esto|anotar|guardar nota|crea una nota|crear nota)[\s:]+/i;
-
 function detectNotesIntent(input: ModuleIntentInput): ModuleIntentResult | null {
   const text = input.messages.map((m) => m.content).join(" ").trim();
   if (!text) return null;
 
-  const matched = NOTE_PATTERNS.some((pattern) => pattern.test(text));
-  if (!matched) return null;
+  if (!matchesNotePrefix(text)) return null;
 
-  const cleaned = text.replace(NOTE_PREFIX_REMOVE, "").trim();
+  const cleaned = extractNoteContent(text);
 
   if (!cleaned) {
     return {
@@ -34,18 +27,12 @@ function detectNotesIntent(input: ModuleIntentInput): ModuleIntentResult | null 
     };
   }
 
-  let noteType: string | undefined;
-  for (const typePattern of NOTE_PATTERNS.slice(1)) {
-    const typeMatch = typePattern.exec(text);
-    if (typeMatch && typeMatch[1]) {
-      const inferredType = typePattern.source.match(/^\^\(\?\:([^)]+)\)/)!;
-      const types = inferredType[1].split("|");
-      for (const t of types) {
-        if (text.toLowerCase().startsWith(t)) {
-          noteType = t;
-          break;
-        }
-      }
+  let noteType = "observacion";
+  const lower = text.toLowerCase();
+  const noteTypes = ["aprendizaje", "idea", "problema", "riesgo", "mejora", "observacion"] as const;
+  for (const nt of noteTypes) {
+    if (lower.startsWith(nt)) {
+      noteType = nt;
       break;
     }
   }
@@ -58,7 +45,7 @@ function detectNotesIntent(input: ModuleIntentInput): ModuleIntentResult | null 
     confidence: 0.85,
     entities: {
       content: cleaned,
-      noteType: noteType || "observacion",
+      noteType,
     },
     missingData: [],
     requiresConfirmation: false,

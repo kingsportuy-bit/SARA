@@ -140,7 +140,7 @@ Salida (`CoarseClassificationResult`):
 - `missingData`: string[]
 - `reasoningSummary`: string
 
-Estado actual: esqueleto retorna modulo `"unknown"` con confianza 0.5.
+Estado actual: detecta modulo `"notes"` con confianza 0.9 para prefijos `nota:`, `guarda una nota:`, `anota esto`, `crear nota`, `aprendizaje:`, `idea:`, `problema:`, `riesgo:`, `mejora:`, `observacion:`. Resto retorna `"unknown"` con 0.5.
 
 ### module-intent-classifier.classify
 Responsable: `module-intent-classifier`
@@ -228,6 +228,21 @@ Entrada: `ModuleIntentResult`
 Salida: `boolean`
 
 Retorna `true` solo si `confidence >= 0.75` y `missingData` esta vacio.
+
+### buffer-processor (orquestador post-buffer)
+Responsable: `buffer-processor`
+
+Flujo por cada `ClaimedBuffer`:
+1. Convierte mensajes `{ id, content, created_at }` a `{ id, content, createdAt }`.
+2. Ejecuta `coarseClassifier.classify`.
+3. Si `module = "unknown"` o `action = "none"` o `route.executable = false`: usa DeepSeek fallback.
+4. Si `intent.confidence < 0.75` o `missingData` no es array vacio: responde con `responseComposer` sin ejecutar accion.
+5. Construye `ActionExecutionInput` con `intent.confidence` y `intent.missingData`.
+6. Ejecuta `actionExecutor.execute`.
+7. Ejecuta `responseComposer.compose`.
+8. Envia respuesta por Chatwoot y completa buffer con `store.complete`.
+
+DeepSeek como fallback solo para mensajes sin accion ejecutable. Nunca ejecuta ni confirma acciones.
 
 ## Modulo notes (v0)
 

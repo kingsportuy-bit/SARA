@@ -1,10 +1,16 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { MessageStore, IngestMessage, IngestResult, ClaimedBuffer } from "../contracts.js";
 
-export function createSupabaseStore(url: string, serviceRoleKey: string): MessageStore {
-  const supabase = createClient(url, serviceRoleKey, {
+export function createSupabaseClient(url: string, serviceRoleKey: string): SupabaseClient {
+  return createClient(url, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+}
+
+export function createSupabaseStore(supabaseOrUrl: SupabaseClient | string, serviceRoleKey?: string): MessageStore {
+  const supabase = typeof supabaseOrUrl === "string"
+    ? createSupabaseClient(supabaseOrUrl, serviceRoleKey!)
+    : supabaseOrUrl;
 
   return {
     async ingest(message: IngestMessage): Promise<IngestResult> {
