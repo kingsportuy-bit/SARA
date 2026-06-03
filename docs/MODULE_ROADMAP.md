@@ -69,7 +69,7 @@ Tablas/eventos:
 ## Proximo orden recomendado
 
 ### 3. `session-context`
-Estado: NEXT_RECOMMENDED
+Estado: APPROVED_TASK
 
 Proposito:
 - recordar contexto conversacional efimero;

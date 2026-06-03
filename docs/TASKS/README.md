@@ -4,7 +4,7 @@
 IDEA -> SPEC -> APPROVED -> IN_PROGRESS -> REVIEW -> DONE (o BLOCKED)
 
 ## Task activa
-- Pendiente de definir.
+- TASK-20260603-009 (APPROVED): implementar `session-context` MVP.
 
 ## Task siguiente
-- Desplegar y validar `tasks.create`, `tasks.list` y `tasks.complete` en produccion.
+- Pendiente de definir despues de validar `session-context` en produccion.

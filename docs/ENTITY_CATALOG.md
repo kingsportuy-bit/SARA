@@ -1,6 +1,6 @@
 # ENTITY_CATALOG.md - SARA
 
-Estado: FASE A MINIMA + TASKS MVP
+Estado: FASE A MINIMA + TASKS MVP + SESSION CONTEXT MVP
 Fecha: 2026-06-03
 
 ## Objetivo
@@ -44,6 +44,8 @@ Registro canonico de cambios relevantes del sistema.
 `sara_events` no emite eventos; registra eventos de otros modulos.
 
 ## 2. `sara_session_contexts`
+Estado: AUTORIZADA PARA TASK-20260603-009
+
 
 ### Proposito
 Guardar contexto conversacional efimero para resolver referencias, confirmaciones y flujos activos.
