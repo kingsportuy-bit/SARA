@@ -101,8 +101,8 @@ No incluye todavia:
 - embeddings;
 - RAG.
 
-### 4. `reminders`
-Estado: IMPLEMENTED_PENDING_DEPLOY
+### 4. `reminders` - productivo
+Estado: DONE + DEPLOYED + VALIDATED
 
 Proposito:
 - convertir tareas o mensajes en recordatorios temporales.
@@ -116,6 +116,12 @@ Acciones MVP sugeridas:
 - `reminders.list`
 - `reminders.cancel`
 - worker de disparo
+
+Resultado actual:
+- La prueba productiva por Chatwoot creo `tomar agua` con `recordame en 2 minutos tomar agua`.
+- El dispatcher envio `Recordatorio: tomar agua`.
+- DB dejo el recordatorio en `status = sent`.
+- `sara_events` registro `reminder_created` y `reminder_sent`.
 
 Tabla autorizable:
 - `sara_reminders`
@@ -227,8 +233,8 @@ No incluir todavia:
 1. `notes` - listo.
 2. `tasks` - listo.
 3. `session-context` - listo.
-4. `reminders` - siguiente recomendado.
-5. `daily-log` - registro diario.
+4. `reminders` - listo.
+5. `daily-log` - siguiente recomendado.
 6. `areas` - agrupacion transversal.
 7. `objectives` - objetivos.
 8. `plans` - planes.

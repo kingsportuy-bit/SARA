@@ -289,9 +289,20 @@
 - `npm test`: PASS (299 tests, hardening SQL/dispatcher scope TASK-20260603-010)
 - `npm run build`: PASS (hardening SQL/dispatcher scope TASK-20260603-010)
 
+## Evidencia productiva 2026-06-03 (TASK-20260603-010)
+- PASS: `GET https://sara.codexa.uy/health`
+- PASS: migracion `20260603_010_reminders.sql` aplicada en VPS.
+- PASS: `sara_reminders` existe en DB compartida.
+- PASS: RPCs `sara_create_reminder`, `sara_cancel_reminder`, `sara_claim_due_reminders`, `sara_mark_reminder_sent`, `sara_mark_reminder_failed` existen.
+- PASS: Chatwoot recibio `recordame en 2 minutos tomar agua`.
+- PASS: SARA respondio `Recordatorio creado para 03/06/2026 18:46: tomar agua`.
+- PASS: dispatcher envio `Recordatorio: tomar agua`.
+- PASS: DB dejo el recordatorio `tomar agua` en `status = sent`.
+- PASS: `sara_events` registro `reminder_created` y `reminder_sent`.
+
 ## Modulo reminders (TASK-20260603-010)
 
-Estado: IMPLEMENTED_PENDING_DEPLOY
+Estado: DONE + DEPLOYED + VALIDATED
 
 ### Migracion y DB
 - PASS: migracion solo crea/modifica objetos `sara_`

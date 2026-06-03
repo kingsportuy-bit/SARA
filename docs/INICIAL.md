@@ -2,14 +2,14 @@
 
 ## Estado del sistema (actualizado: 2026-06-03)
 - Produccion: worker post-buffer con pipeline modular operativo en VPS
-- En progreso: TASK-20260603-010 implementada y revisada localmente; pendiente deploy y validacion productiva
+- En progreso: definicion de la proxima task modular segun `docs/MODULE_ROADMAP.md`
 - Bloqueos activos: activar firma HMAC de Chatwoot cuando se recupere `CHATWOOT_WEBHOOK_SECRET`
 - Primer flujo vertical: Chatwoot -> buffer durable -> DeepSeek bootstrap -> respuesta Chatwoot -> trazabilidad `sara_*`
 - Pipeline modular base: implementado y validado; DeepSeek queda como fallback solo para mensajes sin accion ejecutable.
 - Primer modulo real: `notes` implementado, conectado al worker, desplegado y probado en produccion con `create`, `list` y `search`.
 - Segundo modulo real: `tasks` implementado, conectado al worker, desplegado y probado en produccion con `create`, `list` y `complete`.
 - Tercer modulo interno: `session-context` implementado, conectado al worker, desplegado y probado en produccion resolviendo referencias simples como `completar esa`.
-- Cuarto modulo real: `reminders` implementado con migracion `sara_reminders`, parser temporal deterministico (America/Montevideo), create/list/cancel via Chatwoot, dispatcher de vencidos, integracion con session-context.
+- Cuarto modulo real: `reminders` implementado, conectado al worker/dispatcher, desplegado y probado en produccion con create, disparo automatico y evento `reminder_sent`.
 
 ## Stack actual
 - Backend: Node.js 22 + TypeScript + Fastify
@@ -76,9 +76,10 @@ Reglas derivadas:
 - Codex revisa el diff completo y valida con `npm run typecheck`, `npm test` y `npm run build` antes de aprobar.
 
 ## Task activa o proxima
-- Task: `docs/TASKS/TASK-20260603-010.md`
-- Estado: IMPLEMENTED_REVIEWED_PENDING_DEPLOY
-- Owner: opencode (implementacion) / Codex Orquestador (revision)
+- Task: pendiente de definir
+- Estado: READY_FOR_NEXT_MODULE
+- Owner: Codex Orquestador
+- Objetivo: definir la siguiente task modular. Recomendacion actual: `daily-log` segun `docs/MODULE_ROADMAP.md`.
 
 ## Ultimo cierre de sesion
 - Fecha: 2026-06-02
