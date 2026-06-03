@@ -72,10 +72,10 @@ Reglas derivadas:
 - Codex revisa el diff completo y valida con `npm run typecheck`, `npm test` y `npm run build` antes de aprobar.
 
 ## Task activa o proxima
-- Task: TASK-20260603-008
-- Estado: APPROVED
-- Owner: opencode
-- Objetivo: implementar modulo `tasks` MVP con `tasks.create`, `tasks.list` y `tasks.complete`, manteniendo trazabilidad con `sara_events`.
+- Task: pendiente de definir
+- Estado: READY_FOR_NEXT_PLAN
+- Owner: Codex Orquestador
+- Objetivo: desplegar y validar `tasks.create`, `tasks.list` y `tasks.complete` en produccion, luego definir siguiente feature.
 
 ## Ultimo cierre de sesion
 - Fecha: 2026-06-02
