@@ -30,3 +30,4 @@
 2026-06-03 | v0.4.0 | pipeline | `bufferProcessor` conecta `notes.create` al worker real: `coarseClassifier` detecta modulo `notes` por patrones, `supabaseStore` comparte cliente con `notesStore`, `server.ts` registra handler y wiring completo, DeepSeek como fallback solo para mensajes sin accion ejecutable, +10 tests (82 total)
 2026-06-03 | v0.4.1 | docs | nota bootstrap en `CONTRATOS.md` actualizada para reflejar worker post-buffer con pipeline modular y fallback DeepSeek
 2026-06-03 | v0.4.2 | fix | `stripChatwootHeader` en `patterns.ts` remueve encabezado markdown `**autor:**` antes de clasificar; coarse y fine classifier normalizan contenido para detectar `notes.create` en mensajes de grupo Chatwoot; +4 tests (86 total)
+2026-06-03 | v0.4.3 | planning | TASK-20260603-007 preparada para extraer normalizacion Chatwoot a capa propia y completar MVP read-only de notas con `notes.list` y `notes.search`

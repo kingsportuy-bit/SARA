@@ -1,12 +1,12 @@
 ﻿# INICIAL.md - SARA
 
-## Estado del sistema (actualizado: 2026-06-02)
-- Produccion: bootstrap operativo desplegado en VPS
-- En progreso: preparacion de conexion del pipeline real al worker
+## Estado del sistema (actualizado: 2026-06-03)
+- Produccion: worker post-buffer con pipeline modular operativo en VPS
+- En progreso: normalizacion de mensajes Chatwoot como capa propia y cierre MVP read-only de notas
 - Bloqueos activos: activar firma HMAC de Chatwoot cuando se recupere `CHATWOOT_WEBHOOK_SECRET`
 - Primer flujo vertical: Chatwoot -> buffer durable -> DeepSeek bootstrap -> respuesta Chatwoot -> trazabilidad `sara_*`
-- Pipeline modular base: implementado y validado en TASK-20260602-004; bootstrap sigue como fallback.
-- Primer modulo real: `notes.create` implementado y validado en TASK-20260602-005; pendiente conectarlo al worker real.
+- Pipeline modular base: implementado y validado; DeepSeek queda como fallback solo para mensajes sin accion ejecutable.
+- Primer modulo real: `notes.create` implementado, conectado al worker, desplegado y probado en produccion con `sara_notes` + `sara_events`.
 
 ## Stack actual
 - Backend: Node.js 22 + TypeScript + Fastify
@@ -29,6 +29,7 @@ LAS DECISIONES SE TOMAN CON DATOS Y PROTOCOLOS, NO CON EL ESTADO EMOCIONAL DEL M
 NO MEZCLAR CAPAS DE RESPONSABILIDAD.
 
 Reglas derivadas:
+- Las normalizaciones del canal (por ejemplo encabezados de grupos Chatwoot) viven antes de los clasificadores, no dentro de modulos de dominio.
 - Cada modulo tiene propietario y contrato.
 - El LLM clasifica o redacta, pero no decide ejecutar.
 - Las reglas de negocio viven en codigo.
@@ -71,10 +72,10 @@ Reglas derivadas:
 - Codex revisa el diff completo y valida con `npm run typecheck`, `npm test` y `npm run build` antes de aprobar.
 
 ## Task activa o proxima
-- Task: TASK-20260603-006
+- Task: TASK-20260603-007
 - Estado: APPROVED
 - Owner: opencode
-- Objetivo: conectar `notes.create` al worker post-buffer y mantener DeepSeek como fallback para mensajes sin accion ejecutable.
+- Objetivo: separar normalizacion de mensajes Chatwoot como capa propia y completar MVP read-only de notas (`notes.list` y `notes.search`) sin crear nuevas tablas.
 
 ## Ultimo cierre de sesion
 - Fecha: 2026-06-02
