@@ -775,3 +775,137 @@ describe("moduleIntentClassifier reminders.cancel reference resolution", () => {
     expect(result.missingData).toContain("reminder");
   });
 });
+
+describe("moduleIntentClassifier daily-log detection", () => {
+  it("detects daily-log.morning from buen dia", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-dl1",
+      module: "daily-log",
+      messages: [{ id: 1, content: "buen dia energia 7 dormi 6.5 foco terminar propuestas", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("daily-log");
+    expect(result.action).toBe("morning");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+    expect(result.entities).toHaveProperty("wakeEnergy", 7);
+    expect(result.entities).toHaveProperty("sleepHours", 6.5);
+    expect(result.entities).toHaveProperty("morningIntention");
+    expect(result.missingData).toEqual([]);
+  });
+
+  it("detects daily-log.morning from checkin manana", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-dl2",
+      module: "daily-log",
+      messages: [{ id: 1, content: "checkin manana energia 8 dormi 7 intencion ordenar agenda", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("morning");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+  });
+
+  it("detects daily-log.evening from cierre del dia", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-dl3",
+      module: "daily-log",
+      messages: [{ id: 1, content: "cierre del dia avance termine propuestas y camine", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("daily-log");
+    expect(result.action).toBe("evening");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+    expect(result.entities).toHaveProperty("eveningReview");
+    expect(result.missingData).toEqual([]);
+  });
+
+  it("detects daily-log.evening from cierre de hoy", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-dl4",
+      module: "daily-log",
+      messages: [{ id: 1, content: "cierre de hoy avance logre avanzar", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("evening");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+  });
+
+  it("detects daily-log.evening from fin del dia", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-dl5",
+      module: "daily-log",
+      messages: [{ id: 1, content: "fin del dia avance termine todo", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("evening");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+  });
+
+  it("detects daily-log.summary from resumen del dia", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-dl6",
+      module: "daily-log",
+      messages: [{ id: 1, content: "resumen del dia", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("daily-log");
+    expect(result.action).toBe("summary");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+    expect(result.missingData).toEqual([]);
+  });
+
+  it("detects daily-log.summary from como estuvo mi dia", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-dl7",
+      module: "daily-log",
+      messages: [{ id: 1, content: "como estuvo mi dia", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("summary");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+  });
+
+  it("detects daily-log.summary from que tal mi dia", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-dl8",
+      module: "daily-log",
+      messages: [{ id: 1, content: "que tal mi dia", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("summary");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+  });
+
+  it("returns low confidence for morning without updatable fields", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-dl9",
+      module: "daily-log",
+      messages: [{ id: 1, content: "buen dia", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("morning");
+    expect(result.confidence).toBeLessThan(0.75);
+    expect(result.missingData).toContain("dailyLogFields");
+  });
+
+  it("returns low confidence for evening without updatable fields", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-dl10",
+      module: "daily-log",
+      messages: [{ id: 1, content: "cierre del dia", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("evening");
+    expect(result.confidence).toBeLessThan(0.75);
+    expect(result.missingData).toContain("dailyLogFields");
+  });
+});

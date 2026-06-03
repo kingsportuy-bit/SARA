@@ -7,10 +7,12 @@ import { createNotesStore } from "./infra/notesStore.js";
 import { createTasksStore } from "./infra/tasksStore.js";
 import { createSessionContextStore } from "./infra/sessionContextStore.js";
 import { createRemindersStore } from "./infra/remindersStore.js";
+import { createDailyLogStore } from "./infra/dailyLogStore.js";
 import { createNotesModule } from "./modules/notes/notesModule.js";
 import { createTasksModule } from "./modules/tasks/tasksModule.js";
 import { createSessionContextModule } from "./modules/sessionContext/sessionContextModule.js";
 import { createRemindersModule } from "./modules/reminders/remindersModule.js";
+import { createDailyLogModule } from "./modules/dailyLog/dailyLogModule.js";
 import { createRemindersDispatcher } from "./modules/reminders/remindersDispatcher.js";
 import { createCoarseClassifier } from "./modules/coarseClassifier.js";
 import { createModuleIntentClassifier } from "./modules/moduleIntentClassifier.js";
@@ -22,6 +24,7 @@ import { createMessageNormalizer } from "./modules/messageNormalizer.js";
 import type { CreateNoteInput, ListNotesInput, SearchNotesInput } from "./contracts/notes.js";
 import type { CreateTaskInput, ListTasksInput, CompleteTaskInput } from "./contracts/tasks.js";
 import type { CreateReminderInput, ListRemindersInput, CancelReminderInput } from "./contracts/reminders.js";
+import type { DailyLogMorningInput, DailyLogEveningInput, DailyLogSummaryInput } from "./contracts/dailyLog.js";
 import type { ActionExecutionInput, ActionExecutionResult } from "./contracts/pipeline.js";
 
 const config = loadConfig();
@@ -41,9 +44,13 @@ const sessionContextModule = createSessionContextModule(sessionContextStore);
 const remindersStore = createRemindersStore(supabase);
 const remindersModule = createRemindersModule(remindersStore);
 
+const dailyLogStore = createDailyLogStore(supabase);
+const dailyLogModule = createDailyLogModule(dailyLogStore);
+
 registerModule("notes", ["create", "list", "search"]);
 registerModule("tasks", ["create", "list", "complete"]);
 registerModule("reminders", ["create", "list", "cancel"]);
+registerModule("daily-log", ["morning", "evening", "summary"]);
 
 function notesCreateHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
   const createInput: CreateNoteInput = {
@@ -378,6 +385,125 @@ function remindersCancelHandler(input: ActionExecutionInput): Promise<ActionExec
   });
 }
 
+function dailyLogMorningHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const morningInput: DailyLogMorningInput = {
+    schemaVersion: "daily_log_morning_input.v1",
+    traceId: input.traceId,
+    date: String(input.entities.date ?? ""),
+    wakeEnergy: input.entities.wakeEnergy != null ? Number(input.entities.wakeEnergy) : undefined,
+    sleepHours: input.entities.sleepHours != null ? Number(input.entities.sleepHours) : undefined,
+    morningIntention: input.entities.morningIntention as string | undefined,
+    source: "chatwoot",
+  };
+  return dailyLogModule.morning(morningInput).then((result) => {
+    if (result.status === "updated") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: {
+          dailyLogId: result.dailyLogId,
+          eventId: result.eventId,
+          date: result.date,
+          eventType: result.evidence.eventType,
+        },
+        stateChanges: [
+          {
+            entityType: "daily_log",
+            entityId: result.dailyLogId,
+            eventType: result.evidence.eventType ?? "daily_log_morning_updated",
+            payload: {},
+          },
+        ],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: result.error,
+    };
+  });
+}
+
+function dailyLogEveningHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const eveningInput: DailyLogEveningInput = {
+    schemaVersion: "daily_log_evening_input.v1",
+    traceId: input.traceId,
+    date: String(input.entities.date ?? ""),
+    eveningReview: input.entities.eveningReview as string | undefined,
+    source: "chatwoot",
+  };
+  return dailyLogModule.evening(eveningInput).then((result) => {
+    if (result.status === "updated") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: {
+          dailyLogId: result.dailyLogId,
+          eventId: result.eventId,
+          date: result.date,
+          eventType: result.evidence.eventType,
+        },
+        stateChanges: [
+          {
+            entityType: "daily_log",
+            entityId: result.dailyLogId,
+            eventType: result.evidence.eventType ?? "daily_log_evening_updated",
+            payload: {},
+          },
+        ],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: result.error,
+    };
+  });
+}
+
+function dailyLogSummaryHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const summaryInput: DailyLogSummaryInput = {
+    schemaVersion: "daily_log_summary_input.v1",
+    traceId: input.traceId,
+    date: String(input.entities.date ?? ""),
+  };
+  return dailyLogModule.summary(summaryInput).then((result) => {
+    if (result.status === "success") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: result.dailyLog
+          ? {
+              dailyLog: result.dailyLog,
+              dailyLogId: result.dailyLog.id,
+              date: result.dailyLog.date,
+            }
+          : {
+              date: summaryInput.date,
+            },
+        stateChanges: [],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: result.error,
+    };
+  });
+}
+
 const outboundClient = createChatwootClient(config.chatwoot.url, config.chatwoot.accountId, config.chatwoot.userToken);
 
 const processor = createBufferProcessor({
@@ -401,6 +527,11 @@ const processor = createBufferProcessor({
       create: remindersCreateHandler,
       list: remindersListHandler,
       cancel: remindersCancelHandler,
+    },
+    "daily-log": {
+      morning: dailyLogMorningHandler,
+      evening: dailyLogEveningHandler,
+      summary: dailyLogSummaryHandler,
     },
   }),
   composer: createResponseComposer(),

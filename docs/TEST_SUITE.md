@@ -388,20 +388,60 @@ Estado: DONE + DEPLOYED + VALIDATED
 
 ## Modulo daily-log (TASK-20260603-011)
 
-Estado: SPEC APPROVED
+Estado: IMPLEMENTED
 
-Tests requeridos para cerrar implementacion:
-- migracion solo crea/modifica objetos `sara_`.
-- `sara_daily_log` tiene unique por `date`.
-- `sara_daily_log` tiene RLS y anon/authenticated revocado.
-- `sara_daily_log` valida `wake_energy` entre 1 y 10.
-- `sara_daily_log` valida `sleep_hours >= 0`.
-- RPCs morning/evening crean o actualizan y emiten eventos.
-- parser detecta energia, sueno, intencion, cierre y fecha MVP.
-- `dailyLogModule` valida campos y no ejecuta sin datos actualizables.
-- `dailyLogStore` llama RPCs correctas y summary consulta read-only.
-- clasificadores detectan `daily-log.morning/evening/summary`.
-- `actionExecutor` despacha daily-log con guardas.
-- `responseComposer` confirma solo con evidencia y formatea summary.
-- `bufferProcessor` ejecuta daily-log y actualiza `session-context`.
-- regresion `notes`, `tasks`, `session-context`, `reminders` y Chatwoot scope sigue pasando.
+### DB / Migracion
+- PASS: migracion solo crea/modifica objetos `sara_`.
+- PASS: `sara_daily_log` tiene unique por `date`.
+- PASS: `sara_daily_log` tiene RLS y anon/authenticated revocado.
+- PASS: `sara_daily_log` valida `wake_energy` entre 1 y 10.
+- PASS: `sara_daily_log` valida `sleep_hours >= 0`.
+- PASS: RPCs morning/evening crean o actualizan y emiten eventos (`daily_log_created`, `daily_log_morning_updated`, `daily_log_evening_updated`).
+- PASS: RPCs restringidas a service_role.
+
+### Parser
+- PASS: `dailyLogParser` detecta energia, sueno, intencion y fecha MVP.
+- PASS: `dailyLogParser` detecta cierre/reflexion en evening.
+- PASS: `dailyLogParser` usa fecha actual America/Montevideo por defecto.
+- PASS: `dailyLogParser` soporta ayer.
+- PASS: `dailyLogParser` falla sin campos actualizables para morning/evening.
+
+### Modulo y Store
+- PASS: `dailyLogModule.morning` valida energia y sueno (rango, no negativo).
+- PASS: `dailyLogModule.morning` falla sin campos actualizables.
+- PASS: `dailyLogModule.evening` falla sin campos actualizables.
+- PASS: `dailyLogModule.summary` consulta read-only.
+- PASS: `dailyLogStore` llama RPCs correctas (morning/evening).
+- PASS: `dailyLogStore.summary` consulta `sara_daily_log`.
+
+### Clasificadores
+- PASS: `coarseClassifier` detecta modulo `daily-log`.
+- PASS: `moduleIntentClassifier` detecta `daily-log.morning`.
+- PASS: `moduleIntentClassifier` detecta `daily-log.evening`.
+- PASS: `moduleIntentClassifier` detecta `daily-log.summary`.
+- PASS: `moduleIntentClassifier` no ejecuta morning/evening sin campos.
+
+### Executor y Composer
+- PASS: `moduleRouter` marca daily-log ejecutable tras registro.
+- PASS: `actionExecutor` despacha morning/evening/summary con guardas.
+- PASS: `actionExecutor` bloquea daily-log.morning sin campos.
+- PASS: `actionExecutor` bloquea daily-log.evening sin campos.
+- PASS: `responseComposer` confirma morning solo con dailyLogId y eventId.
+- PASS: `responseComposer` confirma evening solo con dailyLogId y eventId.
+- PASS: `responseComposer` formatea summary con datos.
+- PASS: `responseComposer` muestra sin dato para campos ausentes.
+- PASS: `responseComposer` muestra no encontrado sin registro diario.
+
+### Worker
+- PASS: `bufferProcessor` ejecuta daily-log.morning y no llama DeepSeek.
+- PASS: `bufferProcessor` ejecuta daily-log.evening y no llama DeepSeek.
+- PASS: `bufferProcessor` ejecuta daily-log.summary y no llama DeepSeek.
+- PASS: `bufferProcessor` actualiza session-context despues de daily-log.
+- PASS: `bufferProcessor` no falla accion principal si falla actualizar contexto.
+
+### Regresion
+- PASS: `notes.create/list/search` sigue pasando.
+- PASS: `tasks.create/list/complete` sigue pasando.
+- PASS: `session-context` sigue pasando.
+- PASS: `reminders` sigue pasando.
+- PASS: Chatwoot scope `7/45/85` sigue pasando.

@@ -856,3 +856,230 @@ describe("bufferProcessor session context integration", () => {
     expect(complete).toHaveBeenCalledWith("b-resolve", expect.any(String), 99);
   });
 });
+
+describe("bufferProcessor daily-log", () => {
+  it("executes daily-log.morning and does not call DeepSeek", async () => {
+    registerModule("daily-log", ["morning"]);
+    const logger = fakeLogger();
+
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { dailyLogId: "dl1", eventId: "e1", date: "2026-06-03" },
+      stateChanges: [{ entityType: "daily_log", entityId: "dl1", eventType: "daily_log_morning_updated", payload: {} }],
+    }));
+
+    const { store, complete, send, generate } = (() => {
+      const s = fakeStore([{ bid: "b-dl1", tid: "t-dl1", cid: 85, msgs: [{ id: 1, content: "buen dia energia 7 dormi 6.5 foco terminar propuestas" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ "daily-log": { morning: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate },
+      outbound: { send },
+      logger,
+    });
+
+    await proc.processDue();
+
+    expect(generate).not.toHaveBeenCalled();
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalledWith("b-dl1", expect.any(String), 99);
+  });
+
+  it("executes daily-log.evening and does not call DeepSeek", async () => {
+    registerModule("daily-log", ["evening"]);
+    const logger = fakeLogger();
+
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { dailyLogId: "dl2", eventId: "e2", date: "2026-06-03" },
+      stateChanges: [{ entityType: "daily_log", entityId: "dl2", eventType: "daily_log_evening_updated", payload: {} }],
+    }));
+
+    const { store, complete, send, generate } = (() => {
+      const s = fakeStore([{ bid: "b-dl2", tid: "t-dl2", cid: 85, msgs: [{ id: 1, content: "cierre del dia avance termine propuestas" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ "daily-log": { evening: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate },
+      outbound: { send },
+      logger,
+    });
+
+    await proc.processDue();
+
+    expect(generate).not.toHaveBeenCalled();
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalledWith("b-dl2", expect.any(String), 99);
+  });
+
+  it("executes daily-log.summary and does not call DeepSeek", async () => {
+    registerModule("daily-log", ["summary"]);
+    const logger = fakeLogger();
+
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: {
+        dailyLog: { wakeEnergy: 7, sleepHours: 6.5, morningIntention: "terminar propuestas", eveningReview: "termine todo" },
+        dailyLogId: "dl3",
+        date: "2026-06-03",
+      },
+      stateChanges: [],
+    }));
+
+    const { store, complete, send, generate } = (() => {
+      const s = fakeStore([{ bid: "b-dl3", tid: "t-dl3", cid: 85, msgs: [{ id: 1, content: "resumen del dia" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ "daily-log": { summary: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate },
+      outbound: { send },
+      logger,
+    });
+
+    await proc.processDue();
+
+    expect(generate).not.toHaveBeenCalled();
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalledWith("b-dl3", expect.any(String), 99);
+  });
+
+  it("updates session context after daily-log.morning", async () => {
+    registerModule("daily-log", ["morning"]);
+    const logger = fakeLogger();
+
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { dailyLogId: "dl-sc1", eventId: "e-sc1", date: "2026-06-03" },
+      stateChanges: [{ entityType: "daily_log", entityId: "dl-sc1", eventType: "daily_log_morning_updated", payload: {} }],
+    }));
+
+    const sessionCtxMod = {
+      get: vi.fn().mockResolvedValue({ context: null }),
+      upsert: vi.fn().mockResolvedValue({ context: {}, isNew: true }),
+      clear: vi.fn(),
+    } as any;
+
+    const { store, complete, send, generate } = (() => {
+      const s = fakeStore([{ bid: "b-dl-sc1", tid: "t-dl-sc1", cid: 85, msgs: [{ id: 1, content: "buen dia energia 7" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ "daily-log": { morning: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate },
+      outbound: { send },
+      logger,
+      sessionContextModule: sessionCtxMod,
+    });
+
+    await proc.processDue();
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(sessionCtxMod.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        activeModule: "daily-log",
+        focusedEntityType: "daily_log",
+        focusedEntityId: "dl-sc1",
+      }),
+    );
+  });
+
+  it("does not fail main action if session context update fails for daily-log", async () => {
+    registerModule("daily-log", ["morning"]);
+    const logger = fakeLogger();
+
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { dailyLogId: "dl-sc2", eventId: "e-sc2", date: "2026-06-03" },
+      stateChanges: [{ entityType: "daily_log", entityId: "dl-sc2", eventType: "daily_log_morning_updated", payload: {} }],
+    }));
+
+    const sessionCtxMod = {
+      get: vi.fn().mockResolvedValue({ context: null }),
+      upsert: vi.fn().mockRejectedValue(new Error("DB error")),
+      clear: vi.fn(),
+    } as any;
+
+    const { store, complete, send, generate } = (() => {
+      const s = fakeStore([{ bid: "b-dl-sc2", tid: "t-dl-sc2", cid: 85, msgs: [{ id: 1, content: "buen dia energia 7" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ "daily-log": { morning: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate },
+      outbound: { send },
+      logger,
+      sessionContextModule: sessionCtxMod,
+    });
+
+    await proc.processDue();
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalledWith("b-dl-sc2", expect.any(String), 99);
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ error: "DB error" }),
+      "failed to update session context",
+    );
+  });
+});

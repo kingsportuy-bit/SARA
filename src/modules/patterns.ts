@@ -265,6 +265,50 @@ export function resolveReminderReference(
   return null;
 }
 
+export const DAILY_LOG_MORNING_PATTERNS = [
+  /\bbuen\s*d[ií]a\b/i,
+  /\bbuenas\b/,
+  /\bcheckin\s+ma[nñ]ana\b/i,
+  /\bcheck[\s-]*in\s+ma[nñ]ana\b/i,
+  /\benergia\b/i,
+  /\bdormi\b/i,
+  /\bintencion\b/i,
+];
+
+export const DAILY_LOG_EVENING_PATTERNS = [
+  /\bcierre\s+del\s+d[ií]a\b/i,
+  /\bcierre\s+de\s+hoy\b/i,
+  /\bcierre\s+diario\b/i,
+  /\bfin\s+del\s+d[ií]a\b/i,
+];
+
+export const DAILY_LOG_SUMMARY_PATTERNS = [
+  /\bresumen\s+del\s+d[ií]a\b/i,
+  /\bcomo\s+estuvo\s+mi\s+d[ií]a\b/i,
+  /\bque\s+tal\s+mi\s+d[ií]a\b/i,
+  /\bver\s+mi\s+d[ií]a\b/i,
+  /\bmi\s+d[ií]a\s+de\s+hoy\b/i,
+];
+
+export function matchesDailyLogMorning(text: string): boolean {
+  if (!text) return false;
+  return DAILY_LOG_MORNING_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesDailyLogEvening(text: string): boolean {
+  if (!text) return false;
+  return DAILY_LOG_EVENING_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesDailyLogSummary(text: string): boolean {
+  if (!text) return false;
+  return DAILY_LOG_SUMMARY_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesDailyLogQuery(text: string): boolean {
+  return matchesDailyLogMorning(text) || matchesDailyLogEvening(text) || matchesDailyLogSummary(text);
+}
+
 export function extractReminderTitle(text: string): string {
   for (const pattern of REMINDER_CREATE_PATTERNS) {
     const m = pattern.exec(text);

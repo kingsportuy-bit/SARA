@@ -57,7 +57,7 @@ describe("reminderTimeParser - parseReminderTime", () => {
   });
 
   it("parses hoy a las HH", () => {
-    const result = parseReminderTime("recordame hoy a las 18 llamar");
+    const result = parseReminderTime("recordame hoy a las 23 llamar");
     expect(result.success).toBe(true);
     if (result.success) {
       const due = new Date(result.dueAtISO);

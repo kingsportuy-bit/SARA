@@ -610,3 +610,154 @@ describe("responseComposer reminders", () => {
     expect(result.content).toContain("No encontre recordatorios pendientes");
   });
 });
+
+describe("responseComposer daily-log", () => {
+  it("confirms morning only with dailyLogId and eventId", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "daily-log" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "morning", confidence: 0.85, entities: { date: "2026-06-03" } },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: { dailyLogId: "dl1", eventId: "e1", date: "2026-06-03" },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("Registro de manana actualizado para 2026-06-03");
+  });
+
+  it("shows warning when morning evidence is missing", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "daily-log" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "morning", confidence: 0.85 },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: {},
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("no se puede verificar");
+  });
+
+  it("confirms evening only with dailyLogId and eventId", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "daily-log" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "evening", confidence: 0.85, entities: { date: "2026-06-03" } },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: { dailyLogId: "dl1", eventId: "e2", date: "2026-06-03" },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("Cierre del dia actualizado para 2026-06-03");
+  });
+
+  it("shows warning when evening evidence is missing", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "daily-log" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "evening", confidence: 0.85 },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: {},
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("no se puede verificar");
+  });
+
+  it("formats summary with data", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "daily-log" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "summary", confidence: 0.85, entities: { date: "2026-06-03" } },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: {
+          dailyLog: {
+            wakeEnergy: 7,
+            sleepHours: 6.5,
+            morningIntention: "terminar propuestas",
+            eveningReview: "termine propuestas y camine",
+          },
+          dailyLogId: "dl1",
+          date: "2026-06-03",
+        },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("Resumen de 2026-06-03");
+    expect(result.content).toContain("Energia: 7");
+    expect(result.content).toContain("Sueno: 6.5");
+    expect(result.content).toContain("Intencion: terminar propuestas");
+    expect(result.content).toContain("Cierre: termine propuestas y camine");
+  });
+
+  it("shows sin dato for missing summary fields", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "daily-log" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "summary", confidence: 0.85, entities: { date: "2026-06-03" } },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: {
+          dailyLog: {},
+          date: "2026-06-03",
+        },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("sin dato");
+  });
+
+  it("shows not found message when summary yields no record", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "daily-log" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "summary", confidence: 0.85, entities: { date: "2026-06-03" } },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: { date: "2026-06-03" },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("No encontre registro diario");
+  });
+});

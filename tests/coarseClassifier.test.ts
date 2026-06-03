@@ -365,3 +365,66 @@ describe("coarseClassifier tasks detection", () => {
     expect(result.module).toBe("unknown");
   });
 });
+
+describe("coarseClassifier daily-log detection", () => {
+  it("detects daily-log module from buen dia", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-dl1",
+      messages: [{ id: 1, content: "buen dia energia 7", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("daily-log");
+    expect(result.confidence).toBe(0.9);
+  });
+
+  it("detects daily-log module from checkin manana", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-dl2",
+      messages: [{ id: 1, content: "checkin manana energia 8", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("daily-log");
+  });
+
+  it("detects daily-log module from cierre del dia", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-dl3",
+      messages: [{ id: 1, content: "cierre del dia avance termine propuestas", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("daily-log");
+  });
+
+  it("detects daily-log module from resumen del dia", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-dl4",
+      messages: [{ id: 1, content: "resumen del dia", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("daily-log");
+  });
+
+  it("detects daily-log module from como estuvo mi dia", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-dl5",
+      messages: [{ id: 1, content: "como estuvo mi dia", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("daily-log");
+  });
+
+  it("detects daily-log module from dormi pattern", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-dl6",
+      messages: [{ id: 1, content: "dormi 7 horas", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("daily-log");
+  });
+});

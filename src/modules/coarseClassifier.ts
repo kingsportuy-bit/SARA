@@ -1,5 +1,5 @@
 import type { CoarseClassificationInput, CoarseClassificationResult } from "../contracts/pipeline.js";
-import { matchesNotePrefix, matchesNoteListQuery, matchesNoteSearchQuery, matchesTaskCreate, matchesTaskListQuery, matchesTaskComplete, matchesReminderCreate, matchesReminderListQuery, matchesReminderCancel } from "./patterns.js";
+import { matchesNotePrefix, matchesNoteListQuery, matchesNoteSearchQuery, matchesTaskCreate, matchesTaskListQuery, matchesTaskComplete, matchesReminderCreate, matchesReminderListQuery, matchesReminderCancel, matchesDailyLogQuery } from "./patterns.js";
 
 export interface CoarseClassifier {
   classify(input: CoarseClassificationInput): Promise<CoarseClassificationResult>;
@@ -18,6 +18,17 @@ export function createCoarseClassifier(): CoarseClassifier {
           confidence: 0.9,
           missingData: [],
           reasoningSummary: "Note module detected from explicit match.",
+        };
+      }
+
+      if (matchesDailyLogQuery(text)) {
+        return {
+          schemaVersion: "coarse_classification_result.v1",
+          traceId: input.traceId,
+          module: "daily-log",
+          confidence: 0.9,
+          missingData: [],
+          reasoningSummary: "Daily log module detected from explicit match.",
         };
       }
 

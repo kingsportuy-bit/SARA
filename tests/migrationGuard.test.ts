@@ -88,4 +88,49 @@ describe("migration guard", () => {
     const sql = readFileSync("db/migrations/20260603_010_reminders.sql", "utf8");
     expect(sql).toContain("status = 'processing'");
   });
+
+  it("sara_daily_log has unique constraint on date", () => {
+    const sql = readFileSync("db/migrations/20260603_011_daily_log.sql", "utf8");
+    expect(sql).toContain("sara_daily_log_date_unique");
+    expect(sql).toContain("unique (date)");
+  });
+
+  it("sara_daily_log has RLS enabled and anon/authenticated access revoked", () => {
+    const sql = readFileSync("db/migrations/20260603_011_daily_log.sql", "utf8");
+    expect(sql).toContain("enable row level security");
+    expect(sql).toContain("revoke all on sara_daily_log from anon, authenticated");
+  });
+
+  it("sara_daily_log validates wake_energy between 1 and 10", () => {
+    const sql = readFileSync("db/migrations/20260603_011_daily_log.sql", "utf8");
+    expect(sql).toContain("sara_daily_log_wake_energy_check");
+    expect(sql).toContain("wake_energy >= 1 and wake_energy <= 10");
+  });
+
+  it("sara_daily_log validates sleep_hours >= 0", () => {
+    const sql = readFileSync("db/migrations/20260603_011_daily_log.sql", "utf8");
+    expect(sql).toContain("sara_daily_log_sleep_hours_check");
+    expect(sql).toContain("sleep_hours >= 0");
+  });
+
+  it("sara_upsert_daily_log_morning emits daily_log_created for new records", () => {
+    const sql = readFileSync("db/migrations/20260603_011_daily_log.sql", "utf8");
+    expect(sql).toContain("daily_log_created");
+    expect(sql).toContain("daily_log_morning_updated");
+  });
+
+  it("sara_upsert_daily_log_evening emits daily_log_created for new records and daily_log_evening_updated for updates", () => {
+    const sql = readFileSync("db/migrations/20260603_011_daily_log.sql", "utf8");
+    expect(sql).toContain("daily_log_created");
+    expect(sql).toContain("daily_log_evening_updated");
+  });
+
+  it("daily_log RPCs are restricted to service_role", () => {
+    const sql = readFileSync("db/migrations/20260603_011_daily_log.sql", "utf8");
+    expect(sql).toContain("revoke execute on function sara_upsert_daily_log_morning");
+    expect(sql).toContain("grant execute on function sara_upsert_daily_log_morning");
+    expect(sql).toContain("revoke execute on function sara_upsert_daily_log_evening");
+    expect(sql).toContain("grant execute on function sara_upsert_daily_log_evening");
+    expect(sql).toContain("to service_role");
+  });
 });

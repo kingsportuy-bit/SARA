@@ -1,6 +1,7 @@
 import type { ModuleIntentInput, ModuleIntentResult } from "../contracts/pipeline.js";
-import { matchesNotePrefix, extractNoteContent, matchesNoteListQuery, matchesNoteSearchQuery, extractSearchQuery, matchesTaskCreate, matchesTaskListQuery, matchesTaskComplete, extractTaskTitle, extractCompleteTaskIdentifier, matchesTaskReference, resolveTaskReference, matchesReminderCreate, matchesReminderListQuery, matchesReminderCancel, extractCancelReminderIdentifier, matchesReminderReference, resolveReminderReference, extractReminderTitle } from "./patterns.js";
+import { matchesNotePrefix, extractNoteContent, matchesNoteListQuery, matchesNoteSearchQuery, extractSearchQuery, matchesTaskCreate, matchesTaskListQuery, matchesTaskComplete, extractTaskTitle, extractCompleteTaskIdentifier, matchesTaskReference, resolveTaskReference, matchesReminderCreate, matchesReminderListQuery, matchesReminderCancel, extractCancelReminderIdentifier, matchesReminderReference, resolveReminderReference, extractReminderTitle, matchesDailyLogMorning, matchesDailyLogEvening, matchesDailyLogSummary } from "./patterns.js";
 import { parseReminderTime } from "./reminders/reminderTimeParser.js";
+import { parseDailyLog } from "./dailyLog/dailyLogParser.js";
 
 export interface ModuleIntentClassifier {
   classify(input: ModuleIntentInput): Promise<ModuleIntentResult>;
@@ -341,6 +342,119 @@ function detectRemindersIntent(input: ModuleIntentInput): ModuleIntentResult | n
   };
 }
 
+function detectDailyLogIntent(input: ModuleIntentInput): ModuleIntentResult | null {
+  const text = input.messages.map((m) => m.content).join(" ").trim();
+  if (!text) return null;
+
+  const parseResult = parseDailyLog(text);
+
+  if (!parseResult.success) {
+    const isMorning = matchesDailyLogMorning(text);
+    const isEvening = matchesDailyLogEvening(text);
+    const isSummary = matchesDailyLogSummary(text);
+
+    if (isMorning) {
+      return {
+        schemaVersion: "module_intent_result.v1",
+        traceId: input.traceId,
+        module: "daily-log",
+        action: "morning",
+        confidence: 0.4,
+        entities: {},
+        missingData: parseResult.missingData,
+        requiresConfirmation: false,
+        reasoningSummary: "Daily log morning intent detected but no fields to update.",
+      };
+    }
+
+    if (isEvening) {
+      return {
+        schemaVersion: "module_intent_result.v1",
+        traceId: input.traceId,
+        module: "daily-log",
+        action: "evening",
+        confidence: 0.4,
+        entities: {},
+        missingData: parseResult.missingData,
+        requiresConfirmation: false,
+        reasoningSummary: "Daily log evening intent detected but no fields to update.",
+      };
+    }
+
+    if (isSummary) {
+      return {
+        schemaVersion: "module_intent_result.v1",
+        traceId: input.traceId,
+        module: "daily-log",
+        action: "summary",
+        confidence: 0.85,
+        entities: {},
+        missingData: [],
+        requiresConfirmation: false,
+        reasoningSummary: "Daily log summary intent detected.",
+      };
+    }
+
+    return null;
+  }
+
+  const { parsed } = parseResult;
+
+  if (parsed.intent === "morning") {
+    return {
+      schemaVersion: "module_intent_result.v1",
+      traceId: input.traceId,
+      module: "daily-log",
+      action: "morning",
+      confidence: 0.85,
+      entities: {
+        date: parsed.date,
+        wakeEnergy: parsed.wakeEnergy,
+        sleepHours: parsed.sleepHours,
+        morningIntention: parsed.morningIntention,
+      },
+      missingData: [],
+      requiresConfirmation: false,
+      reasoningSummary: "Daily log morning intent detected.",
+    };
+  }
+
+  if (parsed.intent === "evening") {
+    return {
+      schemaVersion: "module_intent_result.v1",
+      traceId: input.traceId,
+      module: "daily-log",
+      action: "evening",
+      confidence: 0.85,
+      entities: {
+        date: parsed.date,
+        eveningReview: parsed.eveningReview,
+      },
+      missingData: [],
+      requiresConfirmation: false,
+      reasoningSummary: "Daily log evening intent detected.",
+    };
+  }
+
+  if (parsed.intent === "summary") {
+    return {
+      schemaVersion: "module_intent_result.v1",
+      traceId: input.traceId,
+      module: "daily-log",
+      action: "summary",
+      confidence: 0.85,
+      entities: {
+        date: parsed.date,
+      },
+      missingData: [],
+      requiresConfirmation: false,
+      reasoningSummary: "Daily log summary intent detected.",
+    };
+  }
+
+  return null;
+}
+
 export function createModuleIntentClassifier(): ModuleIntentClassifier {
   return {
     async classify(input) {
@@ -356,6 +470,11 @@ export function createModuleIntentClassifier(): ModuleIntentClassifier {
 
       if (input.module === "reminders") {
         const detected = detectRemindersIntent(input);
+        if (detected) return detected;
+      }
+
+      if (input.module === "daily-log") {
+        const detected = detectDailyLogIntent(input);
         if (detected) return detected;
       }
 

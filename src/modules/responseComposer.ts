@@ -105,6 +105,46 @@ export function createResponseComposer(): ResponseComposer {
           } else {
             content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
           }
+        } else if (module === "daily-log") {
+          if (action === "morning") {
+            const dailyLogId = actionResult.evidence?.dailyLogId;
+            const eventId = actionResult.evidence?.eventId;
+            const date = actionResult.evidence?.date ?? classification.intent.entities?.date;
+            if (dailyLogId && eventId) {
+              content = date ? `Registro de manana actualizado para ${date}.` : "Registro de manana actualizado.";
+            } else {
+              content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+            }
+          } else if (action === "evening") {
+            const dailyLogId = actionResult.evidence?.dailyLogId;
+            const eventId = actionResult.evidence?.eventId;
+            const date = actionResult.evidence?.date ?? classification.intent.entities?.date;
+            if (dailyLogId && eventId) {
+              content = date ? `Cierre del dia actualizado para ${date}.` : "Cierre del dia actualizado.";
+            } else {
+              content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+            }
+          } else if (action === "summary") {
+            const dailyLog = actionResult.evidence?.dailyLog as {
+              date?: string;
+              wakeEnergy?: number;
+              sleepHours?: number;
+              morningIntention?: string;
+              eveningReview?: string;
+            } | undefined;
+            const date = actionResult.evidence?.date ?? classification.intent.entities?.date;
+            if (dailyLog) {
+              const energy = dailyLog.wakeEnergy !== undefined ? String(dailyLog.wakeEnergy) : "sin dato";
+              const sueno = dailyLog.sleepHours !== undefined ? String(dailyLog.sleepHours) : "sin dato";
+              const intencion = dailyLog.morningIntention || "sin dato";
+              const cierre = dailyLog.eveningReview || "sin dato";
+              content = `Resumen de ${date || dailyLog.date || "hoy"}:\nEnergia: ${energy}\nSueno: ${sueno}\nIntencion: ${intencion}\nCierre: ${cierre}`;
+            } else {
+              content = date ? `No encontre registro diario para ${date}.` : "No encontre registro diario para hoy.";
+            }
+          } else {
+            content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          }
         } else if (action === "list" || action === "search") {
           const notes = actionResult.evidence?.notes as Array<{ noteType: string; content: string }> | undefined;
           const count = actionResult.evidence?.count as number | undefined;

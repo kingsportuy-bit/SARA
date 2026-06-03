@@ -64,6 +64,43 @@ function validateReminderCancel(input: ActionExecutionInput): string | null {
   return null;
 }
 
+function validateDailyLogMorning(input: ActionExecutionInput): string | null {
+  const hasWakeEnergy = input.entities?.wakeEnergy !== undefined && input.entities?.wakeEnergy !== null;
+  const hasSleepHours = input.entities?.sleepHours !== undefined && input.entities?.sleepHours !== null;
+  const hasIntention = input.entities?.morningIntention && typeof input.entities.morningIntention === "string" && input.entities.morningIntention.trim().length > 0;
+
+  if (!hasWakeEnergy && !hasSleepHours && !hasIntention) {
+    return "wakeEnergy, sleepHours, or morningIntention required for daily-log.morning";
+  }
+
+  if (hasWakeEnergy) {
+    const energy = Number(input.entities?.wakeEnergy);
+    if (isNaN(energy) || energy < 1 || energy > 10) {
+      return "wakeEnergy must be between 1 and 10 for daily-log.morning";
+    }
+  }
+
+  if (hasSleepHours) {
+    const hours = Number(input.entities?.sleepHours);
+    if (isNaN(hours) || hours < 0) {
+      return "sleepHours cannot be negative for daily-log.morning";
+    }
+  }
+
+  return null;
+}
+
+function validateDailyLogEvening(input: ActionExecutionInput): string | null {
+  const hasReview = input.entities?.eveningReview && typeof input.entities.eveningReview === "string" && input.entities.eveningReview.trim().length > 0;
+  const hasMood = input.entities?.mood && typeof input.entities.mood === "string" && input.entities.mood.trim().length > 0;
+
+  if (!hasReview && !hasMood) {
+    return "eveningReview or mood required for daily-log.evening";
+  }
+
+  return null;
+}
+
 function guardConfidenceAndMissing(input: ActionExecutionInput): string | null {
   if (input.intentConfidence === undefined || input.intentConfidence < 0.75) {
     return `confidence insufficient for ${input.module}.${input.action}`;
@@ -100,6 +137,14 @@ function guardAction(input: ActionExecutionInput): string | null {
 
   if (input.module === "reminders" && input.action === "cancel") {
     return validateReminderCancel(input);
+  }
+
+  if (input.module === "daily-log" && input.action === "morning") {
+    return validateDailyLogMorning(input);
+  }
+
+  if (input.module === "daily-log" && input.action === "evening") {
+    return validateDailyLogEvening(input);
   }
 
   return null;

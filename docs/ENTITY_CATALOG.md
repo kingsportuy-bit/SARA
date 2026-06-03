@@ -102,6 +102,7 @@ Representar el dia operativo como unidad de analisis.
 - `evening_review text`
 - `mood text`
 - `notes jsonb not null`
+- `trace_id uuid`
 - `created_at timestamptz not null`
 - `updated_at timestamptz not null`
 

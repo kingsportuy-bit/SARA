@@ -445,6 +445,116 @@ describe("actionExecutor with tasks handlers", () => {
   });
 });
 
+describe("actionExecutor with daily-log handler", () => {
+  it("dispatches to daily-log.morning handler with valid energy", async () => {
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { dailyLogId: "dl1", eventId: "e1", date: "2026-06-03" },
+      stateChanges: [{ entityType: "daily_log", entityId: "dl1", eventType: "daily_log_morning_updated", payload: {} }],
+    }));
+
+    const exec = createActionExecutor({ "daily-log": { morning: handler } });
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-dl1",
+      module: "daily-log",
+      action: "morning",
+      entities: { wakeEnergy: 7, date: "2026-06-03" },
+      requiresConfirmation: false,
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("executed");
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("blocks daily-log.morning when energy is out of range", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ "daily-log": { morning: handler } });
+
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-dl2",
+      module: "daily-log",
+      action: "morning",
+      entities: { wakeEnergy: 0, date: "2026-06-03" },
+      requiresConfirmation: false,
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toContain("wakeEnergy must be between 1 and 10");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("blocks daily-log.morning when no fields are provided", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ "daily-log": { morning: handler } });
+
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-dl3",
+      module: "daily-log",
+      action: "morning",
+      entities: { date: "2026-06-03" },
+      requiresConfirmation: false,
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("failed");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("blocks daily-log.evening when no fields are provided", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ "daily-log": { evening: handler } });
+
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-dl4",
+      module: "daily-log",
+      action: "evening",
+      entities: { date: "2026-06-03" },
+      requiresConfirmation: false,
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("failed");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("dispatches to daily-log.summary handler", async () => {
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { dailyLog: { wakeEnergy: 7, sleepHours: 6.5 }, dailyLogId: "dl1", date: "2026-06-03" },
+      stateChanges: [],
+    }));
+
+    const exec = createActionExecutor({ "daily-log": { summary: handler } });
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-dl5",
+      module: "daily-log",
+      action: "summary",
+      entities: { date: "2026-06-03" },
+      requiresConfirmation: false,
+      intentConfidence: 0.85,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("executed");
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("intentConfidenceSufficient", () => {
   function makeIntent(overrides?: Partial<ModuleIntentResult>): ModuleIntentResult {
     return {

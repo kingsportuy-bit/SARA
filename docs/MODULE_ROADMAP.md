@@ -136,7 +136,7 @@ No incluir todavia:
 - optimizacion inteligente de horarios.
 
 ### 5. `daily-log`
-Estado: APPROVED_FOR_OPENCODE
+Estado: IMPLEMENTED (pendiente revision Codex)
 
 Proposito:
 - registrar estado diario, energia, foco, sueno, intencion y cierre del dia.

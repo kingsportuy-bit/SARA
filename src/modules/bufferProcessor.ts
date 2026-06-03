@@ -181,6 +181,51 @@ export function createBufferProcessor(ctx: PipelineContext) {
             ctx.logger.info({ bufferId: buffer.buffer_id }, "session context focused on single note result");
           }
         }
+      } else if (module === "daily-log") {
+        if (action === "morning" && actionResult.status === "executed") {
+          const dailyLogId = actionResult.evidence?.dailyLogId as string | undefined;
+          const date = actionResult.evidence?.date as string | undefined;
+          if (dailyLogId) {
+            const ctxPayload: Record<string, unknown> = {};
+            if (date) ctxPayload.lastDailyLogDate = date;
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "daily-log",
+              activeFlow: "daily_log_morning_updated",
+              focusedEntityType: "daily_log",
+              focusedEntityId: dailyLogId,
+              context: ctxPayload,
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, dailyLogId }, "session context updated for daily-log.morning");
+          }
+        } else if (action === "evening" && actionResult.status === "executed") {
+          const dailyLogId = actionResult.evidence?.dailyLogId as string | undefined;
+          const date = actionResult.evidence?.date as string | undefined;
+          if (dailyLogId) {
+            const ctxPayload: Record<string, unknown> = {};
+            if (date) ctxPayload.lastDailyLogDate = date;
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "daily-log",
+              activeFlow: "daily_log_evening_updated",
+              focusedEntityType: "daily_log",
+              focusedEntityId: dailyLogId,
+              context: ctxPayload,
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, dailyLogId }, "session context updated for daily-log.evening");
+          }
+        } else if (action === "summary" && actionResult.status === "executed") {
+          const dailyLogId = actionResult.evidence?.dailyLogId as string | undefined;
+          if (dailyLogId) {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "daily-log",
+              focusedEntityType: "daily_log",
+              focusedEntityId: dailyLogId,
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, dailyLogId }, "session context updated for daily-log.summary");
+          }
+        }
       } else if (module === "reminders") {
         if (action === "create" && actionResult.status === "executed") {
           const reminderId = actionResult.evidence?.reminderId as string | undefined;
