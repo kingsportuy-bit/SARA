@@ -1,8 +1,84 @@
 import type { ModuleIntentInput, ModuleIntentResult } from "../contracts/pipeline.js";
-import { matchesNotePrefix, extractNoteContent, matchesNoteListQuery, matchesNoteSearchQuery, extractSearchQuery } from "./patterns.js";
+import { matchesNotePrefix, extractNoteContent, matchesNoteListQuery, matchesNoteSearchQuery, extractSearchQuery, matchesTaskCreate, matchesTaskListQuery, matchesTaskComplete, extractTaskTitle, extractCompleteTaskIdentifier } from "./patterns.js";
 
 export interface ModuleIntentClassifier {
   classify(input: ModuleIntentInput): Promise<ModuleIntentResult>;
+}
+
+function detectTasksIntent(input: ModuleIntentInput): ModuleIntentResult | null {
+  const text = input.messages.map((m) => m.content).join(" ").trim();
+  if (!text) return null;
+
+  if (matchesTaskComplete(text)) {
+    const identifier = extractCompleteTaskIdentifier(text);
+    if (identifier) {
+      return {
+        schemaVersion: "module_intent_result.v1",
+        traceId: input.traceId,
+        module: "tasks",
+        action: "complete",
+        confidence: 0.85,
+        entities: identifier.position ? { position: identifier.position } : { titleMatch: identifier.titleMatch },
+        missingData: [],
+        requiresConfirmation: false,
+        reasoningSummary: "Task complete intent detected.",
+      };
+    }
+    return {
+      schemaVersion: "module_intent_result.v1",
+      traceId: input.traceId,
+      module: "tasks",
+      action: "complete",
+      confidence: 0.4,
+      entities: {},
+      missingData: ["task"],
+      requiresConfirmation: false,
+      reasoningSummary: "Task complete intent detected but no identifier found.",
+    };
+  }
+
+  if (matchesTaskListQuery(text)) {
+    return {
+      schemaVersion: "module_intent_result.v1",
+      traceId: input.traceId,
+      module: "tasks",
+      action: "list",
+      confidence: 0.85,
+      entities: {},
+      missingData: [],
+      requiresConfirmation: false,
+      reasoningSummary: "Task list intent detected.",
+    };
+  }
+
+  if (!matchesTaskCreate(text)) return null;
+
+  const title = extractTaskTitle(text);
+  if (!title) {
+    return {
+      schemaVersion: "module_intent_result.v1",
+      traceId: input.traceId,
+      module: "tasks",
+      action: "create",
+      confidence: 0.4,
+      entities: {},
+      missingData: ["title"],
+      requiresConfirmation: false,
+      reasoningSummary: "Task create intent detected but no title provided.",
+    };
+  }
+
+  return {
+    schemaVersion: "module_intent_result.v1",
+    traceId: input.traceId,
+    module: "tasks",
+    action: "create",
+    confidence: 0.85,
+    entities: { title },
+    missingData: [],
+    requiresConfirmation: false,
+    reasoningSummary: "Task creation intent detected from explicit pattern.",
+  };
 }
 
 function detectNotesIntent(input: ModuleIntentInput): ModuleIntentResult | null {
@@ -87,6 +163,11 @@ function detectNotesIntent(input: ModuleIntentInput): ModuleIntentResult | null 
 export function createModuleIntentClassifier(): ModuleIntentClassifier {
   return {
     async classify(input) {
+      if (input.module === "tasks") {
+        const detected = detectTasksIntent(input);
+        if (detected) return detected;
+      }
+
       if (input.module === "notes") {
         const detected = detectNotesIntent(input);
         if (detected) return detected;

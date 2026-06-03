@@ -307,6 +307,144 @@ describe("actionExecutor with notes handler", () => {
   });
 });
 
+describe("actionExecutor with tasks handlers", () => {
+  it("dispatches to tasks.create handler and returns its result", async () => {
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { taskId: "t1", eventId: "e1", title: "test" },
+      stateChanges: [{ entityType: "task", entityId: "t1", eventType: "task_created", payload: {} }],
+    }));
+
+    const exec = createActionExecutor({ tasks: { create: handler } });
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-t1",
+      module: "tasks",
+      action: "create",
+      entities: { title: "mi tarea" },
+      requiresConfirmation: false,
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("executed");
+    expect(result.evidence).toEqual({ taskId: "t1", eventId: "e1", title: "test" });
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("blocks tasks.create when title is missing", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ tasks: { create: handler } });
+
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-t2",
+      module: "tasks",
+      action: "create",
+      entities: {},
+      requiresConfirmation: false,
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toContain("title is required");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("blocks tasks.create when confidence is low", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ tasks: { create: handler } });
+
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-t3",
+      module: "tasks",
+      action: "create",
+      entities: { title: "test" },
+      requiresConfirmation: false,
+      intentConfidence: 0.5,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toContain("confidence insufficient");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("dispatches to tasks.list handler", async () => {
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { tasks: [], count: 0 },
+      stateChanges: [],
+    }));
+
+    const exec = createActionExecutor({ tasks: { list: handler } });
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-t4",
+      module: "tasks",
+      action: "list",
+      entities: {},
+      requiresConfirmation: false,
+      intentConfidence: 0.85,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("executed");
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("dispatches to tasks.complete handler", async () => {
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { taskId: "t1", eventId: "e1", title: "test" },
+      stateChanges: [{ entityType: "task", entityId: "t1", eventType: "task_completed", payload: {} }],
+    }));
+
+    const exec = createActionExecutor({ tasks: { complete: handler } });
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-t5",
+      module: "tasks",
+      action: "complete",
+      entities: { taskId: "t1" },
+      requiresConfirmation: false,
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("executed");
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("blocks tasks.complete without any identifier in entities", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ tasks: { complete: handler } });
+
+    const result = await exec.execute({
+      schemaVersion: "action_execution_input.v1",
+      traceId: "trace-t6",
+      module: "tasks",
+      action: "complete",
+      entities: {},
+      requiresConfirmation: false,
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toContain("required");
+    expect(handler).not.toHaveBeenCalled();
+  });
+});
+
 describe("intentConfidenceSufficient", () => {
   function makeIntent(overrides?: Partial<ModuleIntentResult>): ModuleIntentResult {
     return {

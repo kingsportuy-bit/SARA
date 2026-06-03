@@ -9,6 +9,10 @@ function formatNoteLine(note: { noteType: string; content: string }, index: numb
   return `${index + 1}. [${note.noteType}] ${preview}`;
 }
 
+function formatTaskLine(task: { title: string }, index: number): string {
+  return `${index + 1}. ${task.title}`;
+}
+
 export function createResponseComposer(): ResponseComposer {
   return {
     async compose(input) {
@@ -29,8 +33,40 @@ export function createResponseComposer(): ResponseComposer {
           : "La accion no pudo completarse por un error inesperado.";
       } else if (actionResult.status === "executed") {
         const action = classification.intent.action;
+        const module = classification.coarse.module;
 
-        if (action === "list" || action === "search") {
+        if (module === "tasks") {
+          if (action === "create") {
+            const taskId = actionResult.evidence?.taskId;
+            const eventId = actionResult.evidence?.eventId;
+            const title = actionResult.evidence?.title ?? classification.intent.entities?.title;
+            if (taskId && eventId) {
+              content = title ? `Tarea creada: ${title}` : "Tarea creada.";
+            } else {
+              content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+            }
+          } else if (action === "list") {
+            const tasks = actionResult.evidence?.tasks as Array<{ title: string }> | undefined;
+            const count = actionResult.evidence?.count as number | undefined;
+            if (!tasks || count === 0) {
+              content = "No encontre tareas pendientes.";
+            } else {
+              const lines = tasks.map(formatTaskLine).join("\n");
+              content = `Estas son tus tareas pendientes:\n${lines}`;
+            }
+          } else if (action === "complete") {
+            const taskId = actionResult.evidence?.taskId;
+            const eventId = actionResult.evidence?.eventId;
+            const title = actionResult.evidence?.title;
+            if (taskId && eventId) {
+              content = title ? `Tarea completada: ${title}` : "Tarea completada.";
+            } else {
+              content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+            }
+          } else {
+            content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          }
+        } else if (action === "list" || action === "search") {
           const notes = actionResult.evidence?.notes as Array<{ noteType: string; content: string }> | undefined;
           const count = actionResult.evidence?.count as number | undefined;
           const searchQuery = actionResult.evidence?.query as string | undefined;

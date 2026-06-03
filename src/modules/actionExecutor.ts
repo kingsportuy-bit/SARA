@@ -18,6 +18,58 @@ function validateContent(input: ActionExecutionInput): string | null {
   return null;
 }
 
+function validateTitle(input: ActionExecutionInput): string | null {
+  const title = input.entities?.title;
+  if (!title || typeof title !== "string" || String(title).trim().length === 0) {
+    return "title is required for tasks.create";
+  }
+  return null;
+}
+
+function validateCompleteIdentifier(input: ActionExecutionInput): string | null {
+  const hasTaskId = input.entities?.taskId;
+  const hasTitleMatch = input.entities?.titleMatch && typeof input.entities.titleMatch === "string" && input.entities.titleMatch.trim().length > 0;
+  const position = Number(input.entities?.position);
+  const hasPosition = !isNaN(position) && position > 0;
+  if (!hasTaskId && !hasTitleMatch && !hasPosition) {
+    return "taskId, titleMatch, or positive position required for tasks.complete";
+  }
+  return null;
+}
+
+function guardConfidenceAndMissing(input: ActionExecutionInput): string | null {
+  if (input.intentConfidence === undefined || input.intentConfidence < 0.75) {
+    return `confidence insufficient for ${input.module}.${input.action}`;
+  }
+  if (!Array.isArray(input.intentMissingData) || input.intentMissingData.length > 0) {
+    return `missing data prevents ${input.module}.${input.action}`;
+  }
+  return null;
+}
+
+function guardAction(input: ActionExecutionInput): string | null {
+  const writingActions = ["create", "complete"];
+
+  if (writingActions.includes(input.action)) {
+    const cm = guardConfidenceAndMissing(input);
+    if (cm) return cm;
+  }
+
+  if (input.module === "notes" && input.action === "create") {
+    return validateContent(input);
+  }
+
+  if (input.module === "tasks" && input.action === "create") {
+    return validateTitle(input);
+  }
+
+  if (input.module === "tasks" && input.action === "complete") {
+    return validateCompleteIdentifier(input);
+  }
+
+  return null;
+}
+
 export function createActionExecutor(handlers: HandlerRegistry = {}): ActionExecutor {
   return {
     async execute(input) {
@@ -53,38 +105,16 @@ export function createActionExecutor(handlers: HandlerRegistry = {}): ActionExec
         };
       }
 
-      if (input.module === "notes" && input.action === "create") {
-        if (input.intentConfidence === undefined || input.intentConfidence < 0.75) {
-          return {
-            schemaVersion: "action_execution_result.v1",
-            traceId: input.traceId,
-            status: "failed",
-            evidence: { reason: "confidence insufficient for notes.create" },
-            stateChanges: [],
-            error: "confidence insufficient for notes.create",
-          };
-        }
-        if (!Array.isArray(input.intentMissingData) || input.intentMissingData.length > 0) {
-          return {
-            schemaVersion: "action_execution_result.v1",
-            traceId: input.traceId,
-            status: "failed",
-            evidence: { reason: "missing data prevents notes.create" },
-            stateChanges: [],
-            error: "missing data prevents notes.create",
-          };
-        }
-        const contentError = validateContent(input);
-        if (contentError) {
-          return {
-            schemaVersion: "action_execution_result.v1",
-            traceId: input.traceId,
-            status: "failed",
-            evidence: { reason: contentError },
-            stateChanges: [],
-            error: contentError,
-          };
-        }
+      const guardError = guardAction(input);
+      if (guardError) {
+        return {
+          schemaVersion: "action_execution_result.v1",
+          traceId: input.traceId,
+          status: "failed",
+          evidence: { reason: guardError },
+          stateChanges: [],
+          error: guardError,
+        };
       }
 
       return handler(input);

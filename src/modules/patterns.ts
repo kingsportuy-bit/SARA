@@ -60,6 +60,86 @@ export function extractSearchQuery(text: string): string | null {
   return null;
 }
 
+export const TASK_COMMAND_PATTERN =
+  /^(?:tarea|crear tarea|agregar tarea|crea una tarea)[\s:]+(.*)/i;
+
+export const TASK_CREATE_PATTERNS = [
+  /^tarea[\s:]/i,
+  /^crear tarea[\s:]/i,
+  /^crea una tarea[\s:]/i,
+  /^agregar tarea[\s:]/i,
+  /^tengo que\b/i,
+  /^debo\b/i,
+  /^pendiente[\s:]/i,
+];
+
+export const TASK_LIST_PATTERNS = [
+  /que tareas (tengo|hay|tienes|existen)/i,
+  /listar?\s*tareas/i,
+  /lista\s*(mis\s*)?tareas/i,
+  /mis\s*tareas/i,
+  /tareas\s*pendientes/i,
+];
+
+export const TASK_COMPLETE_PATTERNS = [
+  /completar\s*tarea\s*(\d+|.+)/i,
+  /marcar\s*tarea\s*(\d+|.+)\s*(?:como\s*hech[oa])?/i,
+  /complete\s+(.+)/i,
+  /termine\s+(.+)/i,
+];
+
+const TASK_COMPLETE_BARE_PATTERNS = [
+  /^completar\s*tarea\s*$/i,
+  /^marcar\s*tarea\s*$/i,
+];
+
+export function matchesTaskCreate(text: string): boolean {
+  if (!text) return false;
+  return TASK_CREATE_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesTaskListQuery(text: string): boolean {
+  if (!text) return false;
+  return TASK_LIST_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesTaskComplete(text: string): boolean {
+  if (!text) return false;
+  return TASK_COMPLETE_PATTERNS.some((pattern) => pattern.test(text)) ||
+    TASK_COMPLETE_BARE_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function extractTaskTitle(text: string): string {
+  const match = TASK_COMMAND_PATTERN.exec(text);
+  if (match) {
+    if (match[1] && match[1].trim()) return match[1].trim();
+    return "";
+  }
+  for (const pattern of TASK_CREATE_PATTERNS) {
+    const m = pattern.exec(text);
+    if (m) {
+      const after = text.slice(m[0].length).trim();
+      if (after) return after;
+    }
+  }
+  return text;
+}
+
+export function extractCompleteTaskIdentifier(text: string): { position?: number; titleMatch?: string } | null {
+  for (const pattern of TASK_COMPLETE_PATTERNS) {
+    const match = pattern.exec(text);
+    if (match && match[1] && match[1].trim()) {
+      const raw = match[1].trim();
+      const num = Number(raw);
+      if (!isNaN(num) && num > 0) {
+        return { position: num };
+      }
+      return { titleMatch: raw };
+    }
+  }
+  return null;
+}
+
 export function extractNoteContent(text: string): string {
   const match = NOTE_COMMAND_PATTERN.exec(text);
   if (match) {

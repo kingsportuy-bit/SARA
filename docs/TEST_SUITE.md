@@ -168,3 +168,79 @@
 - `npm run typecheck`: PASS (hotfix numbering TASK-20260603-007)
 - `npm test`: PASS (132 tests, hotfix numbering TASK-20260603-007)
 - `npm run build`: PASS (hotfix numbering TASK-20260603-007)
+
+## Modulo tasks (TASK-20260603-008)
+
+### Migracion y DB
+- PASS: migracion `sara_tasks` crea tabla, indices, RLS y RPCs
+- PASS: migracion solo crea/modifica objetos `sara_`
+- PASS: RPC `sara_create_task` valida title no vacio
+- PASS: RPC `sara_complete_task` soporta taskId, titleMatch y position
+
+### Tasks Module
+- PASS: tasksModule.create acepta input valido con taskId y eventId
+- PASS: tasksModule.create rechaza title vacio
+- PASS: tasksModule.create rechaza title solo espacios
+- PASS: tasksModule.list retorna tareas pendientes con schema version
+- PASS: tasksModule.complete completa con evidencia (taskId, eventId, title)
+- PASS: tasksModule.complete completa por titleMatch
+- PASS: tasksModule.complete completa por position
+- PASS: tasksModule.complete falla sin identificador
+- PASS: tasksModule.complete falla con position 0
+- PASS: tasksModule.complete falla con position negativo
+
+### Tasks Store
+- PASS: tasksStore.createTask llama RPC `sara_create_task` con parametros correctos
+- PASS: tasksStore.createTask retorna failed en error de RPC
+- PASS: tasksStore.listTasks consulta `sara_tasks` read-only
+- PASS: tasksStore.listTasks mapea campos correctamente
+- PASS: tasksStore.completeTask llama RPC `sara_complete_task` con taskId
+- PASS: tasksStore.completeTask retorna failed en error de RPC
+
+### Classifiers
+- PASS: coarseClassifier detecta modulo `tasks` para tarea:, crear tarea:, tengo que, debo
+- PASS: coarseClassifier detecta modulo `tasks` para que tareas tengo, listar tareas, mis tareas
+- PASS: coarseClassifier detecta modulo `tasks` para completar tarea, complete, marcar tarea
+- PASS: coarseClassifier mantiene `unknown` para mensaje no-task
+- PASS: moduleIntentClassifier detecta tasks.create y extrae title
+- PASS: moduleIntentClassifier detecta tasks.list
+- PASS: moduleIntentClassifier detecta tasks.complete y extrae position
+- PASS: moduleIntentClassifier detecta tasks.complete y extrae titleMatch
+- PASS: moduleIntentClassifier retorna missingData cuando no hay title
+- PASS: moduleIntentClassifier no detecta tasks en modulo no-tasks
+
+### Router
+- PASS: moduleRouter marca tasks.create ejecutable tras registro
+- PASS: moduleRouter marca tasks.list ejecutable tras registro
+- PASS: moduleRouter marca tasks.complete ejecutable tras registro
+
+### Action Executor
+- PASS: actionExecutor despacha a handler tasks.create
+- PASS: actionExecutor bloquea tasks.create sin title
+- PASS: actionExecutor bloquea tasks.create con confianza baja
+- PASS: actionExecutor despacha a handler tasks.list
+- PASS: actionExecutor despacha a handler tasks.complete
+- PASS: actionExecutor bloquea tasks.complete sin identificador
+
+### Response Composer
+- PASS: responseComposer confirma task create solo con taskId y eventId
+- PASS: responseComposer no confirma task create sin evidencia
+- PASS: responseComposer confirma task complete solo con taskId y eventId
+- PASS: responseComposer no confirma task complete sin evidencia
+- PASS: responseComposer formatea task list desde indice 1
+- PASS: responseComposer muestra mensaje vacio para task list sin resultados
+
+### Buffer Processor (integracion)
+- PASS: bufferProcessor ejecuta tasks.create con fakes y no llama DeepSeek
+- PASS: bufferProcessor ejecuta tasks.list con fakes y no llama DeepSeek
+- PASS: bufferProcessor ejecuta tasks.complete con position y no llama DeepSeek
+- PASS: bufferProcessor bloquea tasks.complete sin datos suficientes y no ejecuta handler
+
+### Regresion
+- PASS: notes.create/list/search sigue pasando (13 tests bufferProcessor + notes)
+- PASS: Chatwoot scope 7/45/85 sigue pasando
+
+## Evidencia local 2026-06-03 (TASK-20260603-008)
+- `npm run typecheck`: PASS
+- `npm test`: PASS (195 tests)
+- `npm run build`: PASS

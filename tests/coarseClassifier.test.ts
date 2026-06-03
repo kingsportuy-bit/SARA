@@ -179,3 +179,116 @@ describe("coarseClassifier", () => {
     expect(result.module).toBe("unknown");
   });
 });
+
+describe("coarseClassifier tasks detection", () => {
+  it("detects tasks module from tarea: prefix", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-tt1",
+      messages: [{ id: 1, content: "tarea: llamar al contador", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("tasks");
+    expect(result.confidence).toBe(0.9);
+  });
+
+  it("detects tasks module from crear tarea:", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-tt2",
+      messages: [{ id: 1, content: "crear tarea: revisar facturas", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("tasks");
+  });
+
+  it("detects tasks module from tengo que", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-tt3",
+      messages: [{ id: 1, content: "tengo que ordenar la bandeja", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("tasks");
+  });
+
+  it("detects tasks module from debo", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-tt4",
+      messages: [{ id: 1, content: "debo enviar informe", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("tasks");
+  });
+
+  it("detects tasks module from que tareas tengo", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-tt5",
+      messages: [{ id: 1, content: "que tareas tengo", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("tasks");
+  });
+
+  it("detects tasks module from listar tareas", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-tt6",
+      messages: [{ id: 1, content: "listar tareas", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("tasks");
+  });
+
+  it("detects tasks module from mis tareas", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-tt7",
+      messages: [{ id: 1, content: "mis tareas", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("tasks");
+  });
+
+  it("detects tasks module from completar tarea", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-tt8",
+      messages: [{ id: 1, content: "completar tarea 1", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("tasks");
+  });
+
+  it("detects tasks module from complete", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-tt9",
+      messages: [{ id: 1, content: "complete llamar al contador", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("tasks");
+  });
+
+  it("detects tasks module from marcar tarea", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-tt10",
+      messages: [{ id: 1, content: "marcar tarea 2 como hecha", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("tasks");
+  });
+
+  it("remains unknown for non-task natural language", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-tt11",
+      messages: [{ id: 1, content: "buenos dias sara", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("unknown");
+  });
+});

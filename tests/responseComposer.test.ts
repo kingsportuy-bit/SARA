@@ -357,4 +357,128 @@ describe("responseComposer", () => {
 
     expect(result.content).toContain("...");
   });
+
+  it("confirms task create with taskId and eventId", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "tasks" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "create", confidence: 0.85, entities: { title: "llamar al contador" } },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: { taskId: "t1", eventId: "e1", title: "llamar al contador" },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("Tarea creada:");
+    expect(result.content).toContain("llamar al contador");
+  });
+
+  it("does not confirm task create without evidence", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "tasks" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "create", confidence: 0.85 },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: {},
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("no se puede verificar la evidencia");
+  });
+
+  it("confirms task complete with taskId and eventId", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "tasks" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "complete", confidence: 0.85 },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: { taskId: "t1", eventId: "e1", title: "llamar al contador" },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("Tarea completada:");
+    expect(result.content).toContain("llamar al contador");
+  });
+
+  it("does not confirm task complete without evidence", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "tasks" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "complete", confidence: 0.85 },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: {},
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("no se puede verificar la evidencia");
+  });
+
+  it("formats task list results from index 1", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "tasks" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "list", confidence: 0.85 },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: {
+          tasks: [
+            { title: "llamar al contador" },
+            { title: "revisar facturas" },
+          ],
+          count: 2,
+        },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("Estas son tus tareas pendientes:");
+    expect(result.content).toContain("1. llamar al contador");
+    expect(result.content).toContain("2. revisar facturas");
+  });
+
+  it("shows empty message for task list with no results", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9, module: "tasks" },
+        intent: { ...baseInput.classification.intent, missingData: [], action: "list", confidence: 0.85 },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: { tasks: [], count: 0 },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("No encontre tareas pendientes");
+  });
 });

@@ -418,3 +418,157 @@ describe("bufferProcessor", () => {
     expect(complete).toHaveBeenCalled();
   });
 });
+
+describe("bufferProcessor tasks integration", () => {
+  it("executes tasks.create for tarea: message and does not call DeepSeek", async () => {
+    registerModule("tasks", ["create"]);
+
+    const handler = vi.fn(async (): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: "t10",
+      status: "executed",
+      evidence: { taskId: "t1", eventId: "e1", title: "llamar al contador" },
+      stateChanges: [{ entityType: "task", entityId: "t1", eventType: "task_created", payload: {} }],
+    }));
+
+    const { store, complete, send, generate } = (() => {
+      const s = fakeStore([{ bid: "b10", tid: "t10", cid: 85, msgs: [{ id: 1, content: "tarea: llamar al contador" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ tasks: { create: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate },
+      outbound: { send },
+      logger: fakeLogger(),
+    });
+
+    await proc.processDue();
+
+    expect(generate).not.toHaveBeenCalled();
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalledWith("b10", expect.any(String), 99);
+  });
+
+  it("executes tasks.list for que tareas tengo and does not call DeepSeek", async () => {
+    registerModule("tasks", ["list"]);
+
+    const handler = vi.fn(async (): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: "t11",
+      status: "executed",
+      evidence: { tasks: [{ title: "test" }], count: 1 },
+      stateChanges: [],
+    }));
+
+    const { store, complete, send, generate } = (() => {
+      const s = fakeStore([{ bid: "b11", tid: "t11", cid: 85, msgs: [{ id: 1, content: "que tareas tengo" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ tasks: { list: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate },
+      outbound: { send },
+      logger: fakeLogger(),
+    });
+
+    await proc.processDue();
+
+    expect(generate).not.toHaveBeenCalled();
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalledWith("b11", expect.any(String), 99);
+  });
+
+  it("executes tasks.complete with position and does not call DeepSeek", async () => {
+    registerModule("tasks", ["complete"]);
+
+    const handler = vi.fn(async (): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: "t12",
+      status: "executed",
+      evidence: { taskId: "t1", eventId: "e1", title: "llamar al contador" },
+      stateChanges: [{ entityType: "task", entityId: "t1", eventType: "task_completed", payload: {} }],
+    }));
+
+    const { store, complete, send, generate } = (() => {
+      const s = fakeStore([{ bid: "b12", tid: "t12", cid: 85, msgs: [{ id: 1, content: "completar tarea 1" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ tasks: { complete: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate },
+      outbound: { send },
+      logger: fakeLogger(),
+    });
+
+    await proc.processDue();
+
+    expect(generate).not.toHaveBeenCalled();
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalledWith("b12", expect.any(String), 99);
+  });
+
+  it("blocks tasks.complete when no identifier is provided (missingData)", async () => {
+    registerModule("tasks", ["complete"]);
+
+    const handler = vi.fn();
+
+    const { store, complete, send, generate } = (() => {
+      const s = fakeStore([{ bid: "b13", tid: "t13", cid: 85, msgs: [{ id: 1, content: "completar tarea" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ tasks: { complete: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate },
+      outbound: { send },
+      logger: fakeLogger(),
+    });
+
+    await proc.processDue();
+
+    expect(generate).not.toHaveBeenCalled();
+    expect(handler).not.toHaveBeenCalled();
+    expect(send).toHaveBeenCalledTimes(1);
+    const sentContent = send.mock.calls[0][1];
+    expect(sentContent).toContain("No tengo suficiente informacion");
+    expect(complete).toHaveBeenCalledWith("b13", expect.any(String), 99);
+  });
+});

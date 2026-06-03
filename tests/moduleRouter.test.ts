@@ -68,4 +68,28 @@ describe("moduleRouter", () => {
     expect(result.executable).toBe(false);
     expect(result.reason).toContain("not registered");
   });
+
+  it("marks tasks.create executable after registration", async () => {
+    registerModule("tasks", ["create"]);
+    const registered = createModuleRouter();
+
+    const result = await registered.route(intent({ module: "tasks", action: "create" }));
+    expect(result.executable).toBe(true);
+  });
+
+  it("marks tasks.list executable after registration", async () => {
+    registerModule("tasks", ["create", "list"]);
+    const registered = createModuleRouter();
+
+    const result = await registered.route(intent({ module: "tasks", action: "list" }));
+    expect(result.executable).toBe(true);
+  });
+
+  it("marks tasks.complete executable after registration", async () => {
+    registerModule("tasks", ["create", "list", "complete"]);
+    const registered = createModuleRouter();
+
+    const result = await registered.route(intent({ module: "tasks", action: "complete" }));
+    expect(result.executable).toBe(true);
+  });
 });

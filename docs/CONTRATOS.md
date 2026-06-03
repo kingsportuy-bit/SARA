@@ -359,6 +359,108 @@ Reglas de respuesta:
 - Content preview truncado a 60 caracteres.
 
 ### Tablas autorizadas
-- `sara_events`: registro canonico de eventos (note_created, etc.)
+- `sara_events`: registro canonico de eventos (note_created, task_created, task_completed, etc.)
 - `sara_notes`: notas con schema_version, note_type, content, source, area_id, tags, trace_id
-- Ambas con RLS habilitado, acceso revocado a anon/authenticated.
+- `sara_tasks`: tareas con schema_version, title, description, status, source, area_id, due_at, completed_at, trace_id
+- Todas con RLS habilitado, acceso revocado a anon/authenticated.
+
+## Modulo tasks (v0)
+
+### tasks.create
+Responsable: `tasks`
+
+Entrada (`CreateTaskInput`):
+- `schemaVersion`: `"tasks_create_input.v1"`
+- `traceId`: string
+- `title`: string (no vacio)
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+- `description?`: string
+- `areaId?`: uuid
+
+Salida (`CreateTaskResult`):
+- `schemaVersion`: `"tasks_create_result.v1"`
+- `traceId`: string
+- `status`: `"created"` | `"failed"`
+- `taskId?`: uuid (solo si status = created)
+- `eventId?`: uuid (solo si status = created)
+- `evidence.taskId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"task_created"`
+- `error?`: string
+
+Reglas:
+- `title` no puede ser vacio.
+- `source = "chatwoot"` por defecto.
+- Cada creacion emite evento `task_created` en `sara_events`.
+- Solo confirma con `taskId` y `eventId`.
+
+### RPC `sara_create_task`
+Firma:
+```
+sara_create_task(p_trace_id uuid, p_title text, p_description text, p_source text, p_area_id uuid, p_due_at timestamptz)
+```
+Retorna JSON con `task_id`, `event_id`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+### tasks.list
+Responsable: `tasks`
+
+Entrada (`ListTasksInput`):
+- `schemaVersion`: `"tasks_list_input.v1"`
+- `traceId`: string
+- `limit?`: number (default 5, max 10)
+- `status?`: `TaskStatus` (default `pending`)
+
+Salida (`ListTasksResult`):
+- `schemaVersion`: `"tasks_list_result.v1"`
+- `traceId`: string
+- `status`: `"success"` | `"failed"`
+- `tasks`: array de `TaskRecord`
+- `count`: number
+- `error?`: string
+
+Consulta `sara_tasks` filtrado por status (`pending` default), ordenado por `created_at desc`. Read-only.
+
+### tasks.complete
+Responsable: `tasks`
+
+Entrada (`CompleteTaskInput`):
+- `schemaVersion`: `"tasks_complete_input.v1"`
+- `traceId`: string
+- `taskId?`: uuid
+- `titleMatch?`: string
+- `position?`: number (indice humano 1-based)
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+
+Salida (`CompleteTaskResult`):
+- `schemaVersion`: `"tasks_complete_result.v1"`
+- `traceId`: string
+- `status`: `"completed"` | `"failed"`
+- `taskId?`: uuid
+- `eventId?`: uuid
+- `title?`: string
+- `evidence.taskId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"task_completed"`
+- `error?`: string
+
+Reglas:
+- Requiere al menos un identificador: `taskId`, `titleMatch` o `position` > 0.
+- `position` se resuelve contra la lista de pendientes ordenada por `created_at desc`.
+- `titleMatch` busca por ILIKE parcial en `title`.
+- Solo confirma con `taskId` y `eventId`.
+- Emite evento `task_completed` en `sara_events`.
+
+### RPC `sara_complete_task`
+Firma:
+```
+sara_complete_task(p_trace_id uuid, p_task_id uuid, p_title_match text, p_position int, p_source text)
+```
+Retorna JSON con `task_id`, `event_id`, `title`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+Reglas de respuesta:
+- Crear: `"Tarea creada: <title>"`
+- Listar con resultados: `"Estas son tus tareas pendientes:\n1. <title1>\n2. <title2>"`
+- Listar sin resultados: `"No encontre tareas pendientes."`
+- Completar: `"Tarea completada: <title>"`
