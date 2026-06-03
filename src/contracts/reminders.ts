@@ -101,6 +101,9 @@ export interface ClaimDueRemindersInput {
   schemaVersion: "reminders_claim_due_input.v1";
   traceId: string;
   limit?: number;
+  accountId: number;
+  inboxId: number;
+  conversationId: number;
 }
 
 export interface ClaimDueRemindersResult {

@@ -204,6 +204,9 @@ export function createRemindersStore(supabase: SupabaseClient): RemindersReposit
       try {
         const { data, error } = await supabase.rpc("sara_claim_due_reminders", {
           p_limit: input.limit ?? 10,
+          p_account_id: input.accountId,
+          p_inbox_id: input.inboxId,
+          p_conversation_id: input.conversationId,
         });
 
         if (error) {

@@ -220,6 +220,9 @@ describe("remindersStore claimDueReminders", () => {
       schemaVersion: "reminders_claim_due_input.v1",
       traceId: "trace-claim-1",
       limit: 10,
+      accountId: 7,
+      inboxId: 45,
+      conversationId: 85,
     });
 
     expect(result.status).toBe("success");

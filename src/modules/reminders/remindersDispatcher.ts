@@ -24,6 +24,9 @@ export function createRemindersDispatcher(
         schemaVersion: "reminders_claim_due_input.v1",
         traceId: crypto.randomUUID(),
         limit: 10,
+        accountId: SCOPE_ACCOUNT,
+        inboxId: SCOPE_INBOX,
+        conversationId: SCOPE_CONVERSATION,
       });
 
       if (result.status !== "success" || result.count === 0) return;

@@ -102,7 +102,7 @@ No incluye todavia:
 - RAG.
 
 ### 4. `reminders`
-Estado: DONE
+Estado: IMPLEMENTED_PENDING_DEPLOY
 
 Proposito:
 - convertir tareas o mensajes en recordatorios temporales.

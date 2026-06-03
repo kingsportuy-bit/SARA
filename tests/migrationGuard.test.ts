@@ -68,8 +68,20 @@ describe("migration guard", () => {
 
   it("sara_claim_due_reminders claims only pending with due_at <= now", () => {
     const sql = readFileSync("db/migrations/20260603_010_reminders.sql", "utf8");
-    expect(sql).toContain("status = 'pending' and due_at <= now()");
+    expect(sql).toContain("where status = 'pending'");
+    expect(sql).toContain("and due_at <= now()");
     expect(sql).toContain("status = 'processing'");
+    expect(sql).toContain("and account_id = p_account_id");
+    expect(sql).toContain("and inbox_id = p_inbox_id");
+    expect(sql).toContain("and conversation_id = p_conversation_id");
+    expect(sql).toContain("limit greatest(coalesce(p_limit, 10), 1)");
+    expect(sql).toContain("for update skip locked");
+  });
+
+  it("sara_reminders RPC signatures do not put defaults before required params", () => {
+    const sql = readFileSync("db/migrations/20260603_010_reminders.sql", "utf8");
+    expect(sql).not.toMatch(/p_message\s+text\s+default[\s\S]*p_due_at\s+timestamptz/i);
+    expect(sql).not.toMatch(/p_reminder_id\s+uuid\s+default[\s\S]*p_account_id\s+bigint/i);
   });
 
   it("sara_mark_reminder_sent only works on processing status", () => {

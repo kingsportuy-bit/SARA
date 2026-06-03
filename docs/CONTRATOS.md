@@ -669,9 +669,9 @@ Ejecutable solo por `service_role`.
 ### RPC `sara_claim_due_reminders`
 Firma:
 ```
-sara_claim_due_reminders(p_limit int)
+sara_claim_due_reminders(p_limit int, p_account_id bigint, p_inbox_id bigint, p_conversation_id bigint)
 ```
-Reclama recordatorios vencidos `pending`, los pasa a `processing` y retorna filas para enviar.
+Reclama recordatorios vencidos `pending` de la conversacion indicada, los pasa a `processing` y retorna filas para enviar.
 Ejecutable solo por `service_role`.
 
 ### RPC `sara_mark_reminder_sent`

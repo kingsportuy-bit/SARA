@@ -28,14 +28,14 @@ create table if not exists sara_reminders (
 create or replace function sara_create_reminder(
   p_trace_id uuid,
   p_title text,
-  p_message text default null,
+  p_message text,
   p_due_at timestamptz,
-  p_source text default 'chatwoot',
+  p_source text,
   p_account_id bigint,
   p_inbox_id bigint,
   p_conversation_id bigint,
-  p_related_entity_type text default null,
-  p_related_entity_id uuid default null
+  p_related_entity_type text,
+  p_related_entity_id uuid
 ) returns jsonb
 language plpgsql
 security definer
@@ -88,10 +88,10 @@ $$;
 
 create or replace function sara_cancel_reminder(
   p_trace_id uuid,
-  p_reminder_id uuid default null,
-  p_title_match text default null,
-  p_position int default null,
-  p_source text default 'chatwoot',
+  p_reminder_id uuid,
+  p_title_match text,
+  p_position int,
+  p_source text,
   p_account_id bigint,
   p_inbox_id bigint,
   p_conversation_id bigint
@@ -174,7 +174,10 @@ end;
 $$;
 
 create or replace function sara_claim_due_reminders(
-  p_limit int default 10
+  p_limit int,
+  p_account_id bigint,
+  p_inbox_id bigint,
+  p_conversation_id bigint
 ) returns setof sara_reminders
 language plpgsql
 security definer
@@ -184,10 +187,23 @@ declare
   v_reminder sara_reminders;
 begin
   for v_reminder in
-    update sara_reminders
+    with due as (
+      select id
+      from sara_reminders
+      where status = 'pending'
+        and due_at <= now()
+        and account_id = p_account_id
+        and inbox_id = p_inbox_id
+        and conversation_id = p_conversation_id
+      order by due_at asc
+      limit greatest(coalesce(p_limit, 10), 1)
+      for update skip locked
+    )
+    update sara_reminders r
     set status = 'processing', updated_at = now()
-    where status = 'pending' and due_at <= now()
-    returning *
+    from due
+    where r.id = due.id
+    returning r.*
   loop
     return next v_reminder;
   end loop;
@@ -197,7 +213,7 @@ $$;
 create or replace function sara_mark_reminder_sent(
   p_trace_id uuid,
   p_reminder_id uuid,
-  p_source text default 'system'
+  p_source text
 ) returns jsonb
 language plpgsql
 security definer
@@ -243,8 +259,8 @@ $$;
 create or replace function sara_mark_reminder_failed(
   p_trace_id uuid,
   p_reminder_id uuid,
-  p_source text default 'system',
-  p_failure_reason text default null
+  p_source text,
+  p_failure_reason text
 ) returns jsonb
 language plpgsql
 security definer
@@ -303,8 +319,8 @@ grant execute on function sara_create_reminder(uuid, text, text, timestamptz, te
 revoke execute on function sara_cancel_reminder(uuid, uuid, text, int, text, bigint, bigint, bigint) from public, anon, authenticated;
 grant execute on function sara_cancel_reminder(uuid, uuid, text, int, text, bigint, bigint, bigint) to service_role;
 
-revoke execute on function sara_claim_due_reminders(int) from public, anon, authenticated;
-grant execute on function sara_claim_due_reminders(int) to service_role;
+revoke execute on function sara_claim_due_reminders(int, bigint, bigint, bigint) from public, anon, authenticated;
+grant execute on function sara_claim_due_reminders(int, bigint, bigint, bigint) to service_role;
 
 revoke execute on function sara_mark_reminder_sent(uuid, uuid, text) from public, anon, authenticated;
 grant execute on function sara_mark_reminder_sent(uuid, uuid, text) to service_role;

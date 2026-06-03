@@ -281,9 +281,17 @@
 - `npm test`: PASS (227 tests, hardening foco/TTL TASK-20260603-009)
 - `npm run build`: PASS (hardening foco/TTL TASK-20260603-009)
 
+## Evidencia local 2026-06-03 (TASK-20260603-010)
+- `npm run typecheck`: PASS
+- `npm test`: PASS (295 tests)
+- `npm run build`: PASS
+- `npm run typecheck`: PASS (hardening SQL/dispatcher scope TASK-20260603-010)
+- `npm test`: PASS (299 tests, hardening SQL/dispatcher scope TASK-20260603-010)
+- `npm run build`: PASS (hardening SQL/dispatcher scope TASK-20260603-010)
+
 ## Modulo reminders (TASK-20260603-010)
 
-Estado: DONE - Implementado
+Estado: IMPLEMENTED_PENDING_DEPLOY
 
 ### Migracion y DB
 - PASS: migracion solo crea/modifica objetos `sara_`
