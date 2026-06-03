@@ -2,7 +2,7 @@
 
 ## Estado del sistema (actualizado: 2026-06-03)
 - Produccion: worker post-buffer con pipeline modular operativo en VPS
-- En progreso: definicion de la proxima task modular segun `docs/MODULE_ROADMAP.md`
+- En progreso: TASK-20260603-010 aprobada para opencode (`reminders` MVP)
 - Bloqueos activos: activar firma HMAC de Chatwoot cuando se recupere `CHATWOOT_WEBHOOK_SECRET`
 - Primer flujo vertical: Chatwoot -> buffer durable -> DeepSeek bootstrap -> respuesta Chatwoot -> trazabilidad `sara_*`
 - Pipeline modular base: implementado y validado; DeepSeek queda como fallback solo para mensajes sin accion ejecutable.
@@ -75,10 +75,10 @@ Reglas derivadas:
 - Codex revisa el diff completo y valida con `npm run typecheck`, `npm test` y `npm run build` antes de aprobar.
 
 ## Task activa o proxima
-- Task: pendiente de definir
-- Estado: READY_FOR_NEXT_MODULE
+- Task: `docs/TASKS/TASK-20260603-010.md`
+- Estado: APPROVED_FOR_OPENCODE
 - Owner: Codex Orquestador
-- Objetivo: definir la siguiente task modular. Recomendacion actual: `reminders` segun `docs/MODULE_ROADMAP.md`.
+- Objetivo: implementar modulo `reminders` MVP para crear, listar, cancelar y disparar recordatorios simples por Chatwoot, sin recurrencias ni calendario externo.
 
 ## Ultimo cierre de sesion
 - Fecha: 2026-06-02

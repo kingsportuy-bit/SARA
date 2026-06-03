@@ -102,7 +102,7 @@ No incluye todavia:
 - RAG.
 
 ### 4. `reminders`
-Estado: NEXT_RECOMMENDED
+Estado: APPROVED_FOR_OPENCODE
 
 Proposito:
 - convertir tareas o mensajes en recordatorios temporales.
@@ -119,6 +119,9 @@ Acciones MVP sugeridas:
 
 Tabla autorizable:
 - `sara_reminders`
+
+Task:
+- `docs/TASKS/TASK-20260603-010.md`
 
 No incluir todavia:
 - calendario externo;

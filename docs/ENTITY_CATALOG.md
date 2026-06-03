@@ -1,6 +1,6 @@
 # ENTITY_CATALOG.md - SARA
 
-Estado: FASE A MINIMA + TASKS MVP + SESSION CONTEXT MVP
+Estado: FASE A MINIMA + TASKS MVP + SESSION CONTEXT MVP + REMINDERS MVP AUTORIZADO
 Fecha: 2026-06-03
 
 ## Objetivo
@@ -224,6 +224,61 @@ Representar acciones pendientes simples capturadas desde Chatwoot.
 ### Eventos que emite
 - `task_created`
 - `task_completed`
+
+## 7. `sara_reminders`
+Estado: AUTORIZADA PARA TASK-20260603-010
+
+### Proposito
+Representar recordatorios simples que SARA debe avisar por Chatwoot en una fecha/hora concreta.
+
+### Owner
+`reminders`
+
+### Campos
+- `id uuid primary key`
+- `schema_version text not null`
+- `title text not null`
+- `message text`
+- `status text not null`
+- `source text not null`
+- `due_at timestamptz not null`
+- `sent_at timestamptz`
+- `canceled_at timestamptz`
+- `failed_at timestamptz`
+- `failure_reason text`
+- `related_entity_type text`
+- `related_entity_id uuid`
+- `account_id bigint not null`
+- `inbox_id bigint not null`
+- `conversation_id bigint not null`
+- `trace_id uuid`
+- `created_at timestamptz not null`
+- `updated_at timestamptz not null`
+
+### Estados
+- `pending`
+- `processing`
+- `sent`
+- `canceled`
+- `failed`
+
+### Invariantes
+- `title` no puede estar vacio.
+- `due_at` debe ser futuro al crear.
+- `status` debe estar dentro de los estados permitidos.
+- `sent_at` solo existe cuando `status = sent`.
+- `canceled_at` solo existe cuando `status = canceled`.
+- `failed_at` solo existe cuando `status = failed`.
+- No hay recurrencias en MVP.
+- No hay calendario externo en MVP.
+- No se promete aviso si no se pudo persistir `reminder_created`.
+- Cada creacion, cancelacion, envio o fallo debe emitir evento en `sara_events`.
+
+### Eventos que emite
+- `reminder_created`
+- `reminder_canceled`
+- `reminder_sent`
+- `reminder_failed`
 
 ## Decisiones pendientes fuera de Fase A
 - `sara_plans`

@@ -534,3 +534,187 @@ Eventos emitidos en `sara_events`:
 - `session_context_cleared`
 - `confirmation_requested` (reservado, no implementado en MVP)
 - `confirmation_resolved` (reservado, no implementado en MVP)
+
+## Modulo reminders (v0 MVP)
+
+### reminders.create
+Responsable: `reminders`
+
+Entrada (`CreateReminderInput`):
+- `schemaVersion`: `"reminders_create_input.v1"`
+- `traceId`: string
+- `title`: string (no vacio)
+- `message?`: string
+- `dueAt`: ISO timestamptz futuro
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+- `accountId`: number
+- `inboxId`: number
+- `conversationId`: number
+- `relatedEntityType?`: string
+- `relatedEntityId?`: uuid
+
+Salida (`CreateReminderResult`):
+- `schemaVersion`: `"reminders_create_result.v1"`
+- `traceId`: string
+- `status`: `"created"` | `"failed"`
+- `reminderId?`: uuid
+- `eventId?`: uuid
+- `dueAt?`: ISO timestamptz
+- `title?`: string
+- `evidence.reminderId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"reminder_created"`
+- `error?`: string
+
+Reglas:
+- `title` no puede ser vacio.
+- `dueAt` debe ser futuro.
+- El parseo temporal ocurre antes de ejecutar la accion.
+- Si falta fecha/hora o es ambigua, `missingData=["dueAt"]` y no se ejecuta.
+- Solo confirma creacion con `reminderId` y `eventId`.
+- No crea recurrencias.
+- No integra calendario externo.
+
+### reminders.list
+Responsable: `reminders`
+
+Entrada (`ListRemindersInput`):
+- `schemaVersion`: `"reminders_list_input.v1"`
+- `traceId`: string
+- `status?`: `"pending"` | `"sent"` | `"canceled"` | `"failed"` (default `"pending"`)
+- `limit?`: number (default 5, max 10)
+- `accountId`: number
+- `inboxId`: number
+- `conversationId`: number
+
+Salida (`ListRemindersResult`):
+- `schemaVersion`: `"reminders_list_result.v1"`
+- `traceId`: string
+- `status`: `"success"` | `"failed"`
+- `reminders`: array de `{ id, title, message?, status, dueAt, createdAt }`
+- `count`: number
+- `error?`: string
+
+Consulta `sara_reminders` read-only, filtrada por conversacion y estado.
+
+### reminders.cancel
+Responsable: `reminders`
+
+Entrada (`CancelReminderInput`):
+- `schemaVersion`: `"reminders_cancel_input.v1"`
+- `traceId`: string
+- `reminderId?`: uuid
+- `titleMatch?`: string
+- `position?`: number (indice humano 1-based)
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+- `accountId`: number
+- `inboxId`: number
+- `conversationId`: number
+
+Salida (`CancelReminderResult`):
+- `schemaVersion`: `"reminders_cancel_result.v1"`
+- `traceId`: string
+- `status`: `"canceled"` | `"failed"`
+- `reminderId?`: uuid
+- `eventId?`: uuid
+- `title?`: string
+- `evidence.reminderId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"reminder_canceled"`
+- `error?`: string
+
+Reglas:
+- Requiere `reminderId`, `titleMatch` o `position`.
+- `position` se resuelve contra recordatorios pendientes ordenados por `due_at asc`.
+- `titleMatch` solo ejecuta si hay una unica coincidencia pendiente.
+- Si hay ambiguedad, falla sin cambiar estado.
+- Solo confirma cancelacion con `reminderId` y `eventId`.
+
+### reminders.dispatch-due
+Responsable: `reminders-dispatcher`
+
+Entrada:
+- timestamp actual
+- limite de reclamo
+
+Salida:
+- recordatorios vencidos reclamados atomicamente
+- envios intentados por Chatwoot
+- eventos de envio/fallo registrados
+
+Reglas:
+- Reclama solo `status = pending` y `due_at <= now()`.
+- Al reclamar pasa a `processing` para evitar doble envio.
+- Si Chatwoot confirma envio, pasa a `sent` y emite `reminder_sent`.
+- Si falla el envio, pasa a `failed` y emite `reminder_failed`.
+- No debe enviar recordatorios cancelados.
+- No debe tocar conversaciones fuera de account `7`, inbox `45`, conversation `85` en este MVP.
+
+### RPC `sara_create_reminder`
+Firma:
+```
+sara_create_reminder(p_trace_id uuid, p_title text, p_message text, p_due_at timestamptz, p_source text, p_account_id bigint, p_inbox_id bigint, p_conversation_id bigint, p_related_entity_type text, p_related_entity_id uuid)
+```
+Retorna JSON con `reminder_id`, `event_id`, `due_at`, `title`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+### RPC `sara_cancel_reminder`
+Firma:
+```
+sara_cancel_reminder(p_trace_id uuid, p_reminder_id uuid, p_title_match text, p_position int, p_source text, p_account_id bigint, p_inbox_id bigint, p_conversation_id bigint)
+```
+Retorna JSON con `reminder_id`, `event_id`, `title`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+### RPC `sara_claim_due_reminders`
+Firma:
+```
+sara_claim_due_reminders(p_limit int)
+```
+Reclama recordatorios vencidos `pending`, los pasa a `processing` y retorna filas para enviar.
+Ejecutable solo por `service_role`.
+
+### RPC `sara_mark_reminder_sent`
+Firma:
+```
+sara_mark_reminder_sent(p_trace_id uuid, p_reminder_id uuid, p_source text)
+```
+Marca `sent`, registra `sent_at` y emite `reminder_sent`.
+Ejecutable solo por `service_role`.
+
+### RPC `sara_mark_reminder_failed`
+Firma:
+```
+sara_mark_reminder_failed(p_trace_id uuid, p_reminder_id uuid, p_source text, p_failure_reason text)
+```
+Marca `failed`, registra `failed_at`, `failure_reason` y emite `reminder_failed`.
+Ejecutable solo por `service_role`.
+
+### Parseo temporal MVP
+Responsable: `reminder-time-parser`
+
+Soporta de forma deterministica:
+- `en N minutos`
+- `en N horas`
+- `en N dias`
+- `hoy a las HH`
+- `hoy a las HH:MM`
+- `manana a las HH`
+- `manana a las HH:MM`
+
+Zona horaria operativa: `America/Montevideo`.
+
+No soporta todavia:
+- recurrencias;
+- dias de semana;
+- meses en lenguaje natural;
+- calendario externo;
+- zonas horarias configurables;
+- horarios inteligentes.
+
+Reglas de respuesta:
+- Crear: `"Recordatorio creado para <fecha/hora>: <title>"`
+- Listar con resultados: `"Estos son tus recordatorios pendientes:\n1. <fecha/hora> - <title>"`
+- Listar sin resultados: `"No encontre recordatorios pendientes."`
+- Cancelar: `"Recordatorio cancelado: <title>"`
+- Disparo: `"Recordatorio: <title>"`

@@ -280,3 +280,32 @@
 - `npm run typecheck`: PASS (hardening foco/TTL TASK-20260603-009)
 - `npm test`: PASS (227 tests, hardening foco/TTL TASK-20260603-009)
 - `npm run build`: PASS (hardening foco/TTL TASK-20260603-009)
+
+## Modulo reminders (TASK-20260603-010)
+
+Estado: SPEC APPROVED
+
+Tests requeridos para cerrar implementacion:
+- migracion solo crea/modifica objetos `sara_`.
+- `sara_reminders` tiene RLS y anon/authenticated revocado.
+- `sara_reminders` valida estados permitidos.
+- `sara_create_reminder` rechaza title vacio.
+- `sara_create_reminder` rechaza `due_at` pasado.
+- `sara_create_reminder` emite `reminder_created`.
+- `sara_cancel_reminder` cancela por id.
+- `sara_cancel_reminder` cancela por posicion.
+- `sara_cancel_reminder` falla si `titleMatch` es ambiguo.
+- `sara_claim_due_reminders` reclama solo vencidos pending y los pasa a processing.
+- `sara_mark_reminder_sent` marca sent y emite `reminder_sent`.
+- `sara_mark_reminder_failed` marca failed y emite `reminder_failed`.
+- `reminderTimeParser` parsea tiempos MVP y rechaza texto ambiguo.
+- `remindersModule` valida create/list/cancel.
+- `remindersStore` llama RPCs correctas.
+- clasificadores detectan `reminders.create/list/cancel`.
+- `actionExecutor` despacha reminders con guardas de confianza/missingData.
+- `responseComposer` confirma solo con evidencia.
+- dispatcher envia Chatwoot con fake exitoso y marca sent.
+- dispatcher marca failed con fake fallido.
+- dispatcher ignora recordatorios fuera de scope `7/45/85`.
+- `bufferProcessor` ejecuta create/list/cancel y actualiza `session-context`.
+- regresion `notes`, `tasks`, `session-context` y Chatwoot scope sigue pasando.
