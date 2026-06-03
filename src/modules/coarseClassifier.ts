@@ -1,5 +1,5 @@
 import type { CoarseClassificationInput, CoarseClassificationResult } from "../contracts/pipeline.js";
-import { matchesNotePrefix } from "./patterns.js";
+import { matchesNotePrefix, stripChatwootHeader } from "./patterns.js";
 
 export interface CoarseClassifier {
   classify(input: CoarseClassificationInput): Promise<CoarseClassificationResult>;
@@ -8,7 +8,8 @@ export interface CoarseClassifier {
 export function createCoarseClassifier(): CoarseClassifier {
   return {
     async classify(input) {
-      const text = input.messages.map((m) => m.content).join(" ").trim();
+      const rawText = input.messages.map((m) => m.content).join(" ").trim();
+      const text = stripChatwootHeader(rawText);
 
       if (matchesNotePrefix(text)) {
         return {

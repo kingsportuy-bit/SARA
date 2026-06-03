@@ -92,6 +92,30 @@ describe("moduleIntentClassifier notes.create detection", () => {
     expect(result.missingData).toContain("content");
   });
 
+  it("detects notes.create with Chatwoot markdown header", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-nh1",
+      module: "notes",
+      messages: [{ id: 1, content: "**+598 91 608 727 - Fabian:**\nnota: recordar que esta es la primera prueba real", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("create");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+    expect(result.missingData).toEqual([]);
+  });
+
+  it("extracts content without Chatwoot header in content", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-nh2",
+      module: "notes",
+      messages: [{ id: 1, content: "**+598 91 608 727 - Fabian:**\nnota: recordar algo importante", createdAt: "now" }],
+    });
+
+    expect(result.entities).toHaveProperty("content", "recordar algo importante");
+  });
+
   it("does not detect notes.create for non-notes modules", async () => {
     const result = await classifier.classify({
       schemaVersion: "module_intent_input.v1",

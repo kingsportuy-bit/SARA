@@ -22,6 +22,13 @@ export const NOTE_PREFIX_PATTERNS = [
 
 export const NOTE_PREFIX_REMOVE = NOTE_COMMAND_PATTERN;
 
+const CHATWOOT_HEADER = /^\*\*.+?\*\*\s*/;
+
+export function stripChatwootHeader(text: string): string {
+  if (!text) return "";
+  return text.replace(CHATWOOT_HEADER, "").trim();
+}
+
 export function matchesNotePrefix(text: string): boolean {
   if (!text) return false;
   return NOTE_PREFIX_PATTERNS.some((pattern) => pattern.test(text));

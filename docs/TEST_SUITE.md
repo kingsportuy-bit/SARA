@@ -95,6 +95,10 @@
 - PASS: bufferProcessor completa buffer con respuesta compuesta tras accion ejecutada
 - PASS: bufferProcessor no confirma nota sin noteId y eventId en evidencia
 - PASS: Chatwoot scope 7/45/85 intacto (regresion)
+- PASS: coarseClassifier detecta notes con encabezado markdown Chatwoot
+- PASS: moduleIntentClassifier detecta notes.create con encabezado Chatwoot
+- PASS: moduleIntentClassifier extrae content sin encabezado
+- PASS: bufferProcessor ejecuta notes.create con formato Chatwoot (encabezado + nota)
 
 ## Evidencia local 2026-06-02
 - `npm run typecheck`: PASS
@@ -114,3 +118,6 @@
 - `npm run typecheck`: PASS (TASK-20260603-006)
 - `npm test`: PASS (82 tests, TASK-20260603-006)
 - `npm run build`: PASS (TASK-20260603-006)
+- `npm run typecheck`: PASS (fix header TASK-20260603-006)
+- `npm test`: PASS (86 tests, fix header TASK-20260603-006)
+- `npm run build`: PASS (fix header TASK-20260603-006)

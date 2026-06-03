@@ -97,6 +97,17 @@ describe("coarseClassifier", () => {
     expect(result.module).toBe("notes");
   });
 
+  it("detects notes with Chatwoot markdown header prefix", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-h1",
+      messages: [{ id: 1, content: "**+598 91 608 727 - Fabian:**\nnota: recordar que esta es la primera prueba real", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("notes");
+    expect(result.confidence).toBe(0.9);
+  });
+
   it("returns unknown for normal message", async () => {
     const result = await classifier.classify({
       schemaVersion: "coarse_classification_input.v1",

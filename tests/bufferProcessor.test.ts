@@ -267,4 +267,41 @@ describe("bufferProcessor", () => {
     expect(sentContent).toContain("no se puede verificar");
     expect(complete).toHaveBeenCalledWith("b5", expect.any(String), 99);
   });
+
+  it("executes notes.create with Chatwoot header format", async () => {
+    registerModule("notes", ["create"]);
+
+    const handler = vi.fn(async (): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: "t6",
+      status: "executed",
+      evidence: { noteId: "n1", eventId: "e1" },
+      stateChanges: [{ entityType: "note", entityId: "n1", eventType: "note_created", payload: {} }],
+    }));
+
+    const { store, complete, send } = (() => {
+      const s = fakeStore([{ bid: "b6", tid: "t6", cid: 85, msgs: [{ id: 1, content: "**+598 91 608 727 - Fabian:**\nnota: recordar esta prueba" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ notes: { create: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate: vi.fn() },
+      outbound: { send },
+      logger: fakeLogger(),
+    });
+
+    await proc.processDue();
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalledWith("b6", expect.any(String), 99);
+  });
 });

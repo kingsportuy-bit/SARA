@@ -1,13 +1,15 @@
 import type { ModuleIntentInput, ModuleIntentResult } from "../contracts/pipeline.js";
-import { matchesNotePrefix, extractNoteContent } from "./patterns.js";
+import { matchesNotePrefix, extractNoteContent, stripChatwootHeader } from "./patterns.js";
 
 export interface ModuleIntentClassifier {
   classify(input: ModuleIntentInput): Promise<ModuleIntentResult>;
 }
 
 function detectNotesIntent(input: ModuleIntentInput): ModuleIntentResult | null {
-  const text = input.messages.map((m) => m.content).join(" ").trim();
-  if (!text) return null;
+  const rawText = input.messages.map((m) => m.content).join(" ").trim();
+  if (!rawText) return null;
+
+  const text = stripChatwootHeader(rawText);
 
   if (!matchesNotePrefix(text)) return null;
 
