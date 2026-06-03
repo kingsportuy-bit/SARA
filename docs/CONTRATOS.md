@@ -465,3 +465,72 @@ Reglas de respuesta:
 - Listar con resultados: `"Estas son tus tareas pendientes:\n1. <title1>\n2. <title2>"`
 - Listar sin resultados: `"No encontre tareas pendientes."`
 - Completar: `"Tarea completada: <title>"`
+
+## Modulo session-context (v0 MVP)
+
+### Tabla `sara_session_contexts`
+Responsable: `session-context`
+
+Campos:
+- `id uuid primary key`
+- `schema_version text not null`
+- `account_id bigint not null`
+- `inbox_id bigint not null`
+- `conversation_id bigint not null`
+- `active_module text`
+- `active_flow text`
+- `focused_entity_type text`
+- `focused_entity_id uuid`
+- `awaiting_confirmation boolean not null`
+- `confirmation_payload jsonb`
+- `context jsonb not null`
+- `expires_at timestamptz`
+- `created_at timestamptz not null`
+- `updated_at timestamptz not null`
+
+Restricciones:
+- Unique constraint `sara_session_contexts_unique_conversation` en `(account_id, inbox_id, conversation_id)`.
+- RLS habilitado, acceso revocado a anon/authenticated, solo service_role autorizado.
+
+### session-context.get
+Responsable: `session-context`
+
+RPC: `sara_get_session_context(account_id bigint, inbox_id bigint, conversation_id bigint)`
+Retorna jsonb con el contexto activo (no expirado) o null.
+Ejecutable solo por service_role.
+
+### session-context.upsert
+Responsable: `session-context`
+
+RPC: `sara_upsert_session_context(p_trace_id uuid, p_account_id bigint, p_inbox_id bigint, p_conversation_id bigint, p_active_module text, p_active_flow text, p_focused_entity_type text, p_focused_entity_id uuid, p_awaiting_confirmation boolean, p_confirmation_payload jsonb, p_context jsonb, p_ttl_minutes int)`
+Upsert con merge de context jsonb. Si es nuevo emite `session_context_started`, si actualiza emite `session_context_updated`. TTL default 30 minutos.
+Retorna jsonb con registro completo, eventId e isNew.
+Ejecutable solo por service_role.
+
+### session-context.clear
+Responsable: `session-context`
+
+RPC: `sara_clear_session_context(p_trace_id uuid, p_account_id bigint, p_inbox_id bigint, p_conversation_id bigint)`
+Elimina el contexto activo. Emite `session_context_cleared`.
+Retorna jsonb con cleared y sessionContextId.
+Ejecutable solo por service_role.
+
+### Foco conversacional
+Despues de acciones ejecutadas el bufferProcessor actualiza automaticamente:
+- `tasks.create`: foco en la tarea creada (focusedEntityType=task, focusedEntityId=taskId, activeFlow=task_created, context.lastTaskTitle=title)
+- `tasks.list`: si hay 1 unica pendiente foco en ella; si hay multiples guarda lastTaskList con posiciones e ids
+- `tasks.complete`: limpia foco si la tarea completada era la enfocada (activeFlow=task_completed)
+- `notes.create/list/search`: enfoca nota si se creo o si hay un unico resultado
+
+### Resolucion de referencias simples
+El `moduleIntentClassifier` resuelve frases como `completar esa`, `completar la ultima tarea`, `marcar esa como hecha` usando:
+- `sessionContext.focusedEntityType` + `focusedEntityId` si el foco esta en una tarea
+- `context.lastTaskList` si contiene exactamente una tarea
+Si hay ambiguedad, retorna `missingData=["task"]` y no ejecuta.
+
+Eventos emitidos en `sara_events`:
+- `session_context_started`
+- `session_context_updated`
+- `session_context_cleared`
+- `confirmation_requested` (reservado, no implementado en MVP)
+- `confirmation_resolved` (reservado, no implementado en MVP)

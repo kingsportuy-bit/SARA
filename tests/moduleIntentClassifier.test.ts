@@ -454,3 +454,125 @@ describe("moduleIntentClassifier tasks.complete detection", () => {
     expect(result.entities).toHaveProperty("titleMatch", "revisar facturas");
   });
 });
+
+describe("moduleIntentClassifier tasks.complete reference resolution", () => {
+  it("resolves completar esa with focused task in session context", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-r1",
+      module: "tasks",
+      messages: [{ id: 1, content: "completar esa", createdAt: "now" }],
+      sessionContext: {
+        focusedEntityType: "task",
+        focusedEntityId: "task-focused-1",
+        context: { lastTaskTitle: "llamar al contador" },
+      },
+    });
+
+    expect(result.action).toBe("complete");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+    expect(result.entities).toHaveProperty("taskId", "task-focused-1");
+    expect(result.missingData).toEqual([]);
+  });
+
+  it("resolves completar la ultima tarea with focused task", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-r2",
+      module: "tasks",
+      messages: [{ id: 1, content: "completar la ultima tarea", createdAt: "now" }],
+      sessionContext: {
+        focusedEntityType: "task",
+        focusedEntityId: "task-focused-2",
+      },
+    });
+
+    expect(result.action).toBe("complete");
+    expect(result.entities).toHaveProperty("taskId", "task-focused-2");
+  });
+
+  it("resolves marcar esa como hecha with focused task", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-r3",
+      module: "tasks",
+      messages: [{ id: 1, content: "marcar esa como hecha", createdAt: "now" }],
+      sessionContext: {
+        focusedEntityType: "task",
+        focusedEntityId: "task-3",
+      },
+    });
+
+    expect(result.action).toBe("complete");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+    expect(result.entities).toHaveProperty("taskId", "task-3");
+  });
+
+  it("resolves from lastTaskList when single task in context", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-r4",
+      module: "tasks",
+      messages: [{ id: 1, content: "completar la ultima", createdAt: "now" }],
+      sessionContext: {
+        context: {
+          lastTaskList: [{ position: 1, id: "task-abc", title: "llamar al contador" }],
+        },
+      },
+    });
+
+    expect(result.action).toBe("complete");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+    expect(result.entities).toHaveProperty("taskId", "task-abc");
+  });
+
+  it("returns missingData when session context is undefined (ambiguous)", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-r5",
+      module: "tasks",
+      messages: [{ id: 1, content: "completar esa", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("complete");
+    expect(result.confidence).toBeLessThan(0.75);
+    expect(result.missingData).toContain("task");
+  });
+
+  it("returns missingData when lastTaskList has multiple tasks (ambiguous)", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-r6",
+      module: "tasks",
+      messages: [{ id: 1, content: "completar la ultima tarea", createdAt: "now" }],
+      sessionContext: {
+        context: {
+          lastTaskList: [
+            { position: 1, id: "t1", title: "a" },
+            { position: 2, id: "t2", title: "b" },
+          ],
+        },
+      },
+    });
+
+    expect(result.action).toBe("complete");
+    expect(result.confidence).toBeLessThan(0.75);
+    expect(result.missingData).toContain("task");
+  });
+
+  it("resolves marcar la ultima tarea como hecha with focused task", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-r7",
+      module: "tasks",
+      messages: [{ id: 1, content: "marcar la ultima tarea como hecha", createdAt: "now" }],
+      sessionContext: {
+        focusedEntityType: "task",
+        focusedEntityId: "task-x7",
+      },
+    });
+
+    expect(result.action).toBe("complete");
+    expect(result.entities).toHaveProperty("taskId", "task-x7");
+  });
+});

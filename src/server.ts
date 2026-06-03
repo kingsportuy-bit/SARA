@@ -5,8 +5,10 @@ import { createDeepseekClient } from "./infra/deepseekClient.js";
 import { createSupabaseClient, createSupabaseStore } from "./infra/supabaseStore.js";
 import { createNotesStore } from "./infra/notesStore.js";
 import { createTasksStore } from "./infra/tasksStore.js";
+import { createSessionContextStore } from "./infra/sessionContextStore.js";
 import { createNotesModule } from "./modules/notes/notesModule.js";
 import { createTasksModule } from "./modules/tasks/tasksModule.js";
+import { createSessionContextModule } from "./modules/sessionContext/sessionContextModule.js";
 import { createCoarseClassifier } from "./modules/coarseClassifier.js";
 import { createModuleIntentClassifier } from "./modules/moduleIntentClassifier.js";
 import { createModuleRouter, registerModule } from "./modules/moduleRouter.js";
@@ -28,6 +30,9 @@ const notesModule = createNotesModule(notesStore);
 
 const tasksStore = createTasksStore(supabase);
 const tasksModule = createTasksModule(tasksStore);
+
+const sessionContextStore = createSessionContextStore(supabase);
+const sessionContextModule = createSessionContextModule(sessionContextStore);
 
 registerModule("notes", ["create", "list", "search"]);
 registerModule("tasks", ["create", "list", "complete"]);
@@ -266,6 +271,7 @@ const processor = createBufferProcessor({
   fallbackGenerator: createDeepseekClient(config.deepseek.apiKey, config.deepseek.model),
   outbound: createChatwootClient(config.chatwoot.url, config.chatwoot.accountId, config.chatwoot.userToken),
   logger: app.log,
+  sessionContextModule,
 });
 
 setInterval(() => void processor.processDue(), config.workerIntervalMs).unref();

@@ -19,4 +19,16 @@ describe("migration guard", () => {
     expect(sql).toContain("multiple matching pending tasks found");
     expect(sql).toContain("v_match_count > 1");
   });
+
+  it("sara_session_contexts has unique constraint on account/inbox/conversation", () => {
+    const sql = readFileSync("db/migrations/20260603_009_session_context.sql", "utf8");
+    expect(sql).toContain("sara_session_contexts_unique_conversation");
+    expect(sql).toContain("unique (account_id, inbox_id, conversation_id)");
+  });
+
+  it("sara_session_contexts has RLS enabled and anon/authenticated access revoked", () => {
+    const sql = readFileSync("db/migrations/20260603_009_session_context.sql", "utf8");
+    expect(sql).toContain("enable row level security");
+    expect(sql).toContain("revoke all on sara_session_contexts from anon, authenticated");
+  });
 });

@@ -5,6 +5,7 @@ import type { ModuleRouter } from "./moduleRouter.js";
 import type { ActionExecutor } from "./actionExecutor.js";
 import type { ResponseComposer } from "./responseComposer.js";
 import type { MessageNormalizer } from "./messageNormalizer.js";
+import type { SessionContextModule } from "./sessionContext/sessionContextModule.js";
 
 interface PipelineContext {
   store: MessageStore;
@@ -17,6 +18,7 @@ interface PipelineContext {
   fallbackGenerator: ResponseGenerator;
   outbound: OutboundChatwoot;
   logger: { info: (data: object, message: string) => void; error: (data: object, message: string) => void };
+  sessionContextModule?: SessionContextModule;
 }
 
 export function createBufferProcessor(ctx: PipelineContext) {
@@ -38,6 +40,154 @@ export function createBufferProcessor(ctx: PipelineContext) {
     }
   }
 
+  async function loadSessionContext(buffer: ClaimedBuffer) {
+    if (!ctx.sessionContextModule) return undefined;
+
+    try {
+      const result = await ctx.sessionContextModule.get({
+        accountId: buffer.account_id,
+        inboxId: buffer.inbox_id,
+        conversationId: buffer.conversation_id,
+      });
+
+      if (!result.context) return undefined;
+
+      return {
+        contextId: result.context.id,
+        activeModule: result.context.activeModule,
+        activeFlow: result.context.activeFlow,
+        focusedEntityType: result.context.focusedEntityType,
+        focusedEntityId: result.context.focusedEntityId,
+        awaitingConfirmation: result.context.awaitingConfirmation,
+        context: result.context.context,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      ctx.logger.error({ error: message, bufferId: buffer.buffer_id }, "failed to load session context");
+      return undefined;
+    }
+  }
+
+  async function updateSessionContext(
+    buffer: ClaimedBuffer,
+    actionResult: { status: string; evidence: Record<string, unknown>; stateChanges: Array<{ entityType: string; entityId?: string; eventType: string; payload: Record<string, unknown> }> },
+    module: string,
+    action: string,
+  ): Promise<void> {
+    if (!ctx.sessionContextModule) return;
+
+    try {
+      const base = {
+        traceId: buffer.trace_id,
+        accountId: buffer.account_id,
+        inboxId: buffer.inbox_id,
+        conversationId: buffer.conversation_id,
+      };
+
+      if (module === "tasks") {
+        if (action === "create" && actionResult.status === "executed") {
+          const taskId = actionResult.evidence?.taskId as string | undefined;
+          const title = actionResult.evidence?.title as string | undefined;
+          if (taskId) {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "tasks",
+              activeFlow: "task_created",
+              focusedEntityType: "task",
+              focusedEntityId: taskId,
+              context: title ? { lastTaskTitle: title } : {},
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, taskId }, "session context updated for tasks.create");
+          }
+        } else if (action === "list" && actionResult.status === "executed") {
+          const tasks = actionResult.evidence?.tasks as Array<{ id: string; title: string }> | undefined;
+          const count = actionResult.evidence?.count as number | undefined;
+
+          if (tasks && count === 1 && tasks.length === 1) {
+            ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "tasks",
+              activeFlow: "task_listed",
+              focusedEntityType: "task",
+              focusedEntityId: tasks[0].id,
+              context: { lastTaskTitle: tasks[0].title, lastTaskList: [{ position: 1, id: tasks[0].id, title: tasks[0].title }] },
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id }, "session context focused on single pending task");
+          } else if (tasks && count && count > 1) {
+            const taskList = tasks.map((t, i) => ({ position: i + 1, id: t.id, title: t.title }));
+            ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "tasks",
+              focusedEntityType: undefined,
+              focusedEntityId: undefined,
+              context: { lastTaskList: taskList },
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, count }, "session context saved lastTaskList");
+          }
+        } else if (action === "complete" && actionResult.status === "executed") {
+          const completedTaskId = actionResult.evidence?.taskId as string | undefined;
+          const completedTitle = actionResult.evidence?.title as string | undefined;
+
+          const existingCtx = await ctx.sessionContextModule.get({
+            accountId: buffer.account_id,
+            inboxId: buffer.inbox_id,
+            conversationId: buffer.conversation_id,
+          });
+
+          const focusedId = existingCtx.context?.focusedEntityId;
+          const shouldClearFocus = completedTaskId && focusedId === completedTaskId;
+
+          if (shouldClearFocus) {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "tasks",
+              activeFlow: "task_completed",
+              focusedEntityType: undefined,
+              focusedEntityId: undefined,
+              context: completedTitle ? { lastCompletedTitle: completedTitle } : {},
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, taskId: completedTaskId }, "session context cleared focus after tasks.complete of focused task");
+          } else {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "tasks",
+              activeFlow: "task_completed",
+              context: completedTitle ? { lastCompletedTitle: completedTitle } : {},
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, taskId: completedTaskId }, "session context updated for tasks.complete");
+          }
+        }
+      } else if (module === "notes") {
+        const noteId = actionResult.evidence?.noteId as string | undefined;
+        if (action === "create" && actionResult.status === "executed" && noteId) {
+          await ctx.sessionContextModule.upsert({
+            ...base,
+            activeModule: "notes",
+            activeFlow: "note_created",
+            focusedEntityType: "note",
+            focusedEntityId: noteId,
+          });
+          ctx.logger.info({ bufferId: buffer.buffer_id, noteId }, "session context updated for notes.create");
+        } else if ((action === "list" || action === "search") && actionResult.status === "executed") {
+          const notes = actionResult.evidence?.notes as Array<{ id: string }> | undefined;
+          const count = actionResult.evidence?.count as number | undefined;
+          if (notes && count === 1 && notes.length === 1) {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "notes",
+              focusedEntityType: "note",
+              focusedEntityId: notes[0].id,
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id }, "session context focused on single note result");
+          }
+        }
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      ctx.logger.error({ error: message, bufferId: buffer.buffer_id }, "failed to update session context");
+    }
+  }
+
   async function processBuffer(buffer: ClaimedBuffer): Promise<void> {
     const rawMessages = buffer.messages.map((m) => ({
       id: m.id,
@@ -52,11 +202,14 @@ export function createBufferProcessor(ctx: PipelineContext) {
       createdAt: nm.createdAt,
     }));
 
+    const sessionContext = await loadSessionContext(buffer);
+
     try {
       const coarse = await ctx.coarseClassifier.classify({
         schemaVersion: "coarse_classification_input.v1",
         traceId: buffer.trace_id,
         messages,
+        sessionContext,
       });
 
       if (coarse.module === "unknown") {
@@ -69,6 +222,7 @@ export function createBufferProcessor(ctx: PipelineContext) {
         traceId: buffer.trace_id,
         module: coarse.module,
         messages,
+        sessionContext,
       });
 
       if (intent.action === "none") {
@@ -125,6 +279,9 @@ export function createBufferProcessor(ctx: PipelineContext) {
 
       const sent = await ctx.outbound.send(buffer.conversation_id, response.content);
       await ctx.store.complete(buffer.buffer_id, response.content, sent.id);
+
+      void updateSessionContext(buffer, actionResult, intent.module, intent.action);
+
       ctx.logger.info({ bufferId: buffer.buffer_id, traceId: buffer.trace_id, outboundMessageId: sent.id }, "buffer completed via pipeline");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

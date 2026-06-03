@@ -237,6 +237,29 @@
 - PASS: bufferProcessor ejecuta tasks.complete con position y no llama DeepSeek
 - PASS: bufferProcessor bloquea tasks.complete sin datos suficientes y no ejecuta handler
 
+### Session Context (TASK-20260603-009)
+- PASS: sara_session_contexts tiene unique constraint en account/inbox/conversation
+- PASS: sara_session_contexts tiene RLS y anon/authenticated revocado
+- PASS: sessionContextModule.get retorna contexto vigente
+- PASS: sessionContextModule.get retorna null si contexto no existe
+- PASS: sessionContextModule.get ignora contexto expirado (store retorna null)
+- PASS: sessionContextModule.upsert valida account/inbox/conversation
+- PASS: sessionContextModule.upsert propaga error por falta de campos
+- PASS: sessionContextModule.clear limpia contexto y emite resultado con evidencia
+- PASS: sessionContextStore.get llama sara_get_session_context
+- PASS: sessionContextStore.upsert llama sara_upsert_session_context con params correctos
+- PASS: sessionContextStore.clear llama sara_clear_session_context
+- PASS: bufferProcessor pasa sessionContext a coarseClassifier e moduleIntentClassifier
+- PASS: bufferProcessor actualiza foco despues de tasks.create con evidencia
+- PASS: bufferProcessor actualiza lastTaskList despues de tasks.list con multiple tareas
+- PASS: bufferProcessor no falla accion principal si falla actualizar contexto
+- PASS: moduleIntentClassifier resuelve completar esa con foco task en sessionContext
+- PASS: moduleIntentClassifier resuelve completar la ultima tarea con foco task
+- PASS: moduleIntentClassifier resuelve marcar esa como hecha con foco task
+- PASS: moduleIntentClassifier resuelve desde lastTaskList cuando hay una unica tarea
+- PASS: moduleIntentClassifier no resuelve referencia ambigua sin sessionContext
+- PASS: moduleIntentClassifier no resuelve referencia ambigua con lastTaskList multiple
+
 ### Regresion
 - PASS: notes.create/list/search sigue pasando (13 tests bufferProcessor + notes)
 - PASS: Chatwoot scope 7/45/85 sigue pasando
@@ -248,3 +271,8 @@
 - `npm run typecheck`: PASS (hardening titleMatch TASK-20260603-008)
 - `npm test`: PASS (196 tests, hardening titleMatch TASK-20260603-008)
 - `npm run build`: PASS (hardening titleMatch TASK-20260603-008)
+
+## Evidencia local 2026-06-03 (TASK-20260603-009)
+- `npm run typecheck`: PASS
+- `npm test`: PASS (226 tests)
+- `npm run build`: PASS

@@ -93,6 +93,11 @@ const TASK_COMPLETE_BARE_PATTERNS = [
   /^marcar\s*tarea\s*$/i,
 ];
 
+export const TASK_REFERENCE_PATTERNS = [
+  /^(?:completar|marcar)\s+(?:la\s+)?(?:ultima|anterior|esa)\s*(?:tarea)?(?:\s+(?:como\s+)?hech[oa])?$/i,
+  /^(?:marcar)\s+(?:esa)\s+(?:como\s+)?hech[oa]$/i,
+];
+
 export function matchesTaskCreate(text: string): boolean {
   if (!text) return false;
   return TASK_CREATE_PATTERNS.some((pattern) => pattern.test(text));
@@ -106,7 +111,8 @@ export function matchesTaskListQuery(text: string): boolean {
 export function matchesTaskComplete(text: string): boolean {
   if (!text) return false;
   return TASK_COMPLETE_PATTERNS.some((pattern) => pattern.test(text)) ||
-    TASK_COMPLETE_BARE_PATTERNS.some((pattern) => pattern.test(text));
+    TASK_COMPLETE_BARE_PATTERNS.some((pattern) => pattern.test(text)) ||
+    TASK_REFERENCE_PATTERNS.some((pattern) => pattern.test(text));
 }
 
 export function extractTaskTitle(text: string): string {
@@ -152,4 +158,38 @@ export function extractNoteContent(text: string): string {
     return "";
   }
   return text;
+}
+
+export function matchesTaskReference(text: string): boolean {
+  if (!text) return false;
+  return TASK_REFERENCE_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export interface ResolvedTaskReference {
+  taskId?: string;
+  position?: number;
+  title?: string;
+}
+
+export function resolveTaskReference(
+  sessionContext: {
+    focusedEntityType?: string;
+    focusedEntityId?: string;
+    context?: Record<string, unknown>;
+  } | undefined,
+): ResolvedTaskReference | null {
+  if (!sessionContext) return null;
+
+  if (sessionContext.focusedEntityType === "task" && sessionContext.focusedEntityId) {
+    return { taskId: sessionContext.focusedEntityId };
+  }
+
+  const lastTaskList = sessionContext.context?.lastTaskList as Array<{ position: number; id: string; title: string }> | undefined;
+  if (lastTaskList && Array.isArray(lastTaskList)) {
+    if (lastTaskList.length === 1) {
+      return { taskId: lastTaskList[0].id };
+    }
+  }
+
+  return null;
 }

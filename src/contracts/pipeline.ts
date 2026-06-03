@@ -7,11 +7,13 @@ export interface CoarseClassificationInput {
     createdAt: string;
   }>;
   sessionContext?: {
+    contextId?: string;
     activeModule?: string;
     activeFlow?: string;
     focusedEntityType?: string;
     focusedEntityId?: string;
     awaitingConfirmation?: boolean;
+    context?: Record<string, unknown>;
   };
 }
 

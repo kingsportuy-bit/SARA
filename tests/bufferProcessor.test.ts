@@ -572,3 +572,287 @@ describe("bufferProcessor tasks integration", () => {
     expect(complete).toHaveBeenCalledWith("b13", expect.any(String), 99);
   });
 });
+
+describe("bufferProcessor session context integration", () => {
+  it("passes sessionContext to coarseClassifier when context is loaded", async () => {
+    registerModule("tasks", ["create"]);
+    const logger = fakeLogger();
+
+    const handler = vi.fn(async (): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: "t-sc1",
+      status: "executed",
+      evidence: { taskId: "t1", eventId: "e1", title: "llamar al contador" },
+      stateChanges: [{ entityType: "task", entityId: "t1", eventType: "task_created", payload: {} }],
+    }));
+
+    const sessionCtxMod = {
+      get: vi.fn().mockResolvedValue({
+        context: {
+          id: "ctx-1",
+          schemaVersion: "session_context.v1",
+          accountId: 7,
+          inboxId: 45,
+          conversationId: 85,
+          activeModule: "tasks",
+          activeFlow: "task_created",
+          focusedEntityType: "task",
+          focusedEntityId: "task-focused",
+          awaitingConfirmation: false,
+          context: { lastTaskTitle: "llamar al contador" },
+          createdAt: "now",
+          updatedAt: "now",
+        },
+      }),
+      upsert: vi.fn().mockResolvedValue({ context: {}, isNew: false }),
+      clear: vi.fn().mockResolvedValue({ cleared: true }),
+    } as any;
+
+    const { store, complete, send, generate } = (() => {
+      const s = fakeStore([{ bid: "b-sc1", tid: "t-sc1", cid: 85, msgs: [{ id: 1, content: "tarea: llamar al contador" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ tasks: { create: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate },
+      outbound: { send },
+      logger,
+      sessionContextModule: sessionCtxMod,
+    });
+
+    await proc.processDue();
+
+    expect(generate).not.toHaveBeenCalled();
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalledWith("b-sc1", expect.any(String), 99);
+    expect(sessionCtxMod.get).toHaveBeenCalledWith({ accountId: 7, inboxId: 45, conversationId: 85 });
+  });
+
+  it("updates session context focus after tasks.create with evidence", async () => {
+    registerModule("tasks", ["create"]);
+    const logger = fakeLogger();
+
+    const handler = vi.fn(async (): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: "t-sc2",
+      status: "executed",
+      evidence: { taskId: "t-new", eventId: "e-new", title: "nueva tarea" },
+      stateChanges: [{ entityType: "task", entityId: "t-new", eventType: "task_created", payload: {} }],
+    }));
+
+    const sessionCtxMod = {
+      get: vi.fn().mockResolvedValue({ context: null }),
+      upsert: vi.fn().mockResolvedValue({ context: {}, isNew: true }),
+      clear: vi.fn(),
+    } as any;
+
+    const { store, complete, send, generate } = (() => {
+      const s = fakeStore([{ bid: "b-sc2", tid: "t-sc2", cid: 85, msgs: [{ id: 1, content: "tarea: nueva tarea" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ tasks: { create: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate },
+      outbound: { send },
+      logger,
+      sessionContextModule: sessionCtxMod,
+    });
+
+    await proc.processDue();
+
+    expect(sessionCtxMod.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      activeModule: "tasks",
+      activeFlow: "task_created",
+      focusedEntityType: "task",
+      focusedEntityId: "t-new",
+      context: { lastTaskTitle: "nueva tarea" },
+    }));
+  });
+
+  it("updates lastTaskList after tasks.list with multiple tasks", async () => {
+    registerModule("tasks", ["list"]);
+    const logger = fakeLogger();
+
+    const handler = vi.fn(async (): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: "t-sc3",
+      status: "executed",
+      evidence: {
+        tasks: [{ id: "t1", title: "task 1" }, { id: "t2", title: "task 2" }],
+        count: 2,
+      },
+      stateChanges: [],
+    }));
+
+    const sessionCtxMod = {
+      get: vi.fn().mockResolvedValue({ context: null }),
+      upsert: vi.fn().mockResolvedValue({ context: {}, isNew: true }),
+      clear: vi.fn(),
+    } as any;
+
+    const { store, complete, send, generate } = (() => {
+      const s = fakeStore([{ bid: "b-sc3", tid: "t-sc3", cid: 85, msgs: [{ id: 1, content: "que tareas tengo" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ tasks: { list: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate },
+      outbound: { send },
+      logger,
+      sessionContextModule: sessionCtxMod,
+    });
+
+    await proc.processDue();
+
+    expect(sessionCtxMod.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      activeModule: "tasks",
+      context: {
+        lastTaskList: [
+          { position: 1, id: "t1", title: "task 1" },
+          { position: 2, id: "t2", title: "task 2" },
+        ],
+      },
+    }));
+  });
+
+  it("does not fail main action if session context update fails", async () => {
+    registerModule("tasks", ["create"]);
+    const logger = fakeLogger();
+
+    const handler = vi.fn(async (): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: "t-sc4",
+      status: "executed",
+      evidence: { taskId: "t1", eventId: "e1", title: "test task" },
+      stateChanges: [{ entityType: "task", entityId: "t1", eventType: "task_created", payload: {} }],
+    }));
+
+    const sessionCtxMod = {
+      get: vi.fn().mockResolvedValue({ context: null }),
+      upsert: vi.fn().mockRejectedValue(new Error("DB error")),
+      clear: vi.fn(),
+    } as any;
+
+    const { store, complete, send, generate } = (() => {
+      const s = fakeStore([{ bid: "b-sc4", tid: "t-sc4", cid: 85, msgs: [{ id: 1, content: "tarea: test task" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ tasks: { create: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate },
+      outbound: { send },
+      logger,
+      sessionContextModule: sessionCtxMod,
+    });
+
+    await proc.processDue();
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalledWith("b-sc4", expect.any(String), 99);
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ error: "DB error" }),
+      "failed to update session context",
+    );
+  });
+
+  it("resolves completar esa via moduleIntentClassifier with session context focus", async () => {
+    registerModule("tasks", ["complete"]);
+    const logger = fakeLogger();
+
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { taskId: input.entities.taskId, eventId: "e-resolve", title: "llamar al contador" },
+      stateChanges: [{ entityType: "task", entityId: input.entities.taskId as string, eventType: "task_completed", payload: {} }],
+    }));
+
+    const sessionCtxMod = {
+      get: vi.fn().mockResolvedValue({
+        context: {
+          id: "ctx-resolve",
+          schemaVersion: "session_context.v1",
+          accountId: 7,
+          inboxId: 45,
+          conversationId: 85,
+          focusedEntityType: "task",
+          focusedEntityId: "task-focused-99",
+          awaitingConfirmation: false,
+          context: {},
+          createdAt: "now",
+          updatedAt: "now",
+        },
+      }),
+      upsert: vi.fn().mockResolvedValue({ context: {}, isNew: false }),
+      clear: vi.fn(),
+    } as any;
+
+    const { store, complete, send, generate } = (() => {
+      const s = fakeStore([{ bid: "b-resolve", tid: "t-resolve", cid: 85, msgs: [{ id: 1, content: "completar esa" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ tasks: { complete: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate },
+      outbound: { send },
+      logger,
+      sessionContextModule: sessionCtxMod,
+    });
+
+    await proc.processDue();
+
+    expect(generate).not.toHaveBeenCalled();
+    expect(handler).toHaveBeenCalledTimes(1);
+    const handlerInput = handler.mock.calls[0][0] as ActionExecutionInput;
+    expect(handlerInput.entities).toHaveProperty("taskId", "task-focused-99");
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalledWith("b-resolve", expect.any(String), 99);
+  });
+});

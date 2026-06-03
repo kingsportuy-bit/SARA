@@ -1,5 +1,5 @@
 import type { ModuleIntentInput, ModuleIntentResult } from "../contracts/pipeline.js";
-import { matchesNotePrefix, extractNoteContent, matchesNoteListQuery, matchesNoteSearchQuery, extractSearchQuery, matchesTaskCreate, matchesTaskListQuery, matchesTaskComplete, extractTaskTitle, extractCompleteTaskIdentifier } from "./patterns.js";
+import { matchesNotePrefix, extractNoteContent, matchesNoteListQuery, matchesNoteSearchQuery, extractSearchQuery, matchesTaskCreate, matchesTaskListQuery, matchesTaskComplete, extractTaskTitle, extractCompleteTaskIdentifier, matchesTaskReference, resolveTaskReference } from "./patterns.js";
 
 export interface ModuleIntentClassifier {
   classify(input: ModuleIntentInput): Promise<ModuleIntentResult>;
@@ -24,6 +24,50 @@ function detectTasksIntent(input: ModuleIntentInput): ModuleIntentResult | null 
         reasoningSummary: "Task complete intent detected.",
       };
     }
+
+    if (matchesTaskReference(text)) {
+      const resolved = resolveTaskReference(input.sessionContext);
+      if (resolved) {
+        if (resolved.taskId) {
+          return {
+            schemaVersion: "module_intent_result.v1",
+            traceId: input.traceId,
+            module: "tasks",
+            action: "complete",
+            confidence: 0.85,
+            entities: { taskId: resolved.taskId },
+            missingData: [],
+            requiresConfirmation: false,
+            reasoningSummary: "Task complete reference resolved from session context.",
+          };
+        }
+        if (resolved.position) {
+          return {
+            schemaVersion: "module_intent_result.v1",
+            traceId: input.traceId,
+            module: "tasks",
+            action: "complete",
+            confidence: 0.85,
+            entities: { position: resolved.position },
+            missingData: [],
+            requiresConfirmation: false,
+            reasoningSummary: "Task complete reference resolved from session context.",
+          };
+        }
+      }
+      return {
+        schemaVersion: "module_intent_result.v1",
+        traceId: input.traceId,
+        module: "tasks",
+        action: "complete",
+        confidence: 0.4,
+        entities: {},
+        missingData: ["task"],
+        requiresConfirmation: false,
+        reasoningSummary: "Task complete reference detected but no session context to resolve.",
+      };
+    }
+
     return {
       schemaVersion: "module_intent_result.v1",
       traceId: input.traceId,
