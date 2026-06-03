@@ -70,6 +70,13 @@
 - PASS: moduleIntentClassifier no detecta notes.create en daily-log
 - PASS: moduleIntentClassifier sin falso positivo en mensajes no-note
 - PASS: migrationGuard sigue pasando con nuevos objetos sara_events y sara_notes
+- PASS: actionExecutor bloquea notes.create cuando content esta ausente
+- PASS: actionExecutor bloquea notes.create cuando content es string vacio
+- PASS: actionExecutor bloquea notes.create cuando content es solo espacios
+- PASS: actionExecutor bloquea notes.create cuando content no es string
+- PASS: actionExecutor no bloquea modulos no-notes sin content
+- PASS: responseComposer confirma ejecucion solo si existe noteId o eventId
+- PASS: responseComposer no confirma executed sin evidencia
 
 ## Evidencia local 2026-06-02
 - `npm run typecheck`: PASS
@@ -83,3 +90,6 @@
 - `npm run typecheck`: PASS (TASK-20260602-005)
 - `npm test`: PASS (55 tests, TASK-20260602-005)
 - `npm run build`: PASS (TASK-20260602-005)
+- `npm run typecheck`: PASS (fix TASK-20260602-005)
+- `npm test`: PASS (62 tests, fix TASK-20260602-005)
+- `npm run build`: PASS (fix TASK-20260602-005)

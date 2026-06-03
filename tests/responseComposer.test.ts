@@ -104,7 +104,7 @@ describe("responseComposer", () => {
     expect(result.content).toContain("modulo solicitado aun no esta disponible");
   });
 
-  it("reports executed status", async () => {
+  it("reports executed status with evidence", async () => {
     const input: ResponseCompositionInput = {
       ...baseInput,
       classification: {
@@ -115,11 +115,51 @@ describe("responseComposer", () => {
       actionResult: {
         ...baseInput.actionResult,
         status: "executed",
+        evidence: { noteId: "n1", eventId: "e1" },
       },
     };
     const result = await composer.compose(input);
 
     expect(result.content).toContain("Accion ejecutada");
+  });
+
+  it("does not confirm executed without noteId or eventId evidence", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9 },
+        intent: { ...baseInput.classification.intent, missingData: [] },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: {},
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("no se puede verificar la evidencia");
+    expect(result.content).not.toContain("Accion ejecutada correctamente");
+  });
+
+  it("does not confirm executed with only reason in evidence", async () => {
+    const input: ResponseCompositionInput = {
+      ...baseInput,
+      classification: {
+        ...baseInput.classification,
+        coarse: { ...baseInput.classification.coarse, confidence: 0.9 },
+        intent: { ...baseInput.classification.intent, missingData: [] },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: { reason: "some operation" },
+      },
+    };
+    const result = await composer.compose(input);
+
+    expect(result.content).toContain("no se puede verificar la evidencia");
   });
 
   it("reports failed status with error message", async () => {

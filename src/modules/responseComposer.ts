@@ -23,7 +23,13 @@ export function createResponseComposer(): ResponseComposer {
           ? `La accion no pudo completarse: ${actionResult.error}`
           : "La accion no pudo completarse por un error inesperado.";
       } else if (actionResult.status === "executed") {
-        content = "Accion ejecutada correctamente.";
+        const noteId = actionResult.evidence?.noteId;
+        const eventId = actionResult.evidence?.eventId;
+        if (noteId || eventId) {
+          content = "Accion ejecutada correctamente.";
+        } else {
+          content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+        }
       } else {
         content = "Recibi tu mensaje pero no pude procesarlo en este momento.";
       }

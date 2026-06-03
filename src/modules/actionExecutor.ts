@@ -10,6 +10,14 @@ export interface ActionExecutor {
 
 type HandlerRegistry = Record<string, Record<string, ModuleHandler>>;
 
+function validateContent(input: ActionExecutionInput): string | null {
+  const content = input.entities?.content;
+  if (!content || typeof content !== "string" || String(content).trim().length === 0) {
+    return "content is required for notes.create";
+  }
+  return null;
+}
+
 export function createActionExecutor(handlers: HandlerRegistry = {}): ActionExecutor {
   return {
     async execute(input) {
@@ -43,6 +51,20 @@ export function createActionExecutor(handlers: HandlerRegistry = {}): ActionExec
           evidence: { reason: `Action "${input.action}" not implemented for module "${input.module}".` },
           stateChanges: [],
         };
+      }
+
+      if (input.module === "notes" && input.action === "create") {
+        const contentError = validateContent(input);
+        if (contentError) {
+          return {
+            schemaVersion: "action_execution_result.v1",
+            traceId: input.traceId,
+            status: "failed",
+            evidence: { reason: contentError },
+            stateChanges: [],
+            error: contentError,
+          };
+        }
       }
 
       return handler(input);

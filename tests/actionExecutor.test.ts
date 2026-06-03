@@ -95,6 +95,64 @@ describe("actionExecutor with notes handler", () => {
     expect(result.status).toBe("needs_confirmation");
     expect(handler).not.toHaveBeenCalled();
   });
+
+  it("blocks notes.create when content is missing", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ notes: { create: handler } });
+
+    const result = await exec.execute(execInput({ entities: {} }));
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toContain("content is required");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("blocks notes.create when content is empty string", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ notes: { create: handler } });
+
+    const result = await exec.execute(execInput({ entities: { content: "" } }));
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toContain("content is required");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("blocks notes.create when content is whitespace only", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ notes: { create: handler } });
+
+    const result = await exec.execute(execInput({ entities: { content: "   " } }));
+
+    expect(result.status).toBe("failed");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("blocks notes.create when content is not a string", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ notes: { create: handler } });
+
+    const result = await exec.execute(execInput({ entities: { content: 123 } }));
+
+    expect(result.status).toBe("failed");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("does not block non-notes modules even with empty content", async () => {
+    const handler = vi.fn(async (input) => ({
+      schemaVersion: "action_execution_result.v1" as const,
+      traceId: input.traceId,
+      status: "executed" as const,
+      evidence: {},
+      stateChanges: [],
+    }));
+    const exec = createActionExecutor({ "daily-log": { checkin: handler } });
+
+    const result = await exec.execute(execInput({ module: "daily-log", action: "checkin", entities: {} }));
+
+    expect(result.status).toBe("executed");
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("intentConfidenceSufficient", () => {

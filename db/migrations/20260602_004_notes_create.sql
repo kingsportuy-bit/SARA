@@ -45,7 +45,7 @@ create or replace function sara_create_note(
 ) returns jsonb
 language plpgsql
 security definer
-set search_path = ''
+set search_path = public
 as $$
 declare
   v_note_id uuid;
