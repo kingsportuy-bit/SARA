@@ -1,7 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseReminderTime, formatDueAt } from "../src/modules/reminders/reminderTimeParser.js";
 
 describe("reminderTimeParser - parseReminderTime", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("parses en N minutos", () => {
     const result = parseReminderTime("recordame en 5 minutos llamar al contador");
     expect(result.success).toBe(true);
@@ -57,6 +61,9 @@ describe("reminderTimeParser - parseReminderTime", () => {
   });
 
   it("parses hoy a las HH", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-03T12:00:00.000Z"));
+
     const result = parseReminderTime("recordame hoy a las 23 llamar");
     expect(result.success).toBe(true);
     if (result.success) {
@@ -66,6 +73,9 @@ describe("reminderTimeParser - parseReminderTime", () => {
   });
 
   it("parses hoy a las HH:MM with future time", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-03T12:00:00.000Z"));
+
     const result = parseReminderTime("recordame hoy a las 23:30 revision");
     expect(result.success).toBe(true);
     if (result.success) {
