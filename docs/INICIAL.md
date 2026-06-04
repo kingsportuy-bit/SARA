@@ -3,6 +3,7 @@
 ## Estado del sistema (actualizado: 2026-06-03)
 - Produccion: worker post-buffer con pipeline modular operativo en VPS
 - En progreso: TASK-20260603-013 implementada, revisada, desplegada inicialmente y con hotfix local de prioridad `objectives`/`daily-log`; pendiente redeploy y validacion productiva final
+- Plan paralelo preparado: `docs/PARALLEL_OPENCODE_PLAN.md` con tasks core `routines`, `workouts`, `timers`, `progress`, `plans`, `protocols` y una task secuencial de integracion.
 - Bloqueos activos: activar firma HMAC de Chatwoot cuando se recupere `CHATWOOT_WEBHOOK_SECRET`
 - Primer flujo vertical: Chatwoot -> buffer durable -> DeepSeek bootstrap -> respuesta Chatwoot -> trazabilidad `sara_*`
 - Pipeline modular base: implementado y validado; DeepSeek queda como fallback solo para mensajes sin accion ejecutable.
@@ -54,15 +55,16 @@ Reglas derivadas:
 8. docs/ENTITY_CATALOG.md
 9. docs/MODULE_ROADMAP.md
 10. docs/INFORME_ANALISIS_ARQUITECTURA_FEATURES.md
-11. docs/agents/OPENCODE_EXECUTOR_PROTOCOL.md
-12. docs/DEBUG.md
-13. docs/DEPLOY.md
-14. docs/INFRASTRUCTURE.md
-15. docs/SECURITY.md
-16. docs/TEST_SUITE.md
-17. docs/REGRESSION_CASES.md
-18. docs/ERROR_REGISTRY.md
-19. docs/biblioteca/README.md
+11. docs/PARALLEL_OPENCODE_PLAN.md
+12. docs/agents/OPENCODE_EXECUTOR_PROTOCOL.md
+13. docs/DEBUG.md
+14. docs/DEPLOY.md
+15. docs/INFRASTRUCTURE.md
+16. docs/SECURITY.md
+17. docs/TEST_SUITE.md
+18. docs/REGRESSION_CASES.md
+19. docs/ERROR_REGISTRY.md
+20. docs/biblioteca/README.md
 
 ## Roles al iniciar un hilo nuevo
 - Codex Orquestador: agente principal del proyecto. Lee `docs/INICIAL.md`, mantiene contexto, planifica, define contratos, prepara tasks para opencode, revisa diffs, valida evidencia y decide si se aprueba o se piden correcciones.
@@ -74,6 +76,7 @@ Reglas derivadas:
 - opencode no decide feature, arquitectura ni alcance.
 - opencode debe leer `docs/INICIAL.md` al inicio de cada sesion de trabajo.
 - opencode tambien debe leer la task asignada y los documentos obligatorios indicados en ella.
+- Si se ejecutan varios opencode en paralelo, cada uno debe leer `docs/PARALLEL_OPENCODE_PLAN.md` y respetar la prohibicion de tocar archivos compartidos del pipeline.
 - Si falta informacion, opencode se bloquea y pide decision; no inventa supuestos.
 - Codex revisa el diff completo y valida con `npm run typecheck`, `npm test` y `npm run build` antes de aprobar.
 

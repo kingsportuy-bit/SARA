@@ -1,6 +1,6 @@
 # ENTITY_CATALOG.md - SARA
 
-Estado: FASE A MINIMA + TASKS MVP + SESSION CONTEXT MVP + REMINDERS MVP + DAILY LOG MVP + AREAS MVP + OBJECTIVES MVP AUTORIZADO
+Estado: FASE A MINIMA + TASKS MVP + SESSION CONTEXT MVP + REMINDERS MVP + DAILY LOG MVP + AREAS MVP + OBJECTIVES MVP + BASE PERSONAL PLANIFICADA
 Fecha: 2026-06-03
 
 ## Objetivo
@@ -336,9 +336,169 @@ Representar objetivos simples de mediano/largo plazo, opcionalmente vinculados a
 - `task_objective_assigned`
 
 ## Decisiones pendientes fuera de Fase A
+- `sara_routines`
+- `sara_routine_steps`
+- `sara_workout_sessions`
+- `sara_workout_sets`
+- `sara_timers`
 - `sara_plans`
+- `sara_plan_steps`
 - `sara_protocols`
 - `sara_usage_metrics`
 - entidades de Delta, Gym, Finanzas, Salud y Barberox
 
 Estas entidades no deben ser inventadas por opencode en la primera task.
+
+## 9. `sara_routines`
+Estado: PLANIFICADA PARA TASK-20260603-014
+
+### Proposito
+Guardar plantillas de rutina fija con pasos horarios.
+
+### Owner
+`routines`
+
+### Invariantes principales
+- `slug` debe ser unico.
+- `status` debe ser `draft`, `active`, `paused` o `archived`.
+- No crea recordatorios automaticamente en el core MVP.
+- No registra ejecucion real; eso pertenece a `workouts` o futuras runs.
+
+### Eventos que emite
+- `routine_created`
+- `routine_activated`
+- `routine_paused`
+- `routine_archived`
+- `routine_step_added`
+
+## 10. `sara_routine_steps`
+Estado: PLANIFICADA PARA TASK-20260603-014
+
+### Proposito
+Guardar los pasos ordenados de una rutina.
+
+### Owner
+`routines`
+
+### Invariantes principales
+- Debe pertenecer a una rutina.
+- `position` debe ser positivo.
+- `title` no puede estar vacio.
+- `time_of_day`, si existe, debe ser una hora valida.
+
+## 11. `sara_workout_sessions`
+Estado: PLANIFICADA PARA TASK-20260603-015
+
+### Proposito
+Representar una sesion real de entrenamiento.
+
+### Owner
+`workouts`
+
+### Invariantes principales
+- `status` debe ser `active`, `finished` o `canceled`.
+- `finished_at` solo existe si `status = finished`.
+- Una serie no debe registrarse sin sesion activa resoluble.
+
+### Eventos que emite
+- `workout_session_started`
+- `workout_session_finished`
+- `workout_session_canceled`
+
+## 12. `sara_workout_sets`
+Estado: PLANIFICADA PARA TASK-20260603-015
+
+### Proposito
+Registrar cada serie, bloque o esfuerzo dentro de una sesion de gym.
+
+### Owner
+`workouts`
+
+### Invariantes principales
+- Debe pertenecer a `sara_workout_sessions`.
+- `exercise_name` no puede estar vacio.
+- `set_number` debe ser positivo.
+- No inventar peso, reps ni duracion.
+
+### Eventos que emite
+- `workout_set_logged`
+
+## 13. `sara_timers`
+Estado: PLANIFICADA PARA TASK-20260603-016
+
+### Proposito
+Representar temporizadores cortos e interactivos.
+
+### Owner
+`timers`
+
+### Invariantes principales
+- `kind` debe ser `workout_rest` o `generic`.
+- `status` debe ser `pending`, `fired` o `canceled`.
+- `duration_seconds` debe ser positivo.
+- En MVP no reemplaza `sara_reminders`; timers son interactivos y de corto plazo.
+
+### Eventos que emite
+- `timer_started`
+- `timer_fired`
+- `timer_canceled`
+
+## 14. `sara_plans`
+Estado: PLANIFICADA PARA TASK-20260603-018
+
+### Proposito
+Guardar planes manuales vinculados opcionalmente a objetivos.
+
+### Owner
+`plans`
+
+### Invariantes principales
+- `title` no puede estar vacio.
+- `slug` debe ser unico.
+- `status` debe ser `active` o `archived`.
+- No crea tareas automaticamente en MVP.
+
+### Eventos que emite
+- `plan_created`
+- `plan_archived`
+
+## 15. `sara_plan_steps`
+Estado: PLANIFICADA PARA TASK-20260603-018
+
+### Proposito
+Guardar pasos accionables dentro de un plan.
+
+### Owner
+`plans`
+
+### Invariantes principales
+- Debe pertenecer a `sara_plans`.
+- `position` debe ser positivo.
+- `status` debe ser `pending` o `completed`.
+- `task_id` es opcional y solo vincula tareas existentes.
+
+### Eventos que emite
+- `plan_step_created`
+- `plan_step_completed`
+
+## 16. `sara_protocols`
+Estado: PLANIFICADA PARA TASK-20260603-019
+
+### Proposito
+Guardar reglas personales de decision y actuacion.
+
+### Owner
+`protocols`
+
+### Invariantes principales
+- `slug` debe ser unico.
+- `status` debe ser `draft`, `active` o `archived`.
+- `scope` debe ser `daily`, `fitness`, `planning` o `general`.
+- `rules` debe ser array JSON.
+- Evaluar protocolos no ejecuta acciones automaticas.
+
+### Eventos que emite
+- `protocol_created`
+- `protocol_activated`
+- `protocol_archived`
+- `protocol_evaluated`

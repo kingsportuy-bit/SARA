@@ -197,7 +197,7 @@ No incluir todavia:
 - dashboards avanzados.
 
 ### 7. `objectives`
-Estado: IMPLEMENTED_PENDING_DEPLOY
+Estado: HOTFIX_DEPLOYED_PENDING_PRODUCTIVE_VALIDATION
 
 Proposito:
 - manejar objetivos de mediano/largo plazo.
@@ -225,7 +225,122 @@ No incluir todavia:
 - scoring automatico;
 - planes largos generados por LLM sin aprobacion.
 
-### 8. `plans`
+### 8. `routines`
+Estado: SPEC_PARALLEL_SAFE
+
+Proposito:
+- guardar rutinas fijas con pasos horarios.
+
+Depende de:
+- `areas`
+- `objectives` opcional
+
+Tabla autorizable:
+- `sara_routines`
+- `sara_routine_steps`
+
+Acciones MVP sugeridas:
+- `routines.create`
+- `routines.list`
+- `routines.activate`
+- `routines.pause`
+- `routines.archive`
+
+Task:
+- `docs/TASKS/TASK-20260603-014.md`
+
+No incluir todavia:
+- sesiones reales de gym;
+- timers de descanso;
+- recordatorios automaticos;
+- progreso.
+
+### 9. `workouts`
+Estado: SPEC_PARALLEL_SAFE
+
+Proposito:
+- registrar sesiones reales de gym, ejercicios, series, reps, peso y notas.
+
+Depende de:
+- `routines` opcional para rutina guiada
+- `objectives` opcional para objetivo de salud/fuerza
+
+Tabla autorizable:
+- `sara_workout_sessions`
+- `sara_workout_sets`
+
+Acciones MVP sugeridas:
+- `workouts.start`
+- `workouts.log-set`
+- `workouts.finish`
+- `workouts.cancel`
+- `workouts.list`
+
+Task:
+- `docs/TASKS/TASK-20260603-015.md`
+
+No incluir todavia:
+- timers automaticos;
+- recomendaciones de entrenamiento;
+- progreso avanzado;
+- cambios de rutina.
+
+### 10. `timers`
+Estado: SPEC_PARALLEL_SAFE
+
+Proposito:
+- manejar temporizadores cortos e interactivos, especialmente descansos de gym.
+
+Depende de:
+- `session-context`
+- `workouts` para uso guiado final
+
+Tabla autorizable:
+- `sara_timers`
+
+Acciones MVP sugeridas:
+- `timers.start`
+- `timers.cancel`
+- `timers.claim-due`
+- `timers.mark-fired`
+
+Task:
+- `docs/TASKS/TASK-20260603-016.md`
+
+No incluir todavia:
+- calendario externo;
+- recurrencias;
+- dispatcher productivo sin integracion testeada.
+
+### 11. `progress`
+Estado: SPEC_PARALLEL_SAFE
+
+Proposito:
+- consultar progreso derivado de datos guardados, especialmente gym y objetivos.
+
+Depende de:
+- `workouts`
+- `daily-log`
+- `tasks`
+- `objectives`
+
+Tabla autorizable:
+- ninguna nueva en MVP
+
+Acciones MVP sugeridas:
+- `progress.workout`
+- `progress.objective`
+- `progress.summary`
+
+Task:
+- `docs/TASKS/TASK-20260603-017.md`
+
+No incluir todavia:
+- escritura de metricas;
+- recomendaciones medicas/deportivas avanzadas;
+- scoring automatico opaco.
+
+### 12. `plans`
 Estado: FUTURE
 
 Proposito:
@@ -238,13 +353,17 @@ Depende de:
 
 Tabla autorizable:
 - `sara_plans`
+- `sara_plan_steps`
+
+Task:
+- `docs/TASKS/TASK-20260603-018.md`
 
 No incluir todavia:
 - automatizacion sin confirmacion;
 - cambios masivos de tareas;
 - dependencias complejas.
 
-### 9. `protocols`
+### 13. `protocols`
 Estado: FUTURE
 
 Proposito:
@@ -256,10 +375,34 @@ Depende de:
 Tabla autorizable:
 - `sara_protocols`
 
+Task:
+- `docs/TASKS/TASK-20260603-019.md`
+
 No incluir todavia:
 - decisiones automaticas de alto impacto;
 - reglas opacas sin trazabilidad;
 - recomendaciones sin evidencia.
+
+### 14. `pipeline integration`
+Estado: SPEC_SEQUENTIAL_ONLY
+
+Proposito:
+- integrar al pipeline Chatwoot los modulos core preparados en paralelo.
+
+Depende de:
+- `routines`
+- `workouts`
+- `timers`
+- `progress`
+- `plans`
+- `protocols`
+
+Task:
+- `docs/TASKS/TASK-20260603-020.md`
+
+Regla:
+- no ejecutar en paralelo con las tasks core.
+- solo iniciar despues de revision Codex de cada core.
 
 ## Orden resumido
 1. `notes` - listo.
@@ -268,9 +411,14 @@ No incluir todavia:
 4. `reminders` - listo.
 5. `daily-log` - listo.
 6. `areas` - listo.
-7. `objectives` - siguiente recomendado.
-8. `plans` - planes.
-9. `protocols` - reglas avanzadas.
+7. `objectives` - pendiente validacion productiva final.
+8. `routines` - rutinas fijas.
+9. `workouts` - sesiones de gym.
+10. `timers` - descansos/temporizadores.
+11. `progress` - progreso read-only.
+12. `plans` - planes.
+13. `protocols` - reglas avanzadas.
+14. `pipeline integration` - integrar cores paralelos.
 
 ## Criterio para pasar al siguiente modulo
 - El modulo actual esta desplegado.
