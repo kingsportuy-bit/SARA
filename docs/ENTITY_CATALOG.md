@@ -444,7 +444,7 @@ Representar temporizadores cortos e interactivos.
 - `timer_canceled`
 
 ## 14. `sara_plans`
-Estado: PLANIFICADA PARA TASK-20260603-018
+Estado: IMPLEMENTADA POR TASK-20260603-018 (CORE AISLADO)
 
 ### Proposito
 Guardar planes manuales vinculados opcionalmente a objetivos.
@@ -463,7 +463,7 @@ Guardar planes manuales vinculados opcionalmente a objetivos.
 - `plan_archived`
 
 ## 15. `sara_plan_steps`
-Estado: PLANIFICADA PARA TASK-20260603-018
+Estado: IMPLEMENTADA POR TASK-20260603-018 (CORE AISLADO)
 
 ### Proposito
 Guardar pasos accionables dentro de un plan.

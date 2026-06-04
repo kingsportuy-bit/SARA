@@ -341,7 +341,7 @@ No incluir todavia:
 - scoring automatico opaco.
 
 ### 12. `plans`
-Estado: FUTURE
+Estado: CORE_AISLADO_IMPLEMENTADO (TASK-20260603-018)
 
 Proposito:
 - convertir objetivos en planes accionables.
@@ -355,13 +355,26 @@ Tabla autorizable:
 - `sara_plans`
 - `sara_plan_steps`
 
+Acciones MVP implementadas:
+- `plans.create` (crea plan con pasos, opcionalmente vinculado a objetivo)
+- `plans.list` (lista planes con sus pasos)
+- `plans.archive` (archiva plan)
+- `plans.complete-step` (completa paso de plan)
+
 Task:
 - `docs/TASKS/TASK-20260603-018.md`
+
+Resultado local:
+- Migracion: `sara_plans`, `sara_plan_steps`, 4 RPCs, RLS.
+- Contratos, modulos, store y parser deterministico implementados.
+- Tests unitarios de modulo, parser y store pasan.
+- Core aislado sin integracion al pipeline Chatwoot.
 
 No incluir todavia:
 - automatizacion sin confirmacion;
 - cambios masivos de tareas;
-- dependencias complejas.
+- dependencias complejas;
+- integracion al pipeline (reservado para TASK-20260603-020).
 
 ### 13. `protocols`
 Estado: SPEC_PARALLEL_SAFE (CORE_IMPLEMENTED)
