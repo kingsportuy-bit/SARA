@@ -198,4 +198,11 @@ describe("migration guard", () => {
     expect(signature).not.toMatch(/p_related_entity_type\s+text\s+default[\s\S]*p_account_id\s+bigint/i);
     expect(sql).toContain("sara_start_timer(uuid, text, text, integer, bigint, bigint, bigint, text, uuid, text)");
   });
+
+  it("sara_list_routines without status includes visible non-archived routines", () => {
+    const sql = readFileSync("db/migrations/20260603_014_routines.sql", "utf8");
+    expect(sql).toContain("p_status text default null");
+    expect(sql).toContain("(p_status is null and r.status != 'archived')");
+    expect(sql).toContain("(p_status is null and status != 'archived')");
+  });
 });

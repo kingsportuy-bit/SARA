@@ -220,7 +220,7 @@ grant execute on function sara_create_routine(uuid, text, text, text, uuid, text
 
 -- 8. RPC: sara_list_routines
 create or replace function sara_list_routines(
-  p_status text default 'active',
+  p_status text default null,
   p_limit int default 10
 )
 returns jsonb
@@ -266,12 +266,22 @@ begin
     order by r.name
   ) into v_routines
   from sara_routines r
-  where r.status = p_status
+  where (
+    (p_status is null and r.status != 'archived')
+    or r.status = p_status
+  )
   limit p_limit;
 
   return jsonb_build_object(
     'routines', coalesce(v_routines, '[]'::jsonb),
-    'count', (select count(*) from sara_routines where status = p_status),
+    'count', (
+      select count(*)
+      from sara_routines
+      where (
+        (p_status is null and status != 'archived')
+        or status = p_status
+      )
+    ),
     'status', 'success'
   );
 end;

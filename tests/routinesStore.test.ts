@@ -253,6 +253,30 @@ describe("routinesStore", () => {
     expect(result.count).toBe(1);
     expect(result.routines[0].name).toBe("manana normal");
     expect(supabase.rpc).toHaveBeenCalledWith("sara_list_routines", {
+      p_status: null,
+      p_limit: 10,
+    });
+  });
+
+  it("listRoutines passes explicit status filter when provided", async () => {
+    const supabase = fakeSupabase();
+    (supabase.rpc as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      data: {
+        routines: [],
+        count: 0,
+        status: "success",
+      },
+      error: null,
+    });
+
+    const store = createRoutinesStore(supabase);
+    await store.listRoutines({
+      schemaVersion: "routines_list_input.v1",
+      traceId: "trace-1",
+      status: "active",
+    });
+
+    expect(supabase.rpc).toHaveBeenCalledWith("sara_list_routines", {
       p_status: "active",
       p_limit: 10,
     });

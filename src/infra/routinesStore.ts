@@ -189,7 +189,7 @@ export function createRoutinesStore(supabase: SupabaseClient): RoutinesRepositor
     async listRoutines(input: ListRoutinesInput): Promise<ListRoutinesResult> {
       try {
         const { data, error } = await supabase.rpc("sara_list_routines", {
-          p_status: input.status ?? "active",
+          p_status: input.status ?? null,
           p_limit: input.limit ?? 10,
         });
 
