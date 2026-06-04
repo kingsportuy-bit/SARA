@@ -2,7 +2,7 @@
 
 ## Estado del sistema (actualizado: 2026-06-03)
 - Produccion: worker post-buffer con pipeline modular operativo en VPS
-- En progreso: TASK-20260603-013 implementada y revisada localmente; pendiente deploy y validacion productiva
+- En progreso: TASK-20260603-013 implementada, revisada, desplegada inicialmente y con hotfix local de prioridad `objectives`/`daily-log`; pendiente redeploy y validacion productiva final
 - Bloqueos activos: activar firma HMAC de Chatwoot cuando se recupere `CHATWOOT_WEBHOOK_SECRET`
 - Primer flujo vertical: Chatwoot -> buffer durable -> DeepSeek bootstrap -> respuesta Chatwoot -> trazabilidad `sara_*`
 - Pipeline modular base: implementado y validado; DeepSeek queda como fallback solo para mensajes sin accion ejecutable.
@@ -79,10 +79,10 @@ Reglas derivadas:
 
 ## Task activa o proxima
 - Task: `docs/TASKS/TASK-20260603-013.md`
-- Estado: IMPLEMENTED_REVIEWED_PENDING_DEPLOY
+- Estado: HOTFIX_REVIEWED_PENDING_REDEPLOY
 - Owner: Codex Orquestador
 - Objetivo: implementar modulo `objectives` MVP para crear/listar/lograr/archivar objetivos y asociar tareas existentes, sin planes ni scoring.
-- Resultado local: typecheck, test (502), build pasan. Revisada por Codex Orquestador.
+- Resultado local: typecheck, test (505), build pasan. Hotfix aplicado para priorizar `objectives` sobre `daily-log` cuando el titulo contiene `energia`.
 
 ## Ultimo cierre de sesion
 - Fecha: 2026-06-03

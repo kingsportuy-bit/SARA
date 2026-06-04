@@ -469,3 +469,36 @@ describe("coarseClassifier daily-log detection", () => {
     expect(result.module).toBe("areas");
   });
 });
+
+describe("coarseClassifier objectives priority", () => {
+  it("prioritizes objective creation over daily-log when title contains energia", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-objectives-priority-1",
+      messages: [{ id: 1, content: "crear objetivo mejorar mi energia area salud", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("objectives");
+    expect(result.confidence).toBe(0.9);
+  });
+
+  it("prioritizes objective assignment over daily-log when objective title contains energia", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-objectives-priority-2",
+      messages: [{ id: 1, content: "asociar esa tarea al objetivo mejorar mi energia", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("objectives");
+  });
+
+  it("keeps pure daily-log check-ins classified as daily-log", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "coarse_classification_input.v1",
+      traceId: "trace-objectives-priority-3",
+      messages: [{ id: 1, content: "buen dia energia 7", createdAt: "now" }],
+    });
+
+    expect(result.module).toBe("daily-log");
+  });
+});

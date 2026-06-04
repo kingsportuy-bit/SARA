@@ -600,6 +600,9 @@ Estado: DONE + DEPLOYED + VALIDATED
 
 ### Pipeline
 - PASS: `coarseClassifier` detecta modulo objectives.
+- PASS: `coarseClassifier` prioriza `objectives` sobre `daily-log` cuando un objetivo contiene `energia`.
+- PASS: `coarseClassifier` prioriza `objectives.assign-task` sobre `daily-log` cuando el objetivo contiene `energia`.
+- PASS: `coarseClassifier` conserva `daily-log` para check-ins reales como `buen dia energia 7`.
 - PASS: `moduleIntentClassifier` detecta `objectives.create`.
 - PASS: `moduleIntentClassifier` detecta `objectives.list`.
 - PASS: `moduleIntentClassifier` detecta `objectives.achieve`.
@@ -628,3 +631,6 @@ Estado: DONE + DEPLOYED + VALIDATED
 - `npm run typecheck`: PASS (hardening parser/constraint TASK-20260603-013)
 - `npm test`: PASS (502 tests, hardening parser/constraint TASK-20260603-013)
 - `npm run build`: PASS (hardening parser/constraint TASK-20260603-013)
+- `npm run typecheck`: PASS (hotfix prioridad objectives/daily-log TASK-20260603-013)
+- `npm test`: PASS (505 tests, hotfix prioridad objectives/daily-log TASK-20260603-013)
+- `npm run build`: PASS (hotfix prioridad objectives/daily-log TASK-20260603-013)

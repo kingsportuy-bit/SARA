@@ -21,18 +21,7 @@ export function createCoarseClassifier(): CoarseClassifier {
         };
       }
 
-      if (matchesDailyLogQuery(text)) {
-        return {
-          schemaVersion: "coarse_classification_result.v1",
-          traceId: input.traceId,
-          module: "daily-log",
-          confidence: 0.9,
-          missingData: [],
-          reasoningSummary: "Daily log module detected from explicit match.",
-        };
-      }
-
-      if (matchesTaskCreate(text) || matchesTaskListQuery(text) || matchesTaskComplete(text)) {
+      if (matchesTaskCreate(text) || matchesTaskListQuery(text)) {
         return {
           schemaVersion: "coarse_classification_result.v1",
           traceId: input.traceId,
@@ -73,6 +62,28 @@ export function createCoarseClassifier(): CoarseClassifier {
           confidence: 0.9,
           missingData: [],
           reasoningSummary: "Objective module detected from explicit match.",
+        };
+      }
+
+      if (matchesDailyLogQuery(text)) {
+        return {
+          schemaVersion: "coarse_classification_result.v1",
+          traceId: input.traceId,
+          module: "daily-log",
+          confidence: 0.9,
+          missingData: [],
+          reasoningSummary: "Daily log module detected from explicit match.",
+        };
+      }
+
+      if (matchesTaskComplete(text)) {
+        return {
+          schemaVersion: "coarse_classification_result.v1",
+          traceId: input.traceId,
+          module: "tasks",
+          confidence: 0.9,
+          missingData: [],
+          reasoningSummary: "Task module detected from explicit match.",
         };
       }
 

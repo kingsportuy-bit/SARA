@@ -450,10 +450,10 @@ export const OBJECTIVE_LIST_PATTERNS = [
 ];
 
 export const OBJECTIVE_ACHIEVE_PATTERNS = [
-  /^logr[eé]\s+objetivo\b/i,
+  /^logr[e\u00e9]\s+objetivo\b/i,
   /^marcar\s+objetivo\b/i,
   /^objetivo\s+logrado\b/i,
-  /^consegu[ií]\s+objetivo\b/i,
+  /^consegu[i\u00ed]\s+objetivo\b/i,
 ];
 
 export const OBJECTIVE_ARCHIVE_PATTERNS = [
