@@ -397,7 +397,7 @@ No incluir todavia:
 - recomendaciones sin evidencia.
 
 ### 14. `pipeline integration`
-Estado: SPEC_SEQUENTIAL_ONLY
+Estado: INTEGRATED_LOCAL_PENDING_DEPLOY
 
 Proposito:
 - integrar al pipeline Chatwoot los modulos core preparados en paralelo.
@@ -416,6 +416,11 @@ Task:
 Regla:
 - no ejecutar en paralelo con las tasks core.
 - solo iniciar despues de revision Codex de cada core.
+
+Resultado local:
+- `routines`, `workouts`, `timers`, `progress`, `plans` y `protocols` conectados a coarse classifier, intent classifier, router, executor, response composer, server y session-context.
+- Sin deploy automatico.
+- Pendiente aplicar migraciones nuevas en VPS y validar desde Chatwoot.
 
 ## Orden resumido
 1. `notes` - listo.

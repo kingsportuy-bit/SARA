@@ -644,3 +644,24 @@ Estado: DONE + DEPLOYED + VALIDATED
 - No se tocaron archivos compartidos del pipeline.
 - RLS habilitado y anon/authenticated revocado.
 - Evaluador deterministico no ejecuta acciones.
+
+## Pipeline integration (TASK-20260603-020)
+- PASS: `coarseClassifier` detecta `routines`, `workouts`, `timers`, `progress`, `plans` y `protocols`.
+- PASS: `moduleIntentClassifier` detecta acciones MVP de los nuevos modulos.
+- PASS: `moduleIntentClassifier` bloquea `workouts.log-set` sin sesion activa en `session-context`.
+- PASS: `moduleRouter` registra acciones de los nuevos modulos.
+- PASS: `actionExecutor` despacha `routines.create`.
+- PASS: `actionExecutor` bloquea `workouts.log-set` sin `sessionId`.
+- PASS: `actionExecutor` permite `progress.workout` read-only sin guard mutante.
+- PASS: `responseComposer` confirma `routines.create` solo con evidencia.
+- PASS: `responseComposer` no confirma `workouts.start` sin evidencia.
+- PASS: `responseComposer` formatea progreso read-only.
+- PASS: `bufferProcessor` ejecuta `routines.create` sin llamar DeepSeek.
+
+## Evidencia local 2026-06-04 (TASK-20260603-020)
+- `npm run typecheck`: PASS
+- `npm test`: PASS (790 tests)
+- `npm run build`: PASS
+- Sin deploy.
+- Sin cambios de secretos.
+- Sin cambios de scope Chatwoot.

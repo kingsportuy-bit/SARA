@@ -1,9 +1,10 @@
 ﻿# INICIAL.md - SARA
 
-## Estado del sistema (actualizado: 2026-06-03)
+## Estado del sistema (actualizado: 2026-06-04)
 - Produccion: worker post-buffer con pipeline modular operativo en VPS
 - En progreso: TASK-20260603-013 implementada, revisada, desplegada inicialmente y con hotfix local de prioridad `objectives`/`daily-log`; pendiente redeploy y validacion productiva final
 - Plan paralelo preparado: `docs/PARALLEL_OPENCODE_PLAN.md` con tasks core `routines`, `workouts`, `timers`, `progress`, `plans`, `protocols` y una task secuencial de integracion.
+- Integracion local completada: TASK-20260603-020 conecta `routines`, `workouts`, `timers`, `progress`, `plans` y `protocols` al pipeline Chatwoot; pendiente deploy, migraciones VPS y validacion productiva.
 - Bloqueos activos: activar firma HMAC de Chatwoot cuando se recupere `CHATWOOT_WEBHOOK_SECRET`
 - Primer flujo vertical: Chatwoot -> buffer durable -> DeepSeek bootstrap -> respuesta Chatwoot -> trazabilidad `sara_*`
 - Pipeline modular base: implementado y validado; DeepSeek queda como fallback solo para mensajes sin accion ejecutable.
@@ -81,11 +82,11 @@ Reglas derivadas:
 - Codex revisa el diff completo y valida con `npm run typecheck`, `npm test` y `npm run build` antes de aprobar.
 
 ## Task activa o proxima
-- Task: `docs/TASKS/TASK-20260603-013.md`
-- Estado: HOTFIX_REVIEWED_PENDING_REDEPLOY
+- Task: `docs/TASKS/TASK-20260603-020.md`
+- Estado: INTEGRATED_LOCAL_PENDING_DEPLOY
 - Owner: Codex Orquestador
-- Objetivo: implementar modulo `objectives` MVP para crear/listar/lograr/archivar objetivos y asociar tareas existentes, sin planes ni scoring.
-- Resultado local: typecheck, test (505), build pasan. Hotfix aplicado para priorizar `objectives` sobre `daily-log` cuando el titulo contiene `energia`.
+- Objetivo: integrar los modulos core de base personal al pipeline Chatwoot sin deploy automatico.
+- Resultado local: typecheck, test (790), build pasan. Pendiente deploy controlado y prueba productiva.
 
 ## Ultimo cierre de sesion
 - Fecha: 2026-06-03

@@ -542,6 +542,148 @@ export function createBufferProcessor(ctx: PipelineContext) {
           });
           ctx.logger.info({ bufferId: buffer.buffer_id, objectiveId, taskId }, `session context updated for objectives.assign-task`);
         }
+      } else if (module === "routines") {
+        const routineId = actionResult.evidence?.routineId as string | undefined;
+        const name = actionResult.evidence?.name as string | undefined;
+        const slug = actionResult.evidence?.slug as string | undefined;
+        if (actionResult.status === "executed" && routineId) {
+          const ctxPayload: Record<string, unknown> = {};
+          if (name) ctxPayload.lastRoutineName = name;
+          if (slug) ctxPayload.lastRoutineSlug = slug;
+          await ctx.sessionContextModule.upsert({
+            ...base,
+            activeModule: "routines",
+            activeFlow: `routine_${action}`,
+            focusedEntityType: action === "archive" ? undefined : "routine",
+            focusedEntityId: action === "archive" ? undefined : routineId,
+            context: ctxPayload,
+          });
+          ctx.logger.info({ bufferId: buffer.buffer_id, routineId }, `session context updated for routines.${action}`);
+        } else if (action === "list" && actionResult.status === "executed") {
+          const routines = actionResult.evidence?.routines as Array<{ id: string; name: string; slug: string }> | undefined;
+          const count = actionResult.evidence?.count as number | undefined;
+          if (routines && count === 1 && routines.length === 1) {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "routines",
+              activeFlow: "routine_listed",
+              focusedEntityType: "routine",
+              focusedEntityId: routines[0].id,
+              context: { lastRoutineName: routines[0].name, lastRoutineSlug: routines[0].slug },
+            });
+          }
+        }
+      } else if (module === "workouts") {
+        if (action === "start" && actionResult.status === "executed") {
+          const sessionId = actionResult.evidence?.sessionId as string | undefined;
+          const title = actionResult.evidence?.title as string | undefined;
+          if (sessionId) {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "workouts",
+              activeFlow: "workout_active",
+              focusedEntityType: "workout_session",
+              focusedEntityId: sessionId,
+              context: title ? { lastWorkoutTitle: title } : {},
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, sessionId }, "session context updated for workouts.start");
+          }
+        } else if (action === "log-set" && actionResult.status === "executed") {
+          const sessionId = actionResult.evidence?.sessionId as string | undefined;
+          const exerciseName = actionResult.evidence?.exerciseName as string | undefined;
+          const setNumber = actionResult.evidence?.setNumber as number | undefined;
+          if (sessionId) {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "workouts",
+              activeFlow: "workout_active",
+              focusedEntityType: "workout_session",
+              focusedEntityId: sessionId,
+              context: { lastExerciseName: exerciseName, lastSetNumber: setNumber },
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, sessionId }, "session context updated for workouts.log-set");
+          }
+        } else if ((action === "finish" || action === "cancel") && actionResult.status === "executed") {
+          const sessionId = actionResult.evidence?.sessionId as string | undefined;
+          await ctx.sessionContextModule.upsert({
+            ...base,
+            activeModule: "workouts",
+            activeFlow: action === "finish" ? "workout_finished" : "workout_canceled",
+            focusedEntityType: undefined,
+            focusedEntityId: undefined,
+            context: sessionId ? { lastWorkoutSessionId: sessionId } : {},
+          });
+          ctx.logger.info({ bufferId: buffer.buffer_id, sessionId }, `session context cleared for workouts.${action}`);
+        }
+      } else if (module === "timers") {
+        if (action === "start" && actionResult.status === "executed") {
+          const timerId = actionResult.evidence?.timerId as string | undefined;
+          const kind = actionResult.evidence?.kind as string | undefined;
+          const dueAt = actionResult.evidence?.dueAt as string | undefined;
+          if (timerId) {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "timers",
+              activeFlow: "timer_started",
+              focusedEntityType: "timer",
+              focusedEntityId: timerId,
+              context: { timerKind: kind, timerDueAt: dueAt },
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, timerId }, "session context updated for timers.start");
+          }
+        } else if (action === "cancel" && actionResult.status === "executed") {
+          await ctx.sessionContextModule.upsert({
+            ...base,
+            activeModule: "timers",
+            activeFlow: "timer_canceled",
+            focusedEntityType: undefined,
+            focusedEntityId: undefined,
+            context: {},
+          });
+          ctx.logger.info({ bufferId: buffer.buffer_id }, "session context cleared for timers.cancel");
+        }
+      } else if (module === "plans") {
+        if ((action === "create" || action === "list") && actionResult.status === "executed") {
+          const planId = actionResult.evidence?.planId as string | undefined;
+          if (planId) {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "plans",
+              activeFlow: action === "create" ? "plan_created" : "plan_listed",
+              focusedEntityType: "plan",
+              focusedEntityId: planId,
+              context: { lastPlanTitle: actionResult.evidence?.title, lastPlanSlug: actionResult.evidence?.slug },
+            });
+          }
+        } else if ((action === "archive" || action === "complete-step") && actionResult.status === "executed") {
+          await ctx.sessionContextModule.upsert({
+            ...base,
+            activeModule: "plans",
+            activeFlow: action === "archive" ? "plan_archived" : "plan_step_completed",
+            context: { lastPlanTitle: actionResult.evidence?.title },
+          });
+        }
+      } else if (module === "protocols") {
+        const protocolId = actionResult.evidence?.protocolId as string | undefined;
+        if ((action === "create" || action === "list" || action === "activate") && actionResult.status === "executed" && protocolId) {
+          await ctx.sessionContextModule.upsert({
+            ...base,
+            activeModule: "protocols",
+            activeFlow: `protocol_${action}`,
+            focusedEntityType: "protocol",
+            focusedEntityId: protocolId,
+            context: { lastProtocolName: actionResult.evidence?.name, lastProtocolSlug: actionResult.evidence?.slug },
+          });
+        } else if (action === "archive" && actionResult.status === "executed") {
+          await ctx.sessionContextModule.upsert({
+            ...base,
+            activeModule: "protocols",
+            activeFlow: "protocol_archived",
+            focusedEntityType: undefined,
+            focusedEntityId: undefined,
+            context: { lastProtocolName: actionResult.evidence?.name },
+          });
+        }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -622,7 +764,12 @@ export function createBufferProcessor(ctx: PipelineContext) {
         traceId: buffer.trace_id,
         module: intent.module,
         action: intent.action,
-        entities: intent.entities,
+        entities: {
+          ...intent.entities,
+          accountId: buffer.account_id,
+          inboxId: buffer.inbox_id,
+          conversationId: buffer.conversation_id,
+        },
         requiresConfirmation: intent.requiresConfirmation,
         intentConfidence: intent.confidence,
         intentMissingData: intent.missingData,

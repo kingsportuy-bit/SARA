@@ -20,7 +20,8 @@ export interface CoarseClassificationInput {
 export interface CoarseClassificationResult {
   schemaVersion: "coarse_classification_result.v1";
   traceId: string;
-  module: "notes" | "tasks" | "reminders" | "daily-log" | "areas" | "objectives" | "session-context" | "unknown";  confidence: number;
+  module: "notes" | "tasks" | "reminders" | "daily-log" | "areas" | "objectives" | "routines" | "workouts" | "timers" | "progress" | "plans" | "protocols" | "session-context" | "unknown";
+  confidence: number;
   missingData: string[];
   reasoningSummary: string;
 }
@@ -36,7 +37,8 @@ export interface ModuleIntentInput {
 export interface ModuleIntentResult {
   schemaVersion: "module_intent_result.v1";
   traceId: string;
-  module: "notes" | "tasks" | "reminders" | "daily-log" | "areas" | "objectives" | "session-context" | "unknown";  action: string;
+  module: "notes" | "tasks" | "reminders" | "daily-log" | "areas" | "objectives" | "routines" | "workouts" | "timers" | "progress" | "plans" | "protocols" | "session-context" | "unknown";
+  action: string;
   confidence: number;
   entities: Record<string, unknown>;
   missingData: string[];

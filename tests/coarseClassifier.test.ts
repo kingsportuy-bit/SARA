@@ -502,3 +502,27 @@ describe("coarseClassifier objectives priority", () => {
     expect(result.module).toBe("daily-log");
   });
 });
+
+describe("coarseClassifier TASK-20260603-020 modules", () => {
+  const cases: Array<{ content: string; module: string }> = [
+    { content: "crear rutina manana normal: 07:00 despertar", module: "routines" },
+    { content: "arrancar gym piernas", module: "workouts" },
+    { content: "descanso 90 segundos", module: "timers" },
+    { content: "progreso sentadilla", module: "progress" },
+    { content: "crear plan mejorar energia: caminar; dormir", module: "plans" },
+    { content: "crear protocolo energia baja: si dormi menos de 6 horas, rutina liviana", module: "protocols" },
+  ];
+
+  for (const item of cases) {
+    it(`detects ${item.module}`, async () => {
+      const result = await classifier.classify({
+        schemaVersion: "coarse_classification_input.v1",
+        traceId: `trace-${item.module}`,
+        messages: [{ id: 1, content: item.content, createdAt: "now" }],
+      });
+
+      expect(result.module).toBe(item.module);
+      expect(result.confidence).toBe(0.9);
+    });
+  }
+});

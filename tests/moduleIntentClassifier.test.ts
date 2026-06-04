@@ -36,6 +36,98 @@ describe("moduleIntentClassifier", () => {
   });
 });
 
+describe("moduleIntentClassifier TASK-20260603-020 modules", () => {
+  it("detects routines.create", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-routines-020",
+      module: "routines",
+      messages: [{ id: 1, content: "crear rutina manana normal: 07:00 despertar", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("create");
+    expect(result.entities).toHaveProperty("slug", "manana-normal");
+    expect(result.missingData).toEqual([]);
+  });
+
+  it("resolves workouts.log-set from workout session context", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-workouts-020",
+      module: "workouts",
+      messages: [{ id: 1, content: "sentadilla serie 1 8 reps 60kg", createdAt: "now" }],
+      sessionContext: { focusedEntityType: "workout_session", focusedEntityId: "session-1" },
+    });
+
+    expect(result.action).toBe("log-set");
+    expect(result.entities).toHaveProperty("sessionId", "session-1");
+    expect(result.missingData).toEqual([]);
+  });
+
+  it("blocks workouts.log-set without workout session context", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-workouts-020-missing",
+      module: "workouts",
+      messages: [{ id: 1, content: "sentadilla serie 1 8 reps 60kg", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("log-set");
+    expect(result.confidence).toBeLessThan(0.75);
+    expect(result.missingData).toContain("workoutSession");
+  });
+
+  it("detects timers.start", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-timers-020",
+      module: "timers",
+      messages: [{ id: 1, content: "descanso 90 segundos", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("start");
+    expect(result.entities).toHaveProperty("kind", "workout_rest");
+    expect(result.entities).toHaveProperty("durationSeconds", 90);
+  });
+
+  it("detects progress.objective read-only intent", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-progress-020",
+      module: "progress",
+      messages: [{ id: 1, content: "progreso objetivo mejorar energia", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("objective");
+    expect(result.entities).toHaveProperty("objectiveSlug", "mejorar-energia");
+  });
+
+  it("detects plans.create", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-plans-020",
+      module: "plans",
+      messages: [{ id: 1, content: "crear plan mejorar energia: caminar; dormir", createdAt: "now" }],
+    });
+
+    expect(result.action).toBe("create");
+    expect(result.missingData).toEqual([]);
+  });
+
+  it("detects protocols.evaluate", async () => {
+    const result = await classifier.classify({
+      schemaVersion: "module_intent_input.v1",
+      traceId: "trace-protocols-020",
+      module: "protocols",
+      messages: [{ id: 1, content: "evaluar protocolo energia baja", createdAt: "now" }],
+      sessionContext: { context: { sleepHours: 5 } },
+    });
+
+    expect(result.action).toBe("evaluate");
+    expect(result.entities).toHaveProperty("slug", "energia-baja");
+  });
+});
+
 describe("moduleIntentClassifier notes.create detection", () => {
   it("detects nota: prefix and extracts content", async () => {
     const result = await classifier.classify({

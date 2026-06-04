@@ -203,6 +203,79 @@ function validateObjectiveAssignTask(input: ActionExecutionInput): string | null
   return null;
 }
 
+function validateSlugOrId(input: ActionExecutionInput, label: string): string | null {
+  const id = input.entities?.[`${label}Id`];
+  const slug = input.entities?.slug ?? input.entities?.[`${label}Slug`];
+  if (!id && !(typeof slug === "string" && slug.trim().length > 0)) {
+    return `${label}Id or slug required for ${input.module}.${input.action}`;
+  }
+  return null;
+}
+
+function validateRoutineCreate(input: ActionExecutionInput): string | null {
+  const name = input.entities?.name;
+  const slug = input.entities?.slug;
+  if (!name || typeof name !== "string" || name.trim().length === 0) return "name is required for routines.create";
+  if (!slug || typeof slug !== "string" || slug.trim().length === 0) return "slug is required for routines.create";
+  return null;
+}
+
+function validateWorkoutLogSet(input: ActionExecutionInput): string | null {
+  if (!input.entities?.sessionId) return "sessionId is required for workouts.log-set";
+  const exerciseName = input.entities?.exerciseName;
+  if (!exerciseName || typeof exerciseName !== "string" || exerciseName.trim().length === 0) return "exerciseName is required for workouts.log-set";
+  if (input.entities?.actualReps === undefined && input.entities?.durationSeconds === undefined) return "actualReps or durationSeconds required for workouts.log-set";
+  return null;
+}
+
+function validateWorkoutSession(input: ActionExecutionInput): string | null {
+  if (!input.entities?.sessionId) return `sessionId is required for workouts.${input.action}`;
+  return null;
+}
+
+function validateTimerStart(input: ActionExecutionInput): string | null {
+  const title = input.entities?.title;
+  const duration = Number(input.entities?.durationSeconds);
+  if (!title || typeof title !== "string" || title.trim().length === 0) return "title is required for timers.start";
+  if (isNaN(duration) || duration <= 0) return "positive durationSeconds is required for timers.start";
+  return null;
+}
+
+function validateTimerCancel(input: ActionExecutionInput): string | null {
+  if (!input.entities?.timerId) return "timerId is required for timers.cancel";
+  return null;
+}
+
+function validatePlanCreate(input: ActionExecutionInput): string | null {
+  const title = input.entities?.title;
+  const slug = input.entities?.slug;
+  const steps = input.entities?.steps;
+  if (!title || typeof title !== "string" || title.trim().length === 0) return "title is required for plans.create";
+  if (!slug || typeof slug !== "string" || slug.trim().length === 0) return "slug is required for plans.create";
+  if (!Array.isArray(steps) || steps.length === 0) return "steps are required for plans.create";
+  return null;
+}
+
+function validatePlanCompleteStep(input: ActionExecutionInput): string | null {
+  const stepId = input.entities?.stepId;
+  const planSlug = input.entities?.planSlug;
+  const stepPosition = Number(input.entities?.stepPosition);
+  if (!stepId && (!(typeof planSlug === "string" && planSlug.trim()) || isNaN(stepPosition) || stepPosition <= 0)) {
+    return "stepId or planSlug plus positive stepPosition required for plans.complete-step";
+  }
+  return null;
+}
+
+function validateProtocolCreate(input: ActionExecutionInput): string | null {
+  const name = input.entities?.name;
+  const slug = input.entities?.slug;
+  const rules = input.entities?.rules;
+  if (!name || typeof name !== "string" || name.trim().length === 0) return "name is required for protocols.create";
+  if (!slug || typeof slug !== "string" || slug.trim().length === 0) return "slug is required for protocols.create";
+  if (!Array.isArray(rules)) return "rules array is required for protocols.create";
+  return null;
+}
+
 function guardAction(input: ActionExecutionInput): string | null {
   const mutatingActions = new Set([
     "create",
@@ -214,6 +287,12 @@ function guardAction(input: ActionExecutionInput): string | null {
     "achieve",
     "assign-note",
     "assign-task",
+    "activate",
+    "pause",
+    "start",
+    "log-set",
+    "finish",
+    "complete-step",
   ]);
 
   if (mutatingActions.has(input.action)) {
@@ -280,6 +359,22 @@ function guardAction(input: ActionExecutionInput): string | null {
   if (input.module === "objectives" && input.action === "assign-task") {
     return validateObjectiveAssignTask(input);
   }
+
+  if (input.module === "routines" && input.action === "create") return validateRoutineCreate(input);
+  if (input.module === "routines" && (input.action === "activate" || input.action === "pause" || input.action === "archive")) return validateSlugOrId(input, "routine");
+
+  if (input.module === "workouts" && input.action === "log-set") return validateWorkoutLogSet(input);
+  if (input.module === "workouts" && (input.action === "finish" || input.action === "cancel")) return validateWorkoutSession(input);
+
+  if (input.module === "timers" && input.action === "start") return validateTimerStart(input);
+  if (input.module === "timers" && input.action === "cancel") return validateTimerCancel(input);
+
+  if (input.module === "plans" && input.action === "create") return validatePlanCreate(input);
+  if (input.module === "plans" && input.action === "archive") return validateSlugOrId(input, "plan");
+  if (input.module === "plans" && input.action === "complete-step") return validatePlanCompleteStep(input);
+
+  if (input.module === "protocols" && input.action === "create") return validateProtocolCreate(input);
+  if (input.module === "protocols" && (input.action === "activate" || input.action === "archive" || input.action === "evaluate")) return validateSlugOrId(input, "protocol");
 
   return null;
 }

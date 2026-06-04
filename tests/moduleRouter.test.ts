@@ -92,4 +92,21 @@ describe("moduleRouter", () => {
     const result = await registered.route(intent({ module: "tasks", action: "complete" }));
     expect(result.executable).toBe(true);
   });
+
+  it("marks TASK-20260603-020 module actions executable after registration", async () => {
+    registerModule("routines", ["create"]);
+    registerModule("workouts", ["start", "log-set"]);
+    registerModule("timers", ["start"]);
+    registerModule("progress", ["workout"]);
+    registerModule("plans", ["create"]);
+    registerModule("protocols", ["evaluate"]);
+    const registered = createModuleRouter();
+
+    await expect(registered.route(intent({ module: "routines", action: "create" }))).resolves.toMatchObject({ executable: true });
+    await expect(registered.route(intent({ module: "workouts", action: "log-set" }))).resolves.toMatchObject({ executable: true });
+    await expect(registered.route(intent({ module: "timers", action: "start" }))).resolves.toMatchObject({ executable: true });
+    await expect(registered.route(intent({ module: "progress", action: "workout" }))).resolves.toMatchObject({ executable: true });
+    await expect(registered.route(intent({ module: "plans", action: "create" }))).resolves.toMatchObject({ executable: true });
+    await expect(registered.route(intent({ module: "protocols", action: "evaluate" }))).resolves.toMatchObject({ executable: true });
+  });
 });

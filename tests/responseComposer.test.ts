@@ -483,6 +483,51 @@ describe("responseComposer", () => {
   });
 });
 
+describe("responseComposer TASK-20260603-020 modules", () => {
+  it("confirms routines.create only with routineId and eventId", async () => {
+    const result = await composer.compose({
+      ...baseInput,
+      classification: {
+        coarse: { ...baseInput.classification.coarse, module: "routines", confidence: 0.9 },
+        intent: { ...baseInput.classification.intent, module: "routines", action: "create", confidence: 0.85, entities: { name: "manana" }, missingData: [] },
+      },
+      actionResult: { ...baseInput.actionResult, status: "executed", evidence: { routineId: "r1", eventId: "e1", name: "manana" } },
+    });
+
+    expect(result.content).toContain("Rutina creada");
+  });
+
+  it("does not confirm workouts.start without evidence", async () => {
+    const result = await composer.compose({
+      ...baseInput,
+      classification: {
+        coarse: { ...baseInput.classification.coarse, module: "workouts", confidence: 0.9 },
+        intent: { ...baseInput.classification.intent, module: "workouts", action: "start", confidence: 0.85, entities: {}, missingData: [] },
+      },
+      actionResult: { ...baseInput.actionResult, status: "executed", evidence: {} },
+    });
+
+    expect(result.content).toContain("no se puede verificar");
+  });
+
+  it("formats progress workout read-only result", async () => {
+    const result = await composer.compose({
+      ...baseInput,
+      classification: {
+        coarse: { ...baseInput.classification.coarse, module: "progress", confidence: 0.9 },
+        intent: { ...baseInput.classification.intent, module: "progress", action: "workout", confidence: 0.85, entities: {}, missingData: [] },
+      },
+      actionResult: {
+        ...baseInput.actionResult,
+        status: "executed",
+        evidence: { progress: { exerciseName: "sentadilla", totalSessions: 2, totalSets: 6, lastWeightKg: 60, lastReps: 8, maxWeightKg: 65 } },
+      },
+    });
+
+    expect(result.content).toContain("Progreso sentadilla");
+  });
+});
+
 describe("responseComposer reminders", () => {
   it("confirms reminder create with reminderId and eventId", async () => {
     const input: ResponseCompositionInput = {

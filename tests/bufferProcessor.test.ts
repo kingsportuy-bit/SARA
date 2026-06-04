@@ -419,6 +419,46 @@ describe("bufferProcessor", () => {
   });
 });
 
+describe("bufferProcessor TASK-20260603-020 integration", () => {
+  it("executes routines.create and does not call DeepSeek", async () => {
+    registerModule("routines", ["create"]);
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { routineId: "routine-1", eventId: "event-1", name: input.entities.name, slug: input.entities.slug },
+      stateChanges: [{ entityType: "routine", entityId: "routine-1", eventType: "routine_created", payload: {} }],
+    }));
+
+    const { store, complete, send, generate } = (() => {
+      const s = fakeStore([{ bid: "b-routine-020", tid: "t-routine-020", cid: 85, msgs: [{ id: 1, content: "crear rutina manana normal: 07:00 despertar" }] }]);
+      const o = fakeOutbound();
+      const g = fakeGenerator();
+      return { ...s, ...o, ...g, store: s.store };
+    })();
+
+    const proc = createBufferProcessor({
+      store,
+      normalizer: createMessageNormalizer(),
+      coarseClassifier: createCoarseClassifier(),
+      intentClassifier: createModuleIntentClassifier(),
+      router: createModuleRouter(),
+      executor: createActionExecutor({ routines: { create: handler } }),
+      composer: createResponseComposer(),
+      fallbackGenerator: { generate },
+      outbound: { send },
+      logger: fakeLogger(),
+    });
+
+    await proc.processDue();
+
+    expect(generate).not.toHaveBeenCalled();
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledWith(85, expect.stringContaining("Rutina creada"));
+    expect(complete).toHaveBeenCalledWith("b-routine-020", expect.stringContaining("Rutina creada"), 99);
+  });
+});
+
 describe("bufferProcessor tasks integration", () => {
   it("executes tasks.create for tarea: message and does not call DeepSeek", async () => {
     registerModule("tasks", ["create"]);

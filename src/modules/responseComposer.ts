@@ -260,6 +260,143 @@ export function createResponseComposer(): ResponseComposer {
           } else {
             content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
           }
+        } else if (module === "routines") {
+          if (action === "create") {
+            const routineId = actionResult.evidence?.routineId;
+            const eventId = actionResult.evidence?.eventId;
+            const name = actionResult.evidence?.name ?? classification.intent.entities?.name;
+            content = routineId && eventId ? `Rutina creada: ${name || "sin nombre"}` : "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          } else if (action === "list") {
+            const routines = actionResult.evidence?.routines as Array<{ name: string; status?: string }> | undefined;
+            const count = actionResult.evidence?.count as number | undefined;
+            content = !routines || count === 0
+              ? "No encontre rutinas."
+              : `Estas son tus rutinas:\n${routines.map((r, i) => `${i + 1}. ${r.name}${r.status ? ` (${r.status})` : ""}`).join("\n")}`;
+          } else if (action === "activate" || action === "pause" || action === "archive") {
+            const routineId = actionResult.evidence?.routineId;
+            const eventId = actionResult.evidence?.eventId;
+            const name = actionResult.evidence?.name;
+            const label = action === "activate" ? "activada" : action === "pause" ? "pausada" : "archivada";
+            content = routineId && eventId ? `Rutina ${label}: ${name || "rutina"}` : "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          } else {
+            content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          }
+        } else if (module === "workouts") {
+          if (action === "start") {
+            const sessionId = actionResult.evidence?.sessionId;
+            const eventId = actionResult.evidence?.eventId;
+            const title = actionResult.evidence?.title;
+            content = sessionId && eventId ? `Sesion de gym iniciada${title ? `: ${title}` : "."}` : "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          } else if (action === "log-set") {
+            const setId = actionResult.evidence?.setId;
+            const eventId = actionResult.evidence?.eventId;
+            const exerciseName = actionResult.evidence?.exerciseName;
+            const setNumber = actionResult.evidence?.setNumber;
+            content = setId && eventId ? `Serie registrada: ${exerciseName || "ejercicio"}${setNumber ? ` serie ${setNumber}` : ""}.` : "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          } else if (action === "finish") {
+            const sessionId = actionResult.evidence?.sessionId;
+            const eventId = actionResult.evidence?.eventId;
+            const setCount = actionResult.evidence?.setCount;
+            content = sessionId && eventId ? `Sesion de gym terminada${typeof setCount === "number" ? ` con ${setCount} series registradas` : ""}.` : "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          } else if (action === "cancel") {
+            const sessionId = actionResult.evidence?.sessionId;
+            const eventId = actionResult.evidence?.eventId;
+            content = sessionId && eventId ? "Sesion de gym cancelada." : "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          } else if (action === "list") {
+            const sessions = actionResult.evidence?.sessions as Array<{ title?: string; status: string; startedAt: string }> | undefined;
+            const count = actionResult.evidence?.count as number | undefined;
+            content = !sessions || count === 0
+              ? "No encontre sesiones de gym."
+              : `Estas son tus sesiones de gym:\n${sessions.map((s, i) => `${i + 1}. ${s.title || "Gym"} (${s.status})`).join("\n")}`;
+          } else {
+            content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          }
+        } else if (module === "timers") {
+          if (action === "start") {
+            const timerId = actionResult.evidence?.timerId;
+            const eventId = actionResult.evidence?.eventId;
+            const title = actionResult.evidence?.title;
+            const dueAt = actionResult.evidence?.dueAt;
+            content = timerId && eventId ? `Timer iniciado: ${title || "temporizador"}${dueAt ? ` hasta ${formatDueAt(String(dueAt))}` : ""}.` : "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          } else if (action === "cancel") {
+            const timerId = actionResult.evidence?.timerId;
+            const eventId = actionResult.evidence?.eventId;
+            content = timerId && eventId ? "Timer cancelado." : "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          } else {
+            content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          }
+        } else if (module === "progress") {
+          if (action === "workout") {
+            const progress = actionResult.evidence?.progress as { exerciseName?: string; totalSessions?: number; totalSets?: number; lastWeightKg?: number | null; lastReps?: number | null; maxWeightKg?: number | null } | undefined;
+            content = progress
+              ? `Progreso ${progress.exerciseName || ""}:\nSesiones: ${progress.totalSessions ?? 0}\nSeries: ${progress.totalSets ?? 0}\nUltimo peso: ${progress.lastWeightKg ?? "sin dato"}\nUltimas reps: ${progress.lastReps ?? "sin dato"}\nMax peso: ${progress.maxWeightKg ?? "sin dato"}`
+              : "No encontre progreso para ese ejercicio.";
+          } else if (action === "objective") {
+            const progress = actionResult.evidence?.progress as { objectiveTitle?: string; totalTasks?: number; completedTasks?: number; pendingTasks?: number } | undefined;
+            content = progress
+              ? `Progreso objetivo ${progress.objectiveTitle || ""}:\nTareas totales: ${progress.totalTasks ?? 0}\nCompletadas: ${progress.completedTasks ?? 0}\nPendientes: ${progress.pendingTasks ?? 0}`
+              : "No encontre progreso para ese objetivo.";
+          } else if (action === "summary") {
+            const summary = actionResult.evidence?.summary as { totalDays?: number; streak?: number; averageWakeEnergy?: number | null; averageSleepHours?: number | null } | undefined;
+            content = summary
+              ? `Resumen de progreso:\nDias registrados: ${summary.totalDays ?? 0}\nRacha: ${summary.streak ?? 0}\nEnergia promedio: ${summary.averageWakeEnergy ?? "sin dato"}\nSueno promedio: ${summary.averageSleepHours ?? "sin dato"}`
+              : "No encontre datos suficientes de progreso.";
+          } else {
+            content = "No encontre datos suficientes de progreso.";
+          }
+        } else if (module === "plans") {
+          if (action === "create") {
+            const planId = actionResult.evidence?.planId;
+            const eventId = actionResult.evidence?.eventId;
+            const title = actionResult.evidence?.title ?? classification.intent.entities?.title;
+            content = planId && eventId ? `Plan creado: ${title || "plan"}` : "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          } else if (action === "list") {
+            const plans = actionResult.evidence?.plans as Array<{ title: string; status: string }> | undefined;
+            const count = actionResult.evidence?.count as number | undefined;
+            content = !plans || count === 0 ? "No encontre planes activos." : `Estos son tus planes:\n${plans.map((p, i) => `${i + 1}. ${p.title} (${p.status})`).join("\n")}`;
+          } else if (action === "archive") {
+            const planId = actionResult.evidence?.planId;
+            const eventId = actionResult.evidence?.eventId;
+            const title = actionResult.evidence?.title;
+            content = planId && eventId ? `Plan archivado: ${title || "plan"}` : "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          } else if (action === "complete-step") {
+            const stepId = actionResult.evidence?.stepId;
+            const eventId = actionResult.evidence?.eventId;
+            const title = actionResult.evidence?.title;
+            content = stepId && eventId ? `Paso completado: ${title || "paso"}` : "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          } else {
+            content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          }
+        } else if (module === "protocols") {
+          if (action === "create") {
+            const protocolId = actionResult.evidence?.protocolId;
+            const eventId = actionResult.evidence?.eventId;
+            const name = actionResult.evidence?.name ?? classification.intent.entities?.name;
+            content = protocolId && eventId ? `Protocolo creado: ${name || "protocolo"}` : "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          } else if (action === "list") {
+            const protocols = actionResult.evidence?.protocols as Array<{ name: string; status: string; scope: string }> | undefined;
+            const count = actionResult.evidence?.count as number | undefined;
+            content = !protocols || count === 0 ? "No encontre protocolos." : `Estos son tus protocolos:\n${protocols.map((p, i) => `${i + 1}. ${p.name} (${p.scope}, ${p.status})`).join("\n")}`;
+          } else if (action === "activate" || action === "archive") {
+            const protocolId = actionResult.evidence?.protocolId;
+            const eventId = actionResult.evidence?.eventId;
+            const name = actionResult.evidence?.name;
+            content = protocolId && eventId ? `Protocolo ${action === "activate" ? "activado" : "archivado"}: ${name || "protocolo"}` : "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          } else if (action === "evaluate") {
+            const protocolId = actionResult.evidence?.protocolId;
+            const eventId = actionResult.evidence?.eventId;
+            const suggestions = actionResult.evidence?.suggestions as Array<{ applies: boolean; suggestion: string; evidence: string }> | undefined;
+            if (protocolId && eventId) {
+              const matched = suggestions?.filter((s) => s.applies) ?? [];
+              content = matched.length === 0
+                ? "Protocolo evaluado: no se activaron reglas con la evidencia actual."
+                : `Protocolo evaluado:\n${matched.map((s, i) => `${i + 1}. ${s.suggestion || "Regla activa"} (${s.evidence})`).join("\n")}`;
+            } else {
+              content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+            }
+          } else {
+            content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          }
         } else if (action === "list" || action === "search") {
           const notes = actionResult.evidence?.notes as Array<{ noteType: string; content: string }> | undefined;
           const count = actionResult.evidence?.count as number | undefined;

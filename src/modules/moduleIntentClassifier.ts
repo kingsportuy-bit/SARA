@@ -4,6 +4,12 @@ import { parseReminderTime } from "./reminders/reminderTimeParser.js";
 import { parseDailyLog } from "./dailyLog/dailyLogParser.js";
 import { parseAreasInput } from "./areas/areasParser.js";
 import { parseObjectivesInput } from "./objectives/objectivesParser.js";
+import { parseRoutinesInput } from "./routines/routinesParser.js";
+import { parseWorkoutsInput } from "./workouts/workoutsParser.js";
+import { parseTimersInput } from "./timers/timersParser.js";
+import { parseProgressInput } from "./progress/progressParser.js";
+import { parsePlansInput } from "./plans/plansParser.js";
+import { parseProtocolsInput } from "./protocols/protocolsParser.js";
 
 export interface ModuleIntentClassifier {
   classify(input: ModuleIntentInput): Promise<ModuleIntentResult>;
@@ -804,6 +810,209 @@ function detectObjectivesIntent(input: ModuleIntentInput): ModuleIntentResult | 
   return null;
 }
 
+function detectRoutinesIntent(input: ModuleIntentInput): ModuleIntentResult | null {
+  const text = input.messages.map((m) => m.content).join(" ").trim();
+  if (!text) return null;
+  const parsed = parseRoutinesInput(text);
+  if (parsed.intent === "unknown") return null;
+  const base = {
+    schemaVersion: "module_intent_result.v1" as const,
+    traceId: input.traceId,
+    module: "routines" as const,
+    confidence: parsed.success ? 0.85 : 0.4,
+    missingData: parsed.missingData,
+    requiresConfirmation: false,
+  };
+  if (parsed.intent === "create") {
+    return { ...base, action: "create", entities: { name: parsed.name, slug: parsed.slug, description: parsed.description, steps: parsed.steps }, reasoningSummary: "Routine create intent detected." };
+  }
+  if (parsed.intent === "list") {
+    return { ...base, action: "list", entities: {}, reasoningSummary: "Routine list intent detected." };
+  }
+  if (parsed.intent === "activate") {
+    return { ...base, action: "activate", entities: { slug: parsed.routineSlug }, reasoningSummary: "Routine activate intent detected." };
+  }
+  if (parsed.intent === "pause") {
+    return { ...base, action: "pause", entities: { slug: parsed.routineSlug }, reasoningSummary: "Routine pause intent detected." };
+  }
+  if (parsed.intent === "archive") {
+    return { ...base, action: "archive", entities: { slug: parsed.routineSlug }, reasoningSummary: "Routine archive intent detected." };
+  }
+  return null;
+}
+
+function focusedId(input: ModuleIntentInput, type: string): string | undefined {
+  return input.sessionContext?.focusedEntityType === type ? input.sessionContext.focusedEntityId : undefined;
+}
+
+function detectWorkoutsIntent(input: ModuleIntentInput): ModuleIntentResult | null {
+  const text = input.messages.map((m) => m.content).join(" ").trim();
+  if (!text) return null;
+  const parsed = parseWorkoutsInput(text);
+  if (parsed.intent === "unknown") return null;
+  const sessionId = focusedId(input, "workout_session");
+  const base = {
+    schemaVersion: "module_intent_result.v1" as const,
+    traceId: input.traceId,
+    module: "workouts" as const,
+    confidence: parsed.success ? 0.85 : 0.4,
+    missingData: [...parsed.missingData],
+    requiresConfirmation: false,
+  };
+  if (parsed.intent === "start") {
+    return { ...base, action: "start", entities: { title: parsed.title }, reasoningSummary: "Workout start intent detected." };
+  }
+  if (parsed.intent === "list") {
+    return { ...base, action: "list", entities: {}, reasoningSummary: "Workout list intent detected." };
+  }
+  if (parsed.intent === "finish") {
+    return {
+      ...base,
+      action: "finish",
+      confidence: sessionId ? 0.85 : 0.4,
+      entities: sessionId ? { sessionId } : {},
+      missingData: sessionId ? [] : ["workoutSession"],
+      reasoningSummary: "Workout finish intent detected.",
+    };
+  }
+  if (parsed.intent === "cancel") {
+    return {
+      ...base,
+      action: "cancel",
+      confidence: sessionId ? 0.85 : 0.4,
+      entities: sessionId ? { sessionId } : {},
+      missingData: sessionId ? [] : ["workoutSession"],
+      reasoningSummary: "Workout cancel intent detected.",
+    };
+  }
+  if (parsed.intent === "log-set") {
+    const missing = [...parsed.missingData];
+    if (!sessionId) missing.push("workoutSession");
+    return {
+      ...base,
+      action: "log-set",
+      confidence: parsed.success && sessionId ? 0.85 : 0.4,
+      entities: {
+        sessionId,
+        exerciseName: parsed.exerciseName,
+        setNumber: parsed.setNumber,
+        actualReps: parsed.actualReps,
+        weightKg: parsed.weightKg,
+        durationSeconds: parsed.durationSeconds,
+      },
+      missingData: missing,
+      reasoningSummary: "Workout set logging intent detected.",
+    };
+  }
+  return null;
+}
+
+function detectTimersIntent(input: ModuleIntentInput): ModuleIntentResult | null {
+  const text = input.messages.map((m) => m.content).join(" ").trim();
+  if (!text) return null;
+  const parsed = parseTimersInput(text);
+  if (parsed.intent === "unknown") return null;
+  const timerId = focusedId(input, "timer");
+  if (parsed.intent === "start") {
+    return {
+      schemaVersion: "module_intent_result.v1",
+      traceId: input.traceId,
+      module: "timers",
+      action: "start",
+      confidence: parsed.success ? 0.85 : 0.4,
+      entities: { kind: parsed.kind, title: parsed.title, durationSeconds: parsed.durationSeconds },
+      missingData: parsed.missingData,
+      requiresConfirmation: false,
+      reasoningSummary: "Timer start intent detected.",
+    };
+  }
+  if (parsed.intent === "cancel") {
+    return {
+      schemaVersion: "module_intent_result.v1",
+      traceId: input.traceId,
+      module: "timers",
+      action: "cancel",
+      confidence: timerId ? 0.85 : 0.4,
+      entities: timerId ? { timerId } : {},
+      missingData: timerId ? [] : ["timerId"],
+      requiresConfirmation: false,
+      reasoningSummary: "Timer cancel intent detected.",
+    };
+  }
+  return null;
+}
+
+function detectProgressIntent(input: ModuleIntentInput): ModuleIntentResult | null {
+  const text = input.messages.map((m) => m.content).join(" ").trim();
+  if (!text) return null;
+  const parsed = parseProgressInput(text);
+  if (parsed.intent === "unknown") return null;
+  const action = parsed.intent === "workout" ? "workout" : parsed.intent === "objective" ? "objective" : "summary";
+  return {
+    schemaVersion: "module_intent_result.v1",
+    traceId: input.traceId,
+    module: "progress",
+    action,
+    confidence: parsed.success ? 0.85 : 0.4,
+    entities: { exerciseName: parsed.exerciseName, objectiveSlug: parsed.objectiveSlug },
+    missingData: parsed.missingData,
+    requiresConfirmation: false,
+    reasoningSummary: "Progress read-only intent detected.",
+  };
+}
+
+function detectPlansIntent(input: ModuleIntentInput): ModuleIntentResult | null {
+  const text = input.messages.map((m) => m.content).join(" ").trim();
+  if (!text) return null;
+  const parsed = parsePlansInput(text);
+  if (parsed.intent === "unknown") return null;
+  const action = parsed.intent;
+  return {
+    schemaVersion: "module_intent_result.v1",
+    traceId: input.traceId,
+    module: "plans",
+    action,
+    confidence: parsed.success && parsed.missingData.length === 0 ? 0.85 : 0.4,
+    entities: {
+      title: parsed.title,
+      slug: parsed.slug,
+      description: parsed.description,
+      objectiveSlug: parsed.objectiveSlug,
+      planSlug: parsed.planSlug,
+      steps: parsed.steps,
+      stepPosition: parsed.stepPosition,
+    },
+    missingData: parsed.missingData,
+    requiresConfirmation: false,
+    reasoningSummary: "Plan intent detected.",
+  };
+}
+
+function detectProtocolsIntent(input: ModuleIntentInput): ModuleIntentResult | null {
+  const text = input.messages.map((m) => m.content).join(" ").trim();
+  if (!text) return null;
+  const parsed = parseProtocolsInput(text);
+  if (parsed.intent === "unknown") return null;
+  return {
+    schemaVersion: "module_intent_result.v1",
+    traceId: input.traceId,
+    module: "protocols",
+    action: parsed.intent,
+    confidence: parsed.success ? 0.85 : 0.4,
+    entities: {
+      name: parsed.name,
+      slug: parsed.slug,
+      scope: parsed.scope ?? "general",
+      rules: parsed.rules,
+      description: parsed.description,
+      context: input.sessionContext?.context ?? {},
+    },
+    missingData: parsed.missingData,
+    requiresConfirmation: false,
+    reasoningSummary: "Protocol intent detected.",
+  };
+}
+
 export function createModuleIntentClassifier(): ModuleIntentClassifier {
   return {
     async classify(input) {
@@ -834,6 +1043,36 @@ export function createModuleIntentClassifier(): ModuleIntentClassifier {
 
       if (input.module === "objectives") {
         const detected = detectObjectivesIntent(input);
+        if (detected) return detected;
+      }
+
+      if (input.module === "routines") {
+        const detected = detectRoutinesIntent(input);
+        if (detected) return detected;
+      }
+
+      if (input.module === "workouts") {
+        const detected = detectWorkoutsIntent(input);
+        if (detected) return detected;
+      }
+
+      if (input.module === "timers") {
+        const detected = detectTimersIntent(input);
+        if (detected) return detected;
+      }
+
+      if (input.module === "progress") {
+        const detected = detectProgressIntent(input);
+        if (detected) return detected;
+      }
+
+      if (input.module === "plans") {
+        const detected = detectPlansIntent(input);
+        if (detected) return detected;
+      }
+
+      if (input.module === "protocols") {
+        const detected = detectProtocolsIntent(input);
         if (detected) return detected;
       }
 

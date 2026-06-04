@@ -48,6 +48,63 @@ describe("actionExecutor", () => {
   });
 });
 
+describe("actionExecutor TASK-20260603-020 guards", () => {
+  it("dispatches routines.create with evidence-capable payload", async () => {
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: { routineId: "r1", eventId: "e1" },
+      stateChanges: [],
+    }));
+    const exec = createActionExecutor({ routines: { create: handler } });
+
+    const result = await exec.execute(execInput({
+      module: "routines",
+      action: "create",
+      entities: { name: "manana", slug: "manana" },
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    }));
+
+    expect(result.status).toBe("executed");
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("blocks workouts.log-set without sessionId", async () => {
+    const handler = vi.fn();
+    const exec = createActionExecutor({ workouts: { "log-set": handler } });
+
+    const result = await exec.execute(execInput({
+      module: "workouts",
+      action: "log-set",
+      entities: { exerciseName: "sentadilla", actualReps: 8 },
+      intentConfidence: 0.9,
+      intentMissingData: [],
+    }));
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toContain("sessionId");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("allows progress.workout read-only without mutation guard", async () => {
+    const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "executed",
+      evidence: {},
+      stateChanges: [],
+    }));
+    const exec = createActionExecutor({ progress: { workout: handler } });
+
+    const result = await exec.execute(execInput({ module: "progress", action: "workout", entities: { exerciseName: "sentadilla" } }));
+
+    expect(result.status).toBe("executed");
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("actionExecutor with notes handler", () => {
   it("dispatches to notes.create handler and returns its result", async () => {
     const handler = vi.fn(async (input: ActionExecutionInput): Promise<ActionExecutionResult> => ({
