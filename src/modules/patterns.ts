@@ -429,3 +429,72 @@ export function resolveNoteReference(
 
   return null;
 }
+
+// -- Objective patterns --
+
+export const OBJECTIVE_CREATE_PATTERNS = [
+  /^crear\s+objetivo\b/i,
+  /^crea\s+objetivo\b/i,
+  /^nuevo\s+objetivo\b/i,
+  /^agregar\s+objetivo\b/i,
+];
+
+export const OBJECTIVE_LIST_PATTERNS = [
+  /^(?:que|mis)\s+objetivos\s+(?:tengo|hay|tienes|existen)/i,
+  /^listar?\s*objetivos/i,
+  /^lista\s*(?:mis\s*)?objetivos/i,
+  /^mis\s*objetivos/i,
+  /^objetivos\s*$/i,
+  /^ver\s*objetivos/i,
+  /^mostrar\s*objetivos/i,
+];
+
+export const OBJECTIVE_ACHIEVE_PATTERNS = [
+  /^logr[eé]\s+objetivo\b/i,
+  /^marcar\s+objetivo\b/i,
+  /^objetivo\s+logrado\b/i,
+  /^consegu[ií]\s+objetivo\b/i,
+];
+
+export const OBJECTIVE_ARCHIVE_PATTERNS = [
+  /^archivar\s+objetivo\b/i,
+  /^archiva\s+objetivo\b/i,
+  /^descarta[r]\s+objetivo\b/i,
+];
+
+export const OBJECTIVE_ASSIGN_PATTERNS = [
+  /^asociar\b/i,
+  /^asignar\b/i,
+  /^vincular\b/i,
+];
+
+export function matchesObjectiveCreate(text: string): boolean {
+  if (!text) return false;
+  return OBJECTIVE_CREATE_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesObjectiveListQuery(text: string): boolean {
+  if (!text) return false;
+  return OBJECTIVE_LIST_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesObjectiveAchieve(text: string): boolean {
+  if (!text) return false;
+  return OBJECTIVE_ACHIEVE_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesObjectiveArchive(text: string): boolean {
+  if (!text) return false;
+  return OBJECTIVE_ARCHIVE_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesObjectiveAssign(text: string): boolean {
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  if (!/\bobjetivo\b/i.test(lower)) return false;
+  return OBJECTIVE_ASSIGN_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function matchesObjectiveQuery(text: string): boolean {
+  return matchesObjectiveCreate(text) || matchesObjectiveListQuery(text) || matchesObjectiveAchieve(text) || matchesObjectiveArchive(text) || matchesObjectiveAssign(text);
+}

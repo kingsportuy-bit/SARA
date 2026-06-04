@@ -203,6 +203,63 @@ export function createResponseComposer(): ResponseComposer {
           } else {
             content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
           }
+        } else if (module === "objectives") {
+          if (action === "create") {
+            const objectiveId = actionResult.evidence?.objectiveId;
+            const eventId = actionResult.evidence?.eventId;
+            const title = actionResult.evidence?.title ?? classification.intent.entities?.title;
+            if (objectiveId && eventId) {
+              content = title ? `Objetivo creado: ${title}` : "Objetivo creado.";
+            } else {
+              content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+            }
+          } else if (action === "list") {
+            const objectives = actionResult.evidence?.objectives as Array<{ title: string }> | undefined;
+            const count = actionResult.evidence?.count as number | undefined;
+            if (!objectives || count === 0) {
+              content = "No encontre objetivos activos.";
+            } else {
+              const lines = objectives.map((o, i) => `${i + 1}. ${o.title}`).join("\n");
+              content = `Estos son tus objetivos activos:\n${lines}`;
+            }
+          } else if (action === "achieve") {
+            const objectiveId = actionResult.evidence?.objectiveId;
+            const eventId = actionResult.evidence?.eventId;
+            const title = actionResult.evidence?.title ?? classification.intent.entities?.title;
+            if (objectiveId && eventId) {
+              content = title ? `Objetivo logrado: ${title}` : "Objetivo logrado.";
+            } else {
+              content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+            }
+          } else if (action === "archive") {
+            const objectiveId = actionResult.evidence?.objectiveId;
+            const eventId = actionResult.evidence?.eventId;
+            const title = actionResult.evidence?.title ?? classification.intent.entities?.title;
+            if (objectiveId && eventId) {
+              content = title ? `Objetivo archivado: ${title}` : "Objetivo archivado.";
+            } else {
+              content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+            }
+          } else if (action === "assign-task") {
+            const taskId = actionResult.evidence?.taskId;
+            const objectiveId = actionResult.evidence?.objectiveId;
+            const eventId = actionResult.evidence?.eventId;
+            const objectiveTitle = actionResult.evidence?.objectiveTitle as string | undefined;
+            const taskTitle = actionResult.evidence?.taskTitle as string | undefined;
+            if (taskId && objectiveId && eventId) {
+              if (objectiveTitle && taskTitle) {
+                content = `Tarea asociada al objetivo ${objectiveTitle}: ${taskTitle}`;
+              } else if (objectiveTitle) {
+                content = `Tarea asociada al objetivo ${objectiveTitle}.`;
+              } else {
+                content = "Tarea asociada al objetivo.";
+              }
+            } else {
+              content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+            }
+          } else {
+            content = "La accion se reporto como ejecutada pero no se puede verificar la evidencia.";
+          }
         } else if (action === "list" || action === "search") {
           const notes = actionResult.evidence?.notes as Array<{ noteType: string; content: string }> | undefined;
           const count = actionResult.evidence?.count as number | undefined;

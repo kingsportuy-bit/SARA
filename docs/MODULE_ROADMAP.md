@@ -197,7 +197,7 @@ No incluir todavia:
 - dashboards avanzados.
 
 ### 7. `objectives`
-Estado: APPROVED_PENDING_OPENCODE
+Estado: IMPLEMENTED_PENDING_REVIEW
 
 Proposito:
 - manejar objetivos de mediano/largo plazo.

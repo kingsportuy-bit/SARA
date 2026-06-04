@@ -9,12 +9,14 @@ import { createSessionContextStore } from "./infra/sessionContextStore.js";
 import { createRemindersStore } from "./infra/remindersStore.js";
 import { createDailyLogStore } from "./infra/dailyLogStore.js";
 import { createAreasStore } from "./infra/areasStore.js";
+import { createObjectivesStore } from "./infra/objectivesStore.js";
 import { createNotesModule } from "./modules/notes/notesModule.js";
 import { createTasksModule } from "./modules/tasks/tasksModule.js";
 import { createSessionContextModule } from "./modules/sessionContext/sessionContextModule.js";
 import { createRemindersModule } from "./modules/reminders/remindersModule.js";
 import { createDailyLogModule } from "./modules/dailyLog/dailyLogModule.js";
 import { createAreasModule } from "./modules/areas/areasModule.js";
+import { createObjectivesModule } from "./modules/objectives/objectivesModule.js";
 import { createRemindersDispatcher } from "./modules/reminders/remindersDispatcher.js";
 import { createCoarseClassifier } from "./modules/coarseClassifier.js";
 import { createModuleIntentClassifier } from "./modules/moduleIntentClassifier.js";
@@ -28,6 +30,7 @@ import type { CreateTaskInput, ListTasksInput, CompleteTaskInput } from "./contr
 import type { CreateReminderInput, ListRemindersInput, CancelReminderInput } from "./contracts/reminders.js";
 import type { DailyLogMorningInput, DailyLogEveningInput, DailyLogSummaryInput } from "./contracts/dailyLog.js";
 import type { CreateAreaInput, ListAreasInput, ArchiveAreaInput, AssignNoteAreaInput, AssignTaskAreaInput } from "./contracts/areas.js";
+import type { CreateObjectiveInput, ListObjectivesInput, AchieveObjectiveInput, ArchiveObjectiveInput, AssignTaskObjectiveInput } from "./contracts/objectives.js";
 import type { ActionExecutionInput, ActionExecutionResult } from "./contracts/pipeline.js";
 
 const config = loadConfig();
@@ -53,11 +56,15 @@ const dailyLogModule = createDailyLogModule(dailyLogStore);
 const areasStore = createAreasStore(supabase);
 const areasModule = createAreasModule(areasStore);
 
+const objectivesStore = createObjectivesStore(supabase);
+const objectivesModule = createObjectivesModule(objectivesStore);
+
 registerModule("notes", ["create", "list", "search"]);
 registerModule("tasks", ["create", "list", "complete"]);
 registerModule("reminders", ["create", "list", "cancel"]);
 registerModule("daily-log", ["morning", "evening", "summary"]);
 registerModule("areas", ["create", "list", "archive", "assign-note", "assign-task"]);
+registerModule("objectives", ["create", "list", "achieve", "archive", "assign-task"]);
 
 function notesCreateHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
   const createInput: CreateNoteInput = {
@@ -715,6 +722,210 @@ function areasAssignTaskHandler(input: ActionExecutionInput): Promise<ActionExec
   });
 }
 
+function objectivesCreateHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const createInput: CreateObjectiveInput = {
+    schemaVersion: "objectives_create_input.v1",
+    traceId: input.traceId,
+    title: String(input.entities.title ?? ""),
+    slug: String(input.entities.slug ?? ""),
+    description: input.entities.description as string | undefined,
+    areaId: input.entities.areaId as string | undefined,
+    areaSlug: input.entities.areaSlug as string | undefined,
+    targetDate: input.entities.targetDate as string | undefined,
+    successCriteria: Array.isArray(input.entities.successCriteria) ? (input.entities.successCriteria as string[]) : [],
+    source: "chatwoot",
+  };
+  return objectivesModule.create(createInput).then((result) => {
+    if (result.status === "created") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: {
+          objectiveId: result.objectiveId,
+          eventId: result.eventId,
+          title: result.title,
+          slug: result.slug,
+          areaId: result.areaId,
+          areaName: result.areaName,
+        },
+        stateChanges: [
+          {
+            entityType: "objective",
+            entityId: result.objectiveId,
+            eventType: "objective_created",
+            payload: {},
+          },
+        ],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: result.error,
+    };
+  });
+}
+
+function objectivesListHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const listInput: ListObjectivesInput = {
+    schemaVersion: "objectives_list_input.v1",
+    traceId: input.traceId,
+    limit: typeof input.entities.limit === "number" ? input.entities.limit : 10,
+  };
+  return objectivesModule.list(listInput).then((listResult) => {
+    if (listResult.status === "success") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: {
+          objectives: listResult.objectives,
+          count: listResult.count,
+        },
+        stateChanges: [],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: listResult.error,
+    };
+  });
+}
+
+function objectivesAchieveHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const achieveInput: AchieveObjectiveInput = {
+    schemaVersion: "objectives_achieve_input.v1",
+    traceId: input.traceId,
+    objectiveId: input.entities.objectiveId as string | undefined,
+    slug: input.entities.objectiveSlug as string | undefined,
+    source: "chatwoot",
+  };
+  return objectivesModule.achieve(achieveInput).then((result) => {
+    if (result.status === "achieved") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: {
+          objectiveId: result.objectiveId,
+          eventId: result.eventId,
+          title: result.title,
+          slug: result.slug,
+        },
+        stateChanges: [
+          {
+            entityType: "objective",
+            entityId: result.objectiveId,
+            eventType: "objective_achieved",
+            payload: {},
+          },
+        ],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: result.error,
+    };
+  });
+}
+
+function objectivesArchiveHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const archiveInput: ArchiveObjectiveInput = {
+    schemaVersion: "objectives_archive_input.v1",
+    traceId: input.traceId,
+    objectiveId: input.entities.objectiveId as string | undefined,
+    slug: input.entities.objectiveSlug as string | undefined,
+    source: "chatwoot",
+  };
+  return objectivesModule.archive(archiveInput).then((result) => {
+    if (result.status === "archived") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: {
+          objectiveId: result.objectiveId,
+          eventId: result.eventId,
+          title: result.title,
+          slug: result.slug,
+        },
+        stateChanges: [
+          {
+            entityType: "objective",
+            entityId: result.objectiveId,
+            eventType: "objective_archived",
+            payload: {},
+          },
+        ],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: result.error,
+    };
+  });
+}
+
+function objectivesAssignTaskHandler(input: ActionExecutionInput): Promise<ActionExecutionResult> {
+  const assignInput: AssignTaskObjectiveInput = {
+    schemaVersion: "objectives_assign_task_input.v1",
+    traceId: input.traceId,
+    taskId: String(input.entities.taskId ?? ""),
+    objectiveId: input.entities.objectiveId as string | undefined,
+    objectiveSlug: input.entities.objectiveSlug as string | undefined,
+    source: "chatwoot",
+  };
+  return objectivesModule.assignTask(assignInput).then((result) => {
+    if (result.status === "assigned") {
+      return {
+        schemaVersion: "action_execution_result.v1",
+        traceId: input.traceId,
+        status: "executed",
+        evidence: {
+          taskId: result.taskId,
+          taskTitle: result.taskTitle,
+          objectiveId: result.objectiveId,
+          objectiveTitle: result.objectiveTitle,
+          objectiveSlug: result.objectiveSlug,
+          eventId: result.eventId,
+        },
+        stateChanges: [
+          {
+            entityType: "task",
+            entityId: result.taskId,
+            eventType: "task_objective_assigned",
+            payload: {},
+          },
+        ],
+      };
+    }
+    return {
+      schemaVersion: "action_execution_result.v1",
+      traceId: input.traceId,
+      status: "failed",
+      evidence: {},
+      stateChanges: [],
+      error: result.error,
+    };
+  });
+}
+
 const outboundClient = createChatwootClient(config.chatwoot.url, config.chatwoot.accountId, config.chatwoot.userToken);
 
 const processor = createBufferProcessor({
@@ -750,6 +961,13 @@ const processor = createBufferProcessor({
       archive: areasArchiveHandler,
       "assign-note": areasAssignNoteHandler,
       "assign-task": areasAssignTaskHandler,
+    },
+    objectives: {
+      create: objectivesCreateHandler,
+      list: objectivesListHandler,
+      achieve: objectivesAchieveHandler,
+      archive: objectivesArchiveHandler,
+      "assign-task": objectivesAssignTaskHandler,
     },
   }),
   composer: createResponseComposer(),

@@ -409,6 +409,139 @@ export function createBufferProcessor(ctx: PipelineContext) {
           });
           ctx.logger.info({ bufferId: buffer.buffer_id, areaId, entityId }, `session context updated for areas.${action}`);
         }
+      } else if (module === "objectives") {
+        if (action === "create" && actionResult.status === "executed") {
+          const objectiveId = actionResult.evidence?.objectiveId as string | undefined;
+          const title = actionResult.evidence?.title as string | undefined;
+          const slug = actionResult.evidence?.slug as string | undefined;
+          if (objectiveId) {
+            const ctxPayload: Record<string, unknown> = {};
+            if (title) ctxPayload.lastObjectiveTitle = title;
+            if (slug) ctxPayload.lastObjectiveSlug = slug;
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "objectives",
+              activeFlow: "objective_created",
+              focusedEntityType: "objective",
+              focusedEntityId: objectiveId,
+              context: ctxPayload,
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, objectiveId }, "session context updated for objectives.create");
+          }
+        } else if (action === "list" && actionResult.status === "executed") {
+          const objectives = actionResult.evidence?.objectives as Array<{ id: string; title: string; slug: string }> | undefined;
+          const count = actionResult.evidence?.count as number | undefined;
+
+          if (objectives && count === 1 && objectives.length === 1) {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "objectives",
+              focusedEntityType: "objective",
+              focusedEntityId: objectives[0].id,
+              context: {
+                lastObjectiveTitle: objectives[0].title,
+                lastObjectiveSlug: objectives[0].slug,
+                lastObjectiveList: [{ position: 1, id: objectives[0].id, title: objectives[0].title, slug: objectives[0].slug }],
+              },
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id }, "session context focused on single active objective");
+          } else if (objectives && count && count > 1) {
+            const objectiveList = objectives.map((o, i) => ({ position: i + 1, id: o.id, title: o.title, slug: o.slug }));
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "objectives",
+              focusedEntityType: undefined,
+              focusedEntityId: undefined,
+              context: { lastObjectiveList: objectiveList },
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, count }, "session context saved lastObjectiveList");
+          }
+        } else if (action === "achieve" && actionResult.status === "executed") {
+          const achievedObjectiveId = actionResult.evidence?.objectiveId as string | undefined;
+          const achievedTitle = actionResult.evidence?.title as string | undefined;
+
+          const existingCtx = await ctx.sessionContextModule.get({
+            accountId: buffer.account_id,
+            inboxId: buffer.inbox_id,
+            conversationId: buffer.conversation_id,
+          });
+
+          const focusedId = existingCtx.context?.focusedEntityId;
+          const shouldClearFocus = achievedObjectiveId && focusedId === achievedObjectiveId;
+
+          if (shouldClearFocus) {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "objectives",
+              activeFlow: "objective_achieved",
+              focusedEntityType: undefined,
+              focusedEntityId: undefined,
+              context: achievedTitle ? { lastAchievedObjectiveTitle: achievedTitle } : {},
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, objectiveId: achievedObjectiveId }, "session context cleared focus after objectives.achieve of focused objective");
+          } else {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "objectives",
+              activeFlow: "objective_achieved",
+              context: achievedTitle ? { lastAchievedObjectiveTitle: achievedTitle } : {},
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, objectiveId: achievedObjectiveId }, "session context updated for objectives.achieve");
+          }
+        } else if (action === "archive" && actionResult.status === "executed") {
+          const archivedObjectiveId = actionResult.evidence?.objectiveId as string | undefined;
+          const archivedTitle = actionResult.evidence?.title as string | undefined;
+
+          const existingCtx = await ctx.sessionContextModule.get({
+            accountId: buffer.account_id,
+            inboxId: buffer.inbox_id,
+            conversationId: buffer.conversation_id,
+          });
+
+          const focusedId = existingCtx.context?.focusedEntityId;
+          const shouldClearFocus = archivedObjectiveId && focusedId === archivedObjectiveId;
+
+          if (shouldClearFocus) {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "objectives",
+              activeFlow: "objective_archived",
+              focusedEntityType: undefined,
+              focusedEntityId: undefined,
+              context: archivedTitle ? { lastArchivedObjectiveTitle: archivedTitle } : {},
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, objectiveId: archivedObjectiveId }, "session context cleared focus after objectives.archive of focused objective");
+          } else {
+            await ctx.sessionContextModule.upsert({
+              ...base,
+              activeModule: "objectives",
+              activeFlow: "objective_archived",
+              context: archivedTitle ? { lastArchivedObjectiveTitle: archivedTitle } : {},
+            });
+            ctx.logger.info({ bufferId: buffer.buffer_id, objectiveId: archivedObjectiveId }, "session context updated for objectives.archive");
+          }
+        } else if (action === "assign-task" && actionResult.status === "executed") {
+          const objectiveId = actionResult.evidence?.objectiveId as string | undefined;
+          const objectiveTitle = actionResult.evidence?.objectiveTitle as string | undefined;
+          const objectiveSlug = actionResult.evidence?.objectiveSlug as string | undefined;
+          const taskId = actionResult.evidence?.taskId as string | undefined;
+          const taskTitle = actionResult.evidence?.taskTitle as string | undefined;
+
+          const ctxPayload: Record<string, unknown> = {};
+          if (objectiveTitle) ctxPayload.lastObjectiveTitle = objectiveTitle;
+          if (objectiveSlug) ctxPayload.lastObjectiveSlug = objectiveSlug;
+          if (taskTitle) ctxPayload.lastAssignedTaskTitle = taskTitle;
+
+          await ctx.sessionContextModule.upsert({
+            ...base,
+            activeModule: "objectives",
+            activeFlow: "task_objective_assigned",
+            focusedEntityType: "task",
+            focusedEntityId: taskId,
+            context: ctxPayload,
+          });
+          ctx.logger.info({ bufferId: buffer.buffer_id, objectiveId, taskId }, `session context updated for objectives.assign-task`);
+        }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

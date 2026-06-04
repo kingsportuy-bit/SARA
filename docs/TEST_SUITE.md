@@ -557,3 +557,70 @@ Estado: DONE + DEPLOYED + VALIDATED
 - PASS: DB dejo el registro diario en `sara_daily_log`.
 - PASS: `sara_events` registro `daily_log_created` y `daily_log_evening_updated`.
 - PASS: `sara_session_contexts` quedo enfocado en `daily-log`.
+
+## Modulo objectives (TASK-20260603-013)
+
+### Migracion
+- PASS: migracion solo crea/modifica objetos `sara_`.
+- PASS: `sara_objectives` tiene unique por `slug`.
+- PASS: `sara_objectives` tiene RLS y anon/authenticated revocado.
+- PASS: `sara_objectives` valida status permitido (`active`, `achieved`, `archived`).
+- PASS: `sara_tasks.objective_id` existe y es nullable.
+
+### Store
+- PASS: `objectivesStore.createObjective` llama `sara_create_objective` RPC.
+- PASS: `objectivesStore.createObjective` maneja error RPC.
+- PASS: `objectivesStore.achieveObjective` llama `sara_achieve_objective` RPC.
+- PASS: `objectivesStore.archiveObjective` llama `sara_archive_objective` RPC.
+- PASS: `objectivesStore.assignTaskObjective` llama `sara_assign_task_objective` RPC.
+- PASS: `objectivesStore.listObjectives` consulta `sara_objectives`.
+
+### Parser
+- PASS: `objectivesParser` parsea crear objetivo.
+- PASS: `objectivesParser` parsea crear objetivo con area.
+- PASS: `objectivesParser` parsea crear objetivo con criterios.
+- PASS: `objectivesParser` parsea crear objetivo con fecha target.
+- PASS: `objectivesParser` parsea listar objetivos.
+- PASS: `objectivesParser` parsea lograr objetivo.
+- PASS: `objectivesParser` parsea archivar objetivo.
+- PASS: `objectivesParser` parsea asignar tarea a objetivo.
+- PASS: `objectivesParser` genera slug deterministico ASCII-safe.
+- PASS: `objectivesParser` retorna missingData sin titulo.
+
+### Modulo
+- PASS: `objectivesModule.create` crea con input valido.
+- PASS: `objectivesModule.create` rechaza titulo vacio.
+- PASS: `objectivesModule.create` rechaza slug vacio.
+- PASS: `objectivesModule.list` consulta read-only.
+- PASS: `objectivesModule.achieve` requiere objetivo identificable.
+- PASS: `objectivesModule.archive` requiere objetivo identificable.
+- PASS: `objectivesModule.assignTask` requiere objetivo y task.
+
+### Pipeline
+- PASS: `coarseClassifier` detecta modulo objectives.
+- PASS: `moduleIntentClassifier` detecta `objectives.create`.
+- PASS: `moduleIntentClassifier` detecta `objectives.list`.
+- PASS: `moduleIntentClassifier` detecta `objectives.achieve`.
+- PASS: `moduleIntentClassifier` detecta `objectives.archive`.
+- PASS: `moduleIntentClassifier` detecta `objectives.assign-task`.
+- PASS: `moduleIntentClassifier` no ejecuta assign ambiguo.
+- PASS: `moduleRouter` marca objectives ejecutable tras registro.
+- PASS: `actionExecutor` despacha create/list/achieve/archive/assign-task.
+- PASS: `actionExecutor` bloquea mutaciones con confianza baja.
+- PASS: `responseComposer` confirma create/achieve/archive/assign solo con evidencia.
+- PASS: `responseComposer` formatea list.
+
+### Regresion
+- PASS: `notes.create/list/search` sigue pasando.
+- PASS: `tasks.create/list/complete` sigue pasando.
+- PASS: `session-context` sigue pasando.
+- PASS: `reminders` sigue pasando.
+- PASS: `daily-log` sigue pasando.
+- PASS: `areas` sigue pasando.
+- PASS: Chatwoot scope `7/45/85` sigue pasando.
+
+## Evidencia local 2026-06-03 (TASK-20260603-013)
+- `npm run typecheck`: PASS
+- `npm test`: PASS (501 tests)
+- `npm run build`: PASS
+

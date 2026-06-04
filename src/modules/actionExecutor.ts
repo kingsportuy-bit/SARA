@@ -160,6 +160,49 @@ function validateAreaAssignTask(input: ActionExecutionInput): string | null {
   return null;
 }
 
+function validateObjectiveCreate(input: ActionExecutionInput): string | null {
+  const title = input.entities?.title;
+  if (!title || typeof title !== "string" || String(title).trim().length === 0) {
+    return "title is required for objectives.create";
+  }
+  const slug = input.entities?.slug;
+  if (!slug || typeof slug !== "string" || String(slug).trim().length === 0) {
+    return "slug is required for objectives.create";
+  }
+  return null;
+}
+
+function validateObjectiveAchieve(input: ActionExecutionInput): string | null {
+  const hasObjectiveId = input.entities?.objectiveId;
+  const hasObjectiveSlug = input.entities?.objectiveSlug && typeof input.entities.objectiveSlug === "string" && input.entities.objectiveSlug.trim().length > 0;
+  if (!hasObjectiveId && !hasObjectiveSlug) {
+    return "objectiveId or objectiveSlug required for objectives.achieve";
+  }
+  return null;
+}
+
+function validateObjectiveArchive(input: ActionExecutionInput): string | null {
+  const hasObjectiveId = input.entities?.objectiveId;
+  const hasObjectiveSlug = input.entities?.objectiveSlug && typeof input.entities.objectiveSlug === "string" && input.entities.objectiveSlug.trim().length > 0;
+  if (!hasObjectiveId && !hasObjectiveSlug) {
+    return "objectiveId or objectiveSlug required for objectives.archive";
+  }
+  return null;
+}
+
+function validateObjectiveAssignTask(input: ActionExecutionInput): string | null {
+  const taskId = input.entities?.taskId;
+  if (!taskId || typeof taskId !== "string" || String(taskId).trim().length === 0) {
+    return "taskId is required for objectives.assign-task";
+  }
+  const hasObjectiveId = input.entities?.objectiveId;
+  const hasObjectiveSlug = input.entities?.objectiveSlug && typeof input.entities.objectiveSlug === "string" && input.entities.objectiveSlug.trim().length > 0;
+  if (!hasObjectiveId && !hasObjectiveSlug) {
+    return "objectiveId or objectiveSlug required for objectives.assign-task";
+  }
+  return null;
+}
+
 function guardAction(input: ActionExecutionInput): string | null {
   const mutatingActions = new Set([
     "create",
@@ -168,6 +211,7 @@ function guardAction(input: ActionExecutionInput): string | null {
     "morning",
     "evening",
     "archive",
+    "achieve",
     "assign-note",
     "assign-task",
   ]);
@@ -219,6 +263,22 @@ function guardAction(input: ActionExecutionInput): string | null {
 
   if (input.module === "areas" && input.action === "assign-task") {
     return validateAreaAssignTask(input);
+  }
+
+  if (input.module === "objectives" && input.action === "create") {
+    return validateObjectiveCreate(input);
+  }
+
+  if (input.module === "objectives" && input.action === "achieve") {
+    return validateObjectiveAchieve(input);
+  }
+
+  if (input.module === "objectives" && input.action === "archive") {
+    return validateObjectiveArchive(input);
+  }
+
+  if (input.module === "objectives" && input.action === "assign-task") {
+    return validateObjectiveAssignTask(input);
   }
 
   return null;
