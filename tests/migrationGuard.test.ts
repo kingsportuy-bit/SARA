@@ -185,4 +185,17 @@ describe("migration guard", () => {
     expect(sql).toContain("sara_objectives_success_criteria_array");
     expect(sql).toContain("jsonb_typeof(success_criteria) = 'array'");
   });
+
+  it("sara_start_timer RPC signatures match parameter order", () => {
+    const sql = readFileSync("db/migrations/20260603_016_timers.sql", "utf8");
+    const signature =
+      sql.match(/create or replace function sara_start_timer\(([\s\S]*?)\)\s*returns jsonb/i)?.[1] ?? "";
+    expect(signature).toContain("p_account_id bigint");
+    expect(signature).toContain("p_related_entity_type text default null");
+    expect(signature.indexOf("p_conversation_id bigint")).toBeLessThan(
+      signature.indexOf("p_related_entity_type text default null"),
+    );
+    expect(signature).not.toMatch(/p_related_entity_type\s+text\s+default[\s\S]*p_account_id\s+bigint/i);
+    expect(sql).toContain("sara_start_timer(uuid, text, text, integer, bigint, bigint, bigint, text, uuid, text)");
+  });
 });

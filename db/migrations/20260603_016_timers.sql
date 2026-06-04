@@ -134,8 +134,8 @@ begin
 end;
 $$;
 
-revoke execute on function sara_start_timer(uuid, text, text, integer, text, uuid, bigint, bigint, bigint, text) from anon, authenticated;
-grant execute on function sara_start_timer(uuid, text, text, integer, text, uuid, bigint, bigint, bigint, text) to service_role;
+revoke execute on function sara_start_timer(uuid, text, text, integer, bigint, bigint, bigint, text, uuid, text) from anon, authenticated;
+grant execute on function sara_start_timer(uuid, text, text, integer, bigint, bigint, bigint, text, uuid, text) to service_role;
 
 -- 5. RPC: sara_cancel_timer
 create or replace function sara_cancel_timer(
