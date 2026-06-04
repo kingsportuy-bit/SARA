@@ -51,16 +51,16 @@ const OBJECTIVE_LIST_PATTERNS = [
 ];
 
 const OBJECTIVE_ACHIEVE_PATTERNS = [
-  /^(?:logr[eé]|marcar)\s+(?:objetivo\s+)?(.+?)\s+como\s+logrado/i,
-  /^logr[eé]\s+objetivo\s+(.+)/i,
+  /^(?:logr[e\u00e9]|marcar)\s+(?:objetivo\s+)?(.+?)\s+como\s+logrado/i,
+  /^logr[e\u00e9]\s+objetivo\s+(.+)/i,
   /^marcar\s+objetivo\s+(.+)/i,
   /^(?:objetivo\s+)?logrado\s+(.+)/i,
-  /^consegu[ií]\s+objetivo\s+(.+)/i,
+  /^consegu[i\u00ed]\s+objetivo\s+(.+)/i,
 ];
 
 const OBJECTIVE_ACHIEVE_BARE_PATTERNS = [
-  /^(?:logr[eé]|marcar)\s+objetivo\s*$/i,
-  /^consegu[ií]\s+objetivo\s*$/i,
+  /^(?:logr[e\u00e9]|marcar)\s+objetivo\s*$/i,
+  /^consegu[i\u00ed]\s+objetivo\s*$/i,
 ];
 
 const OBJECTIVE_ARCHIVE_PATTERNS = [
@@ -94,30 +94,26 @@ function extractAreaAndCriteriaFromTitle(rawTitle: string): { cleanTitle: string
   let targetDate: string | undefined;
   const successCriteria: string[] = [];
 
-  // Extract targetDate: "para YYYY-MM-DD"
+  const criteriaMatch = remaining.match(/\b(?:criterio|criterios)\s*:\s*(.+)/i);
+  if (criteriaMatch && criteriaMatch[1]) {
+    const criteriaText = criteriaMatch[1].trim();
+    for (const criterion of criteriaText.split(/[,;]\s*/)) {
+      const trimmed = criterion.trim();
+      if (trimmed) successCriteria.push(trimmed);
+    }
+    remaining = remaining.replace(criteriaMatch[0], "").trim();
+  }
+
   const dateMatch = remaining.match(/\bpara\s+(\d{4}-\d{2}-\d{2})\b/i);
   if (dateMatch && dateMatch[1]) {
     targetDate = dateMatch[1];
     remaining = remaining.replace(dateMatch[0], "").trim();
   }
 
-  // Extract area: "area X" at the end
   const areaMatch = remaining.match(/\barea\s+([a-z0-9\s]+)$/i);
   if (areaMatch && areaMatch[1]) {
     areaSlug = slugify(areaMatch[1].trim());
     remaining = remaining.replace(areaMatch[0], "").trim();
-  }
-
-  // Extract successCriteria: "criterio: X" or "criterios: X, Y, Z"
-  const criteriaMatch = remaining.match(/\b(?:criterio|criterios)\s*:\s*(.+)/i);
-  if (criteriaMatch && criteriaMatch[1]) {
-    const criteriaText = criteriaMatch[1].trim();
-    const split = criteriaText.split(/[,;]\s*/);
-    for (const c of split) {
-      const trimmed = c.trim();
-      if (trimmed) successCriteria.push(trimmed);
-    }
-    remaining = remaining.replace(criteriaMatch[0], "").trim();
   }
 
   return { cleanTitle: remaining, areaSlug, targetDate, successCriteria };
@@ -130,14 +126,12 @@ export function parseObjectivesInput(text: string): ParsedObjectivesInput {
 
   const trimmed = text.trim();
 
-  // Check create bare patterns (no title)
   for (const pattern of OBJECTIVE_CREATE_BARE_PATTERNS) {
     if (pattern.test(trimmed)) {
       return { intent: "create", success: false, missingData: ["objectiveTitle"], successCriteria: [] };
     }
   }
 
-  // Check create patterns
   for (const pattern of OBJECTIVE_CREATE_PATTERNS) {
     const match = pattern.exec(trimmed);
     if (match && match[1] && match[1].trim()) {
@@ -151,21 +145,18 @@ export function parseObjectivesInput(text: string): ParsedObjectivesInput {
     }
   }
 
-  // Check list patterns
   for (const pattern of OBJECTIVE_LIST_PATTERNS) {
     if (pattern.test(trimmed)) {
       return { intent: "list", success: true, missingData: [], successCriteria: [] };
     }
   }
 
-  // Check achieve bare patterns
   for (const pattern of OBJECTIVE_ACHIEVE_BARE_PATTERNS) {
     if (pattern.test(trimmed)) {
       return { intent: "achieve", success: false, missingData: ["objective"], successCriteria: [] };
     }
   }
 
-  // Check achieve patterns
   for (const pattern of OBJECTIVE_ACHIEVE_PATTERNS) {
     const match = pattern.exec(trimmed);
     if (match && match[1] && match[1].trim()) {
@@ -178,14 +169,12 @@ export function parseObjectivesInput(text: string): ParsedObjectivesInput {
     }
   }
 
-  // Check archive bare patterns
   for (const pattern of OBJECTIVE_ARCHIVE_BARE_PATTERNS) {
     if (pattern.test(trimmed)) {
       return { intent: "archive", success: false, missingData: ["objective"], successCriteria: [] };
     }
   }
 
-  // Check archive patterns
   for (const pattern of OBJECTIVE_ARCHIVE_PATTERNS) {
     const match = pattern.exec(trimmed);
     if (match && match[1] && match[1].trim()) {
@@ -198,14 +187,12 @@ export function parseObjectivesInput(text: string): ParsedObjectivesInput {
     }
   }
 
-  // Check assign task bare patterns
   for (const pattern of OBJECTIVE_ASSIGN_TASK_BARE_PATTERNS) {
     if (pattern.test(trimmed)) {
       return { intent: "assign-task", success: false, missingData: ["objective"], successCriteria: [] };
     }
   }
 
-  // Check assign task patterns
   for (const pattern of OBJECTIVE_ASSIGN_TASK_PATTERNS) {
     const match = pattern.exec(trimmed);
     if (match && match[1] && match[1].trim()) {

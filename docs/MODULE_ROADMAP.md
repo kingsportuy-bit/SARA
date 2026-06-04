@@ -197,7 +197,7 @@ No incluir todavia:
 - dashboards avanzados.
 
 ### 7. `objectives`
-Estado: IMPLEMENTED_PENDING_REVIEW
+Estado: IMPLEMENTED_PENDING_DEPLOY
 
 Proposito:
 - manejar objetivos de mediano/largo plazo.

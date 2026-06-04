@@ -565,6 +565,7 @@ Estado: DONE + DEPLOYED + VALIDATED
 - PASS: `sara_objectives` tiene unique por `slug`.
 - PASS: `sara_objectives` tiene RLS y anon/authenticated revocado.
 - PASS: `sara_objectives` valida status permitido (`active`, `achieved`, `archived`).
+- PASS: `sara_objectives` valida `success_criteria` como array JSON.
 - PASS: `sara_tasks.objective_id` existe y es nullable.
 
 ### Store
@@ -582,6 +583,7 @@ Estado: DONE + DEPLOYED + VALIDATED
 - PASS: `objectivesParser` parsea crear objetivo con fecha target.
 - PASS: `objectivesParser` parsea listar objetivos.
 - PASS: `objectivesParser` parsea lograr objetivo.
+- PASS: `objectivesParser` parsea lograr objetivo con acentos reales.
 - PASS: `objectivesParser` parsea archivar objetivo.
 - PASS: `objectivesParser` parsea asignar tarea a objetivo.
 - PASS: `objectivesParser` genera slug deterministico ASCII-safe.
@@ -623,4 +625,6 @@ Estado: DONE + DEPLOYED + VALIDATED
 - `npm run typecheck`: PASS
 - `npm test`: PASS (501 tests)
 - `npm run build`: PASS
-
+- `npm run typecheck`: PASS (hardening parser/constraint TASK-20260603-013)
+- `npm test`: PASS (502 tests, hardening parser/constraint TASK-20260603-013)
+- `npm run build`: PASS (hardening parser/constraint TASK-20260603-013)

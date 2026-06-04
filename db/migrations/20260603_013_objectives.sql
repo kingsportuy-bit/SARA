@@ -25,6 +25,7 @@ create table if not exists sara_objectives (
   constraint sara_objectives_slug_not_empty check (length(trim(slug)) > 0),
   constraint sara_objectives_slug_unique unique (slug),
   constraint sara_objectives_status_valid check (status in ('active', 'achieved', 'archived')),
+  constraint sara_objectives_success_criteria_array check (jsonb_typeof(success_criteria) = 'array'),
   constraint sara_objectives_achieved_at_requires_achieved
     check (achieved_at is null or status = 'achieved'),
   constraint sara_objectives_archived_at_requires_archived

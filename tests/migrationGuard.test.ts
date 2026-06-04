@@ -179,4 +179,10 @@ describe("migration guard", () => {
     expect(sql).toContain("revoke execute on function sara_assign_task_area");
     expect(sql).toContain("grant execute on function sara_assign_task_area");
   });
+
+  it("sara_objectives validates success_criteria as json array", () => {
+    const sql = readFileSync("db/migrations/20260603_013_objectives.sql", "utf8");
+    expect(sql).toContain("sara_objectives_success_criteria_array");
+    expect(sql).toContain("jsonb_typeof(success_criteria) = 'array'");
+  });
 });

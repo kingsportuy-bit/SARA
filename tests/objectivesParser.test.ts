@@ -104,22 +104,25 @@ describe("objectivesParser - achieve", () => {
     expect(result.objectiveSlug).toBe("mejorar-mi-energia");
   });
 
-  it("parses logré mejorar mi energia como logrado", () => {
-    const result = parseObjectivesInput("logré mejorar mi energia como logrado");
+  it("parses logre with real accent", () => {
+    const text = `logr${String.fromCharCode(0x00e9)} mejorar mi energia como logrado`;
+    const result = parseObjectivesInput(text);
     expect(result.success).toBe(true);
     expect(result.intent).toBe("achieve");
     expect(result.objectiveSlug).toBe("mejorar-mi-energia");
   });
 
-  it("parses conseguí objetivo mejorar mi energia", () => {
-    const result = parseObjectivesInput("conseguí objetivo mejorar mi energia");
+  it("parses consegui with real accent", () => {
+    const text = `consegu${String.fromCharCode(0x00ed)} objetivo mejorar mi energia`;
+    const result = parseObjectivesInput(text);
     expect(result.success).toBe(true);
     expect(result.intent).toBe("achieve");
     expect(result.objectiveSlug).toBe("mejorar-mi-energia");
   });
 
   it("returns missing objective for achieve without title", () => {
-    const result = parseObjectivesInput("logré objetivo");
+    const text = `logr${String.fromCharCode(0x00e9)} objetivo`;
+    const result = parseObjectivesInput(text);
     expect(result.success).toBe(false);
     expect(result.missingData).toContain("objective");
   });
