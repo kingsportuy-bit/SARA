@@ -634,3 +634,13 @@ Estado: DONE + DEPLOYED + VALIDATED
 - `npm run typecheck`: PASS (hotfix prioridad objectives/daily-log TASK-20260603-013)
 - `npm test`: PASS (505 tests, hotfix prioridad objectives/daily-log TASK-20260603-013)
 - `npm run build`: PASS (hotfix prioridad objectives/daily-log TASK-20260603-013)
+
+## Evidencia local 2026-06-03 (TASK-20260603-019)
+- `npm run typecheck`: PASS (protocols files; pre-existing workoutsStore error outside scope)
+- `npm test`: PASS (616 total, 612 pass; 4 pre-existing failures in workouts module outside scope)
+- Protocols tests: 40 PASS (parser 21, module 10, store 9)
+- `npm run build`: PASS
+- Todos los objetos DB creados solo con prefijo `sara_`.
+- No se tocaron archivos compartidos del pipeline.
+- RLS habilitado y anon/authenticated revocado.
+- Evaluador deterministico no ejecuta acciones.

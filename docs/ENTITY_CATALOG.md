@@ -482,7 +482,7 @@ Guardar pasos accionables dentro de un plan.
 - `plan_step_completed`
 
 ## 16. `sara_protocols`
-Estado: PLANIFICADA PARA TASK-20260603-019
+Estado: IMPLEMENTADA EN TASK-20260603-019
 
 ### Proposito
 Guardar reglas personales de decision y actuacion.

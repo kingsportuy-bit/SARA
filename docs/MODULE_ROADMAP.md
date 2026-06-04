@@ -364,7 +364,7 @@ No incluir todavia:
 - dependencias complejas.
 
 ### 13. `protocols`
-Estado: FUTURE
+Estado: SPEC_PARALLEL_SAFE (CORE_IMPLEMENTED)
 
 Proposito:
 - aplicar reglas personales de decision y actuacion.

@@ -1296,3 +1296,209 @@ Reglas de respuesta:
 - Lograr: `"Objetivo logrado: <title>"`
 - Archivar: `"Objetivo archivado: <title>"`
 - Asignar tarea: `"Tarea asociada al objetivo <objectiveTitle>: <taskTitle>"`
+
+## Modulo protocols (v0 MVP - core aislado)
+
+### protocols.create
+Responsable: `protocols`
+
+Entrada (`CreateProtocolInput`):
+- `schemaVersion`: `"protocols_create_input.v1"`
+- `traceId`: string
+- `name`: string (no vacio)
+- `slug`: string (no vacio, unico)
+- `scope`: `ProtocolScope` (daily | fitness | planning | general)
+- `rules`: `ProtocolRule[]` (array JSON con condition/action)
+- `description?`: string
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+
+Salida (`CreateProtocolResult`):
+- `schemaVersion`: `"protocols_create_result.v1"`
+- `traceId`: string
+- `status`: `"created"` | `"failed"`
+- `protocolId?`: uuid
+- `eventId?`: uuid
+- `name?`: string
+- `slug?`: string
+- `scope?`: string
+- `evidence.protocolId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"protocol_created"`
+- `error?`: string
+
+Reglas:
+- `name` no puede ser vacio.
+- `slug` no puede ser vacio y debe ser unico.
+- `scope` debe ser uno de los valores validos.
+- `rules` debe ser array JSON.
+- El protocolo nace con `status = draft`.
+- Solo confirma con `protocolId` y `eventId`.
+
+### protocols.list
+Responsable: `protocols`
+
+Entrada (`ListProtocolsInput`):
+- `schemaVersion`: `"protocols_list_input.v1"`
+- `traceId`: string
+- `status?`: `ProtocolStatus` (default `active`)
+- `scope?`: `ProtocolScope`
+- `limit?`: number (default 20, max 20)
+
+Salida (`ListProtocolsResult`):
+- `schemaVersion`: `"protocols_list_result.v1"`
+- `traceId`: string
+- `status`: `"success"` | `"failed"`
+- `protocols`: array de `ProtocolRecord`
+- `count`: number
+- `error?`: string
+
+Consulta `sara_protocols` read-only, filtrada por estado y opcionalmente por scope.
+
+### protocols.activate
+Responsable: `protocols`
+
+Entrada (`ActivateProtocolInput`):
+- `schemaVersion`: `"protocols_activate_input.v1"`
+- `traceId`: string
+- `protocolId?`: uuid
+- `slug?`: string
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+
+Salida (`ActivateProtocolResult`):
+- `schemaVersion`: `"protocols_activate_result.v1"`
+- `traceId`: string
+- `status`: `"activated"` | `"failed"`
+- `protocolId?`: uuid
+- `eventId?`: uuid
+- `name?`: string
+- `slug?`: string
+- `scope?`: string
+- `evidence.protocolId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"protocol_activated"`
+- `error?`: string
+
+Reglas:
+- Requiere `protocolId` o `slug`.
+- No puede activarse un protocolo ya activo o archivado.
+- Cambia `status` a `active` y setea `activated_at`.
+- Emite evento `protocol_activated`.
+- Solo confirma con `protocolId` y `eventId`.
+
+### protocols.archive
+Responsable: `protocols`
+
+Entrada (`ArchiveProtocolInput`):
+- `schemaVersion`: `"protocols_archive_input.v1"`
+- `traceId`: string
+- `protocolId?`: uuid
+- `slug?`: string
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+
+Salida (`ArchiveProtocolResult`):
+- `schemaVersion`: `"protocols_archive_result.v1"`
+- `traceId`: string
+- `status`: `"archived"` | `"failed"`
+- `protocolId?`: uuid
+- `eventId?`: uuid
+- `name?`: string
+- `slug?`: string
+- `scope?`: string
+- `evidence.protocolId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"protocol_archived"`
+- `error?`: string
+
+Reglas:
+- Requiere `protocolId` o `slug`.
+- No borra datos.
+- Solo cambia `status` a `archived` y setea `archived_at`.
+- Emite evento `protocol_archived`.
+- Solo confirma con `protocolId` y `eventId`.
+
+### protocols.evaluate
+Responsable: `protocols`
+
+Entrada (`EvaluateProtocolInput`):
+- `schemaVersion`: `"protocols_evaluate_input.v1"`
+- `traceId`: string
+- `protocolId?`: uuid
+- `slug?`: string
+- `context`: Record<string, unknown>
+- `source`: `"chatwoot"` | `"manual"` | `"system"`
+
+Salida (`EvaluateProtocolResult`):
+- `schemaVersion`: `"protocols_evaluate_result.v1"`
+- `traceId`: string
+- `status`: `"evaluated"` | `"failed"`
+- `protocolId?`: uuid
+- `eventId?`: uuid
+- `name?`: string
+- `slug?`: string
+- `scope?`: string
+- `suggestions`: array de `{ rule, applies, suggestion, evidence }`
+- `evidence.protocolId?`: uuid
+- `evidence.eventId?`: uuid
+- `evidence.eventType?`: `"protocol_evaluated"`
+- `evidence.rulesCount`: number
+- `evidence.rulesMatched`: number
+- `error?`: string
+
+Reglas:
+- Read-only evaluacion deterministica de reglas.
+- No ejecuta acciones automaticas.
+- No muta otros modulos.
+- Solo evalua protocolos activos.
+- Puede devolver sugerencias textuales con evidencia.
+- Cada evaluacion registra evento `protocol_evaluated` en `sara_events`.
+- No usar LLM para decidir.
+
+### RPC `sara_create_protocol`
+Firma:
+```
+sara_create_protocol(p_trace_id uuid, p_name text, p_slug text, p_scope text, p_rules jsonb, p_description text, p_source text)
+```
+Retorna JSON con `protocol_id`, `event_id`, `name`, `slug`, `scope`, `status`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+### RPC `sara_activate_protocol`
+Firma:
+```
+sara_activate_protocol(p_trace_id uuid, p_protocol_id uuid, p_slug text, p_source text)
+```
+Retorna JSON con `protocol_id`, `event_id`, `name`, `slug`, `scope`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+### RPC `sara_archive_protocol`
+Firma:
+```
+sara_archive_protocol(p_trace_id uuid, p_protocol_id uuid, p_slug text, p_source text)
+```
+Retorna JSON con `protocol_id`, `event_id`, `name`, `slug`, `scope`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+### RPC `sara_log_protocol_evaluation`
+Firma:
+```
+sara_log_protocol_evaluation(p_trace_id uuid, p_protocol_id uuid, p_slug text, p_evidence jsonb, p_suggestions jsonb, p_source text)
+```
+Registra evento `protocol_evaluated` en `sara_events`. Read-only sobre `sara_protocols`.
+Retorna JSON con `protocol_id`, `event_id`, `name`, `slug`, `scope`, `status`, `trace_id`, `schema_version`.
+Ejecutable solo por `service_role`.
+
+### Parseo MVP
+Responsable: `protocols-parser`
+
+Soporta de forma deterministica:
+- `crear protocolo energia baja: si dormi menos de 6 horas, rutina liviana`
+- `que protocolos tengo`
+- `listar protocolos`
+- `activar protocolo energia baja`
+- `archivar protocolo energia baja`
+- `evaluar protocolo energia baja`
+
+No soporta todavia:
+- edicion de protocolos existentes;
+- reglas compuestas avanzadas;
+- condiciones OR/AND complejas;
+- integracion al pipeline Chatwoot.
