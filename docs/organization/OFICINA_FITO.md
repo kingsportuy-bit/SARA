@@ -71,7 +71,8 @@ Fito — Principal, CEO y Director General
 +-- Alma — Dirección de Producto, Negocios y Experiencia
 |
 +-- Sol Max — Dirección de Tecnología
-|   +-- Luna — Liderazgo de Ingeniería y Ejecución
+|   +-- OpenCode — Ejecución primaria de trabajo pesado
+|   +-- Luna — Fallback de ejecución pesada solo por OPENCODE_QUOTA_EXHAUSTED
 |
 +-- Vera — Dirección de Calidad, Validación y Preaceptación
 |
