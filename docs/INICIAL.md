@@ -47,25 +47,28 @@ Reglas derivadas:
 
 ## Mapa de lectura obligatoria (orden)
 1. docs/BIBLIA.md
-2. docs/LEY_ARQUITECTURA.md
-3. docs/AGENTS.md
-4. docs/SYSTEM.md
-5. docs/BUSINESS.md
-6. docs/CONTRATOS.md
-7. docs/ARQUITECTURA_CHATWOOT_V1.md
-8. docs/ENTITY_CATALOG.md
-9. docs/MODULE_ROADMAP.md
-10. docs/INFORME_ANALISIS_ARQUITECTURA_FEATURES.md
-11. docs/PARALLEL_OPENCODE_PLAN.md
-12. docs/agents/OPENCODE_EXECUTOR_PROTOCOL.md
-13. docs/DEBUG.md
-14. docs/DEPLOY.md
-15. docs/INFRASTRUCTURE.md
-16. docs/SECURITY.md
-17. docs/TEST_SUITE.md
-18. docs/REGRESSION_CASES.md
-19. docs/ERROR_REGISTRY.md
-20. docs/biblioteca/README.md
+2. docs/organization/OFICINA_FITO.md
+3. docs/organization/MESA_DIRECCION_INTEGRAL.md
+4. docs/organization/CARGOS_Y_NOMBRAMIENTOS.md
+5. docs/LEY_ARQUITECTURA.md
+6. docs/AGENTS.md
+7. docs/SYSTEM.md
+8. docs/BUSINESS.md
+9. docs/CONTRATOS.md
+10. docs/ARQUITECTURA_CHATWOOT_V1.md
+11. docs/ENTITY_CATALOG.md
+12. docs/MODULE_ROADMAP.md
+13. docs/INFORME_ANALISIS_ARQUITECTURA_FEATURES.md
+14. docs/PARALLEL_OPENCODE_PLAN.md
+15. docs/agents/OPENCODE_EXECUTOR_PROTOCOL.md
+16. docs/DEBUG.md
+17. docs/DEPLOY.md
+18. docs/INFRASTRUCTURE.md
+19. docs/SECURITY.md
+20. docs/TEST_SUITE.md
+21. docs/REGRESSION_CASES.md
+22. docs/ERROR_REGISTRY.md
+23. docs/biblioteca/README.md
 
 ## Roles al iniciar un hilo nuevo
 - Codex Orquestador: agente principal del proyecto. Lee `docs/INICIAL.md`, mantiene contexto, planifica, define contratos, prepara tasks para opencode, revisa diffs, valida evidencia y decide si se aprueba o se piden correcciones.

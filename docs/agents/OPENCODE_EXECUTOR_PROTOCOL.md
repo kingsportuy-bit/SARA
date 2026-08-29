@@ -3,6 +3,14 @@
 ## Objetivo
 Definir como trabaja opencode como agente ejecutor de trabajo pesado en SARA.
 
+## Regla de despacho de trabajo pesado
+
+- OpenCode es el ejecutor primario de TODO trabajo pesado sobre tareas aprobadas.
+- Luna solo puede actuar como fallback de ejecucion pesada si OpenCode agoto cuota y existe evidencia explicita `OPENCODE_QUOTA_EXHAUSTED`.
+- Sin evidencia de cuota agotada, Luna debe rechazarse (fail-closed).
+- El owner/Sol reanuda o redistribuye el trabajo de vuelta a OpenCode.
+- Sol solo dirige, despacha y revisa; no absorbe silenciosamente trabajo pesado que corresponde a OpenCode.
+
 ## Rol de opencode
 opencode es un agente ejecutor.
 

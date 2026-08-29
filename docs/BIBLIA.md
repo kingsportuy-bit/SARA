@@ -6,6 +6,11 @@ Convertir direccion en ejecucion sostenida mediante un sistema que registre, mid
 ## Naturaleza del producto
 SARA es una app de uso personal. No tiene presion comercial ni usuarios externos que obliguen a conservar decisiones tempranas por compatibilidad.
 
+SARA opera la Oficina Fito: integra vida personal, patrimonio y emprendimientos
+en un contexto ejecutivo unico, con compartimentos de permisos y contabilidad
+por titular, entidad, area y centro de costo. Los proyectos sirven a la
+direccion integral de Fito; no fragmentan ni gobiernan el contexto superior.
+
 Esto habilita iteracion rapida, refactors y cambios profundos cuando mejoren el sistema. La velocidad no habilita desorden: se mantienen arquitectura modular, tests, migraciones versionadas y trazabilidad completa.
 
 ## Regla madre
