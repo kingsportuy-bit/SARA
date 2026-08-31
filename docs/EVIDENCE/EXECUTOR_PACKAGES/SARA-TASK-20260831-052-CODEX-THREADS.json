@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "taskId": "TASK-20260831-052",
+  "status": "EXECUTOR_READY",
+  "approvedBy": "Fito",
+  "approvedAt": "2026-08-31",
+  "executor": "OpenCode",
+  "objective": "Habilitar persistencia local de SARA Personal para hilos Codex del proyecto SARA.",
+  "requiredReads": [
+    "docs/INICIAL.md",
+    "docs/LEY_ARQUITECTURA.md",
+    "docs/AGENTS.md",
+    "docs/SECURITY.md",
+    "docs/CONTRATOS.md",
+    "docs/agents/OPENCODE_EXECUTOR_PROTOCOL.md",
+    "docs/TASKS/TASK-20260831-052.md"
+  ],
+  "sourceReference": {
+    "worktree": "C:\\Users\\Fito\\Documents\\CODEX\\SARA-personal-mvp",
+    "branch": "codex/task-20260831-051-sara-personal",
+    "verifiedFunctionalCommit": "a62f96abefbb4df649686cbb906d493568e4dd8d"
+  },
+  "allowed": [
+    "copy and adapt audited personal assistant contracts parser and module",
+    "file repository under data/personal",
+    "structured local CLI",
+    "root Codex instructions documentation tests and gitignore"
+  ],
+  "forbidden": [
+    "network remote deploy production Supabase WhatsApp Chatwoot UI",
+    "package.json",
+    "other projects",
+    "secrets or sensitive context without explicit consent",
+    "committing real personal data"
+  ],
+  "validation": [
+    "focused E2E including concurrency and privacy",
+    "npm run typecheck",
+    "npm test",
+    "npm run build",
+    "git diff --check"
+  ],
+  "commit": "feat(TASK-20260831-052): habilitar SARA Personal en hilos Codex"
+}
