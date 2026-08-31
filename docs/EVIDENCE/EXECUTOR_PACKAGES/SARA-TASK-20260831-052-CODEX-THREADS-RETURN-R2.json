@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "taskId": "TASK-20260831-052",
+  "status": "RETURN_REQUIRED",
+  "reviewedCommit": "168a1e4",
+  "reviewer": "Codex",
+  "findings": [
+    {
+      "id": "R2-01",
+      "severity": "BLOCKER",
+      "evidence": "La repetición independiente del focal falló en RUN=3 en el caso multiproceso: una de seis respuestas devolvió ok=false.",
+      "problem": "La inicialización de state.json/journal.jsonl ocurre fuera del lock y releaseLock elimina el path sin verificar que siga siendo el lock propio. Esto permite carreras de inicialización y de ownership.",
+      "requiredFix": "Inicializar el repositorio bajo el mismo lock exclusivo; usar token/owner único y liberar o recuperar solamente si el contenido del lock sigue perteneciendo al actor esperado. Eliminar la ventana remove-then-recreate insegura o protegerla con ownership verificable."
+    },
+    {
+      "id": "R2-02",
+      "severity": "HIGH",
+      "problem": "FORBIDDEN_RE contiene pin sin límites y produce falsos positivos en palabras normales como pintura, opinión o shopping.",
+      "requiredFix": "Usar términos con límites Unicode/segmentación o patrones de credencial contextuales. Agregar positivos (PIN 1234, token, password, OTP) y negativos (pintura, opinión, shopping, espinaca)."
+    },
+    {
+      "id": "R2-03",
+      "severity": "HIGH",
+      "problem": "Una prueba multiproceso única es insuficiente y ya demostró ser flaky.",
+      "requiredFix": "Estresar al menos 20 rondas dentro de un test o helper, informar errores con stdout sanitizado y demostrar conteos exactos en cada ronda. Mantener duración razonable."
+    }
+  ],
+  "scopeRule": "Corregir solo almacenamiento concurrente, ownership de lock y precisión del filtro forbidden. Sin package.json, red, Supabase, UI, WhatsApp ni otros proyectos.",
+  "requiredValidation": [
+    "focal stress multi-process repeated at least 20 rounds",
+    "forbidden positive and ordinary-word negative tests",
+    "npm run typecheck",
+    "npm test",
+    "npm run build",
+    "git diff --check"
+  ],
+  "commit": "fix(TASK-20260831-052): estabilizar persistencia concurrente local"
+}

@@ -3,3 +3,7 @@
 !.env.example
 node_modules/
 dist/
+
+# SARA Personal: datos locales reales (solo README.md se rastrea)
+data/personal/**
+!data/personal/README.md

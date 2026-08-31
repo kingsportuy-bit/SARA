@@ -665,3 +665,44 @@ Estado: DONE + DEPLOYED + VALIDATED
 - Sin deploy.
 - Sin cambios de secretos.
 - Sin cambios de scope Chatwoot.
+
+## SARA Personal local (TASK-20260831-052)
+
+### Parser
+- PASS: parsea separadores UYU y nunca adivina USD para `$` sin moneda.
+- PASS: extrae entidades DELTA y BARBEROX para gastos BUSINESS.
+- PASS: reporta `missingData` cuando falta entidad o moneda.
+
+### Módulo de dominio
+- PASS: crea, actualiza y reclasifica gastos sin perder evidencia.
+- PASS: rechaza contexto sensitive sin consentimiento explícito.
+- PASS: rechaza datos forbidden (contraseñas, tokens, secretos, etc.).
+- PASS: no persiste contexto ephemeral ni llama al repositorio.
+- PASS: corrige contexto durable.
+- PASS: olvida contexto sin devolver el valor olvidado.
+- PASS: guía sin ejecutar acciones externas.
+
+### Repositorio local atómico
+- PASS: inicializa estado y journal en primer uso.
+- PASS: persiste gasto PERSONAL y lo lee de vuelta.
+- PASS: rechaza gasto BUSINESS sin entidad.
+- PASS: persiste gasto BUSINESS con entidad.
+- PASS: rechaza valores forbidden y no escribe en journal.
+- PASS: guarda contexto durable y redacta el valor al olvidar.
+- PASS: crea casos y mantiene eventos en orden cronológico.
+- PASS: lista casos ordenados por fecha.
+
+### Concurrencia
+- PASS: 6 escrituras concurrentes sin pérdida de datos.
+
+### CLI
+- PASS: `expense.create` con texto libre devuelve JSON con `ok`, `id`, `persisted`.
+- PASS: `context.save` durable devuelve JSON con `ok`, `id`, `persisted`.
+- PASS: `summary` reporta conteos sin mutar.
+
+### Evidencia local (TASK-20260831-052)
+- `npm run typecheck`: PASS
+- `npm test`: PASS (809 tests)
+- `npm run build`: PASS
+- `git diff --check`: PASS
+- Sin deploy, sin red, sin Supabase, sin modificar `package.json`.

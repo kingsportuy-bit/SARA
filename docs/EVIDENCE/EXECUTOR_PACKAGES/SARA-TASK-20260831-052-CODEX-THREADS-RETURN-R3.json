@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "taskId": "TASK-20260831-052",
+  "status": "RETURN_REQUIRED",
+  "reviewedCommit": "f85a2df plus uncommitted R2 changes",
+  "reviewer": "Codex",
+  "evidence": "Independent 20-run focal stress produced two failures: EPERM opening the lock and one missing context entry.",
+  "requiredFix": [
+    "Treat Windows EPERM, EBUSY and ENOENT around lock open/read/release as transient contention and retry until timeout; never expose them as a mutation failure while a valid lock may be transitioning.",
+    "Make stale recovery mutually exclusive. A contender must obtain a separate recovery guard or use an equivalent atomic protocol, then reread and revalidate the exact lock owner before moving/removing it. It must never move a newly-acquired lock based on stale information.",
+    "Keep owner token verification on release and initialization under the exclusive mutation lock.",
+    "Add a focused stress case for many contenders recovering a dead lock, plus 20 repeated multi-process rounds; run that test suite at least ten times independently without a failure."
+  ],
+  "scopeRule": "Only file-store lock reliability and tests. LOCAL_ONLY; no package.json, network, Supabase, WhatsApp, UI, deploy or other projects.",
+  "validation": ["focal stress repeated 10 times", "npm run typecheck", "npm test", "npm run build", "git diff --check"],
+  "commit": "fix(TASK-20260831-052): robustecer lock local multiproceso"
+}
