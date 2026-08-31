@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { mkdtempSync, rmSync, readFileSync, existsSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { spawn } from "node:child_process";
 import { createPersonalAssistantFileStore } from "../src/infra/personalAssistantFileStore.js";
 import { createPersonalAssistantModule } from "../src/modules/personalAssistant/personalAssistantModule.js";
 import { parseExpenseCommand } from "../src/modules/personalAssistant/personalAssistantParser.js";
+import { scanForForbidden } from "../src/modules/personalAssistant/personalAssistantGuard.js";
 
 const traceId = "trace-1";
 
@@ -13,6 +15,21 @@ function makeRepo() {
   const store = createPersonalAssistantFileStore({ dir });
   const module = createPersonalAssistantModule(store);
   return { dir, store, module, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+}
+
+function runCli(dir: string, json: unknown): Promise<{ code: number; stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(process.execPath, ["scripts/sara-personal.mjs", JSON.stringify(json)], {
+      cwd: process.cwd(),
+      env: { ...process.env, SARA_PERSONAL_DIR: dir },
+    });
+    let stdout = "";
+    let stderr = "";
+    proc.stdout.on("data", (data) => { stdout += data.toString(); });
+    proc.stderr.on("data", (data) => { stderr += data.toString(); });
+    proc.on("error", reject);
+    proc.on("close", (code) => resolve({ code: code ?? 1, stdout, stderr }));
+  });
 }
 
 describe("SARA Personal V1", () => {
@@ -223,7 +240,7 @@ describe("personalAssistantFileStore E2E", () => {
 });
 
 describe("personalAssistantFileStore concurrency", () => {
-  it("survives two concurrent writes without losing data", async () => {
+  it("survives concurrent writes inside one process without losing data", async () => {
     const { store, cleanup } = makeRepo();
     try {
       const workers = [
@@ -250,6 +267,237 @@ describe("personalAssistantFileStore concurrency", () => {
       expect(cases).toHaveLength(2);
     } finally {
       cleanup();
+    }
+  });
+});
+
+describe("personalAssistantFileStore R1 fixes", () => {
+  it("recovers from a stale lock left by a dead process", async () => {
+    const { dir, store, cleanup } = makeRepo();
+    try {
+      const lockPath = join(dir, "lock");
+      writeFileSync(lockPath, JSON.stringify({ pid: 999999, startedAt: new Date(Date.now() - 60000).toISOString(), hostname: "test" }));
+
+      const result = await store.createExpense({ scope: "PERSONAL", amount: 100, currency: "UYU", concept: "after crash", source: "manual", traceId });
+      expect(result.status).toBe("created");
+      expect(existsSync(lockPath)).toBe(false);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("does not delete an active lock from the same process", async () => {
+    const { dir, cleanup } = makeRepo();
+    try {
+      const lockPath = join(dir, "lock");
+      writeFileSync(lockPath, JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString(), hostname: "test" }));
+
+      // A second operation should wait for the active lock rather than steal it.
+      // We use a very short timeout to keep the test fast.
+      const store2 = createPersonalAssistantFileStore({ dir, lockTimeoutMs: 100 });
+      const result = await store2.createExpense({ scope: "PERSONAL", amount: 100, currency: "UYU", concept: "contended", source: "manual", traceId });
+      expect(result.status).toBe("failed");
+      expect(result.error).toContain("lock timeout");
+      expect(existsSync(lockPath)).toBe(true);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("never removes an active lock based on age alone", async () => {
+    const { dir, cleanup } = makeRepo();
+    try {
+      const lockPath = join(dir, "lock");
+      // Active lock from this process, older than any staleMs.
+      writeFileSync(lockPath, JSON.stringify({ pid: process.pid, startedAt: new Date(Date.now() - 60000).toISOString(), hostname: "test" }));
+
+      const store2 = createPersonalAssistantFileStore({ dir, lockTimeoutMs: 100 });
+      const result = await store2.createExpense({ scope: "PERSONAL", amount: 100, currency: "UYU", concept: "contended", source: "manual", traceId });
+      expect(result.status).toBe("failed");
+      expect(result.error).toContain("lock timeout");
+      expect(existsSync(lockPath)).toBe(true);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("rejects forbidden material in expenses, cases and case events before persistence", async () => {
+    const { dir, store, cleanup } = makeRepo();
+    try {
+      const expense = await store.createExpense({ scope: "PERSONAL", amount: 10, currency: "UYU", concept: "my secret password", source: "manual", traceId });
+      expect(expense.status).toBe("failed");
+
+      const created = await store.createCase({ name: "SimpleBox", traceId });
+      const event = await store.addCaseEvent({ caseId: created.case!.id, type: "note", content: "token: abc123", traceId });
+      expect(event.status).toBe("failed");
+
+      const journal = readFileSync(join(dir, "journal.jsonl"), "utf8");
+      const lines = journal.trim().split("\n").filter(Boolean);
+      for (const line of lines) {
+        const parsed = JSON.parse(line);
+        expect(JSON.stringify(parsed).toLowerCase()).not.toContain("password");
+        expect(JSON.stringify(parsed).toLowerCase()).not.toContain("token");
+      }
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("lists and corrects context through the CLI", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "sara-cli-"));
+    try {
+      const saved = await runCli(dir, { action: "context.save", payload: { key: "focus", value: "old", kind: "durable", source: "manual", traceId } });
+      expect(saved.code).toBe(0);
+      const savedJson = JSON.parse(saved.stdout);
+      expect(savedJson.ok).toBe(true);
+      const id = savedJson.id;
+
+      const corrected = await runCli(dir, { action: "context.correct", payload: { id, key: "focus", value: "new", kind: "durable", source: "manual", traceId } });
+      expect(corrected.code).toBe(0);
+      const correctedJson = JSON.parse(corrected.stdout);
+      expect(correctedJson.ok).toBe(true);
+      expect(correctedJson.entry.value).toBe("new");
+
+      const listed = await runCli(dir, { action: "context.list", payload: {} });
+      expect(listed.code).toBe(0);
+      const listedJson = JSON.parse(listed.stdout);
+      expect(listedJson.entries).toHaveLength(1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("lists and updates expenses through the CLI", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "sara-cli-"));
+    try {
+      const created = await runCli(dir, { action: "expense.create", payload: { scope: "PERSONAL", amount: 10, currency: "UYU", concept: "cafe", source: "manual", traceId } });
+      expect(created.code).toBe(0);
+      const id = JSON.parse(created.stdout).id;
+
+      const listed = await runCli(dir, { action: "expense.list", payload: {} });
+      expect(JSON.parse(listed.stdout).expenses).toHaveLength(1);
+
+      const updated = await runCli(dir, { action: "expense.update", payload: { id, amount: 25, concept: "cafe y medialuna", traceId } });
+      expect(updated.code).toBe(0);
+      const updatedJson = JSON.parse(updated.stdout);
+      expect(updatedJson.expense.amount).toBe(25);
+
+      const reclassified = await runCli(dir, { action: "expense.reclassify", payload: { id, scope: "BUSINESS", entity: "DELTA", traceId } });
+      expect(reclassified.code).toBe(0);
+      const reclassifiedJson = JSON.parse(reclassified.stdout);
+      expect(reclassifiedJson.expense.scope).toBe("BUSINESS");
+      expect(reclassifiedJson.expense.entity).toBe("DELTA");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("lists cases and events through the CLI", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "sara-cli-"));
+    try {
+      const created = await runCli(dir, { action: "case.create", payload: { name: "SimpleBox", traceId } });
+      expect(created.code).toBe(0);
+      const caseId = JSON.parse(created.stdout).id;
+
+      const event = await runCli(dir, { action: "case.event", payload: { caseId, type: "pending", content: "pedir documento", traceId } });
+      expect(event.code).toBe(0);
+
+      const cases = await runCli(dir, { action: "case.list", payload: {} });
+      expect(JSON.parse(cases.stdout).cases).toHaveLength(1);
+
+      const events = await runCli(dir, { action: "case.events", payload: { caseId } });
+      expect(JSON.parse(events.stdout).events).toHaveLength(1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("runs real multi-process CLI concurrency without losing data", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "sara-concurrent-"));
+    try {
+      const commands = [
+        { action: "expense.create", payload: { scope: "PERSONAL", amount: 100, currency: "UYU", concept: "a", source: "manual", traceId } },
+        { action: "expense.create", payload: { scope: "PERSONAL", amount: 200, currency: "UYU", concept: "b", source: "manual", traceId } },
+        { action: "context.save", payload: { key: "k1", value: "v1", kind: "durable", source: "manual", traceId } },
+        { action: "context.save", payload: { key: "k2", value: "v2", kind: "durable", source: "manual", traceId } },
+        { action: "case.create", payload: { name: "C1", traceId } },
+        { action: "case.create", payload: { name: "C2", traceId } },
+      ];
+      const processes = commands.map((cmd) => runCli(dir, cmd));
+      const results = await Promise.all(processes);
+      for (const r of results) {
+        expect(r.code).toBe(0);
+        expect(JSON.parse(r.stdout).ok).toBe(true);
+      }
+
+      const summary = await runCli(dir, { action: "summary", payload: {} });
+      const s = JSON.parse(summary.stdout).summary;
+      expect(s.expenses).toBe(2);
+      expect(s.contextEntries).toBe(2);
+      expect(s.cases).toBe(2);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("preflight rejects forbidden case.create payload without creating the store or touching disk", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "sara-forbidden-"));
+    try {
+      const result = await runCli(dir, { action: "case.create", payload: { name: "Caso", description: "pin 1234", traceId } });
+      expect(result.code).toBe(0);
+      const json = JSON.parse(result.stdout);
+      expect(json.ok).toBe(false);
+      expect(json.error).toBe("forbidden personal data");
+      expect(json.persisted).toBe(false);
+      expect(existsSync(join(dir, "state.json"))).toBe(false);
+      expect(existsSync(join(dir, "journal.jsonl"))).toBe(false);
+      expect(result.stdout.toLowerCase()).not.toContain("pin");
+      expect(result.stderr.toLowerCase()).not.toContain("pin");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("preflight rejects forbidden expense.create payload without creating the store or touching disk", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "sara-forbidden-expense-"));
+    try {
+      const result = await runCli(dir, { action: "expense.create", payload: { scope: "PERSONAL", amount: 10, currency: "UYU", concept: "my password", source: "manual", traceId } });
+      expect(result.code).toBe(0);
+      const json = JSON.parse(result.stdout);
+      expect(json.ok).toBe(false);
+      expect(json.error).toBe("forbidden personal data");
+      expect(json.persisted).toBe(false);
+      expect(existsSync(join(dir, "state.json"))).toBe(false);
+      expect(existsSync(join(dir, "journal.jsonl"))).toBe(false);
+      expect(result.stdout.toLowerCase()).not.toContain("password");
+      expect(result.stderr.toLowerCase()).not.toContain("password");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("preflight rejects forbidden case.event and never writes the value", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "sara-forbidden-event-"));
+    try {
+      const created = await runCli(dir, { action: "case.create", payload: { name: "SimpleBox", traceId } });
+      expect(created.code).toBe(0);
+      const caseId = JSON.parse(created.stdout).id;
+
+      const result = await runCli(dir, { action: "case.event", payload: { caseId, type: "note", content: "token abc123", traceId } });
+      expect(result.code).toBe(0);
+      const json = JSON.parse(result.stdout);
+      expect(json.ok).toBe(false);
+      expect(json.error).toBe("forbidden personal data");
+      expect(json.persisted).toBe(false);
+
+      const events = await runCli(dir, { action: "case.events", payload: { caseId } });
+      expect(JSON.parse(events.stdout).events).toHaveLength(0);
+
+      const journal = readFileSync(join(dir, "journal.jsonl"), "utf8");
+      expect(journal.toLowerCase()).not.toContain("token");
+      expect(result.stdout.toLowerCase()).not.toContain("token");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 });

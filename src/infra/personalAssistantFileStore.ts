@@ -10,6 +10,7 @@ import {
   fsyncSync,
   rmSync,
   existsSync,
+  statSync,
 } from "node:fs";
 import { join } from "node:path";
 import type {
@@ -27,6 +28,7 @@ import type {
   PersonalAssistantRepository,
   PersonalScope,
 } from "../contracts/personalAssistant.js";
+import { containsForbiddenMaterial, scanForForbidden } from "../modules/personalAssistant/personalAssistantGuard.js";
 
 const STATE_SCHEMA = "personal_state.v1";
 const EVENT_SCHEMA = "personal_event.v1";
@@ -98,7 +100,15 @@ function appendJournal(journalPath: string, event: JournalEvent): void {
 }
 
 function isForbiddenValue(key: string, value: string): boolean {
-  return /(?:password|contraseña|pin|token|mfa|secret|secreto|recovery|recuperaci[oó]n)/i.test(`${key} ${value}`);
+  return containsForbiddenMaterial(`${key} ${value}`);
+}
+
+function forbiddenExpenseText(input: ExpenseInput | Partial<ExpenseInput>): boolean {
+  return containsForbiddenMaterial(`${input.concept ?? ""} ${input.category ?? ""} ${input.entity ?? ""}`);
+}
+
+function forbiddenCaseInput(input: PersonalCaseInput | CaseEventInput): boolean {
+  return scanForForbidden(input).forbidden;
 }
 
 function newEvent(eventType: string, traceId: string, payload: Record<string, unknown>): JournalEvent {
@@ -112,32 +122,111 @@ function newEvent(eventType: string, traceId: string, payload: Record<string, un
   };
 }
 
-async function acquireLock(lockDir: string, timeoutMs = 5000, pollMs = 20): Promise<void> {
+interface LockMeta {
+  pid: number;
+  startedAt: string;
+  hostname: string;
+}
+
+function newLockMeta(): LockMeta {
+  return {
+    pid: process.pid,
+    startedAt: nowIso(),
+    hostname: process.env.COMPUTERNAME || process.env.HOSTNAME || "unknown",
+  };
+}
+
+function readLockMeta(lockPath: string): LockMeta | undefined {
+  try {
+    const raw = readFileSync(lockPath, "utf8");
+    return JSON.parse(raw) as LockMeta;
+  } catch {
+    return undefined;
+  }
+}
+
+function isProcessAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * A lock is stale only when we can prove the owner is dead.
+ * An active process never loses its lock because of age: PID life prevails.
+ * If there is no metadata yet, the file may be mid-creation; only consider it
+ * stale after staleMs have passed since the file was created.
+ */
+function isStaleLock(lockPath: string, staleMs: number): boolean {
+  const meta = readLockMeta(lockPath);
+  if (meta) {
+    return !isProcessAlive(meta.pid);
+  }
+  try {
+    const { birthtimeMs } = statSync(lockPath);
+    return Date.now() - birthtimeMs > staleMs;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Acquire an exclusive file lock using O_EXCL creation, which is atomic on
+ * both POSIX and Windows. The lock file content carries metadata so a later
+ * process can recover from a crash of the owner.
+ */
+async function acquireLock(lockPath: string, timeoutMs = 5000, pollMs = 20, staleMs = 30000): Promise<number> {
   const start = Date.now();
   while (true) {
     try {
-      mkdirSync(lockDir, { recursive: false });
-      writeFileSync(join(lockDir, "pid"), String(process.pid));
-      return;
+      const fd = openSync(lockPath, "wx");
+      try {
+        writeSync(fd, JSON.stringify(newLockMeta()));
+        fsyncSync(fd);
+      } catch (err) {
+        closeSync(fd);
+        rmSync(lockPath, { force: true });
+        throw err;
+      }
+      return fd;
     } catch (err: any) {
       if (err.code !== "EEXIST") throw err;
+
+      if (isStaleLock(lockPath, staleMs)) {
+        try {
+          rmSync(lockPath, { force: true });
+          continue;
+        } catch {
+          // Another process may have taken it; fall through to polling.
+        }
+      }
+
       if (Date.now() - start > timeoutMs) {
-        throw new Error(`personalAssistantFileStore lock timeout after ${timeoutMs}ms: ${lockDir}`);
+        throw new Error(`personalAssistantFileStore lock timeout after ${timeoutMs}ms: ${lockPath}`);
       }
       await new Promise((resolve) => setTimeout(resolve, pollMs));
     }
   }
 }
 
-function releaseLock(lockDir: string): void {
+function releaseLock(fd: number | undefined, lockPath: string): void {
+  if (fd !== undefined) {
+    try {
+      closeSync(fd);
+    } catch {}
+  }
   try {
-    rmSync(lockDir, { recursive: true, force: true });
+    rmSync(lockPath, { force: true });
   } catch {}
 }
 
 export interface PersonalAssistantFileStoreOptions {
   dir: string;
   lockTimeoutMs?: number;
+  lockStaleMs?: number;
 }
 
 function catchFailed<T extends { status: string; traceId?: string }>(promise: Promise<T>, traceId: string): Promise<T> {
@@ -152,7 +241,7 @@ export function createPersonalAssistantFileStore(options: PersonalAssistantFileS
   const dir = options.dir;
   const statePath = join(dir, "state.json");
   const journalPath = join(dir, "journal.jsonl");
-  const lockDir = join(dir, "lock");
+  const lockPath = join(dir, "lock");
 
   mkdirSync(dir, { recursive: true });
   if (!existsSync(statePath)) {
@@ -168,16 +257,17 @@ export function createPersonalAssistantFileStore(options: PersonalAssistantFileS
   }
 
   async function withLock<T>(fn: () => T): Promise<T> {
-    await acquireLock(lockDir, options.lockTimeoutMs ?? 5000);
+    const fd = await acquireLock(lockPath, options.lockTimeoutMs ?? 5000, 20, options.lockStaleMs ?? 30000);
     try {
       return fn();
     } finally {
-      releaseLock(lockDir);
+      releaseLock(fd, lockPath);
     }
   }
 
   return {
     async createExpense(input: ExpenseInput): Promise<ExpenseResult> {
+      if (forbiddenExpenseText(input)) return { status: "failed", error: "forbidden personal data", traceId: input.traceId };
       if (!input.scope) return { status: "failed", error: "scope is required", traceId: input.traceId };
       if (!Number.isFinite(input.amount) || input.amount <= 0) return { status: "failed", error: "amount must be positive", traceId: input.traceId };
       if (!input.concept || !input.concept.trim()) return { status: "failed", error: "concept is required", traceId: input.traceId };
@@ -243,6 +333,7 @@ export function createPersonalAssistantFileStore(options: PersonalAssistantFileS
     },
 
     async updateExpense(id: string, patch: Partial<ExpenseInput>, traceId: string): Promise<ExpenseResult> {
+      if (forbiddenExpenseText(patch)) return { status: "failed", error: "forbidden personal data", traceId };
       return catchFailed(
         withLock(() => {
           const state = loadState(statePath);
@@ -414,6 +505,7 @@ export function createPersonalAssistantFileStore(options: PersonalAssistantFileS
     },
 
     async createCase(input: PersonalCaseInput): Promise<{ status: "created" | "failed"; case?: PersonalCase; eventId?: string; traceId?: string; schemaVersion?: string; error?: string }> {
+      if (forbiddenCaseInput(input)) return { status: "failed", error: "forbidden personal data", traceId: input.traceId };
       if (!input.name || !input.name.trim()) return { status: "failed", error: "name is required", traceId: input.traceId };
       return catchFailed(
         withLock(() => {
@@ -439,6 +531,7 @@ export function createPersonalAssistantFileStore(options: PersonalAssistantFileS
     },
 
     async addCaseEvent(input: CaseEventInput): Promise<{ status: "created" | "failed"; event?: CaseEvent; eventId?: string; traceId?: string; schemaVersion?: string; error?: string }> {
+      if (forbiddenCaseInput(input)) return { status: "failed", error: "forbidden personal data", traceId: input.traceId };
       if (!input.caseId) return { status: "failed", error: "caseId is required", traceId: input.traceId };
       if (!input.type || !input.content) return { status: "failed", error: "type and content are required", traceId: input.traceId };
       return catchFailed(

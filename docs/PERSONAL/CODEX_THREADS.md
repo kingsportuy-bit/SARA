@@ -34,7 +34,7 @@ La CLI lee un único JSON y responde un único JSON.
 
 ```json
 {
-  "action": "expense.create | context.save | context.forget | case.create | case.event | summary",
+  "action": "expense.create | expense.list | expense.update | expense.reclassify | context.save | context.list | context.correct | context.forget | case.create | case.list | case.events | case.event | summary",
   "payload": { ... }
 }
 ```
@@ -129,6 +129,76 @@ clave y el tipo.
 }
 ```
 
+#### `expense.list`
+
+```json
+{ "action": "expense.list", "payload": { "limit": 10 } }
+```
+
+Devuelve `expenses` ordenados por fecha de creación descendente.
+
+#### `expense.update`
+
+```json
+{
+  "action": "expense.update",
+  "payload": {
+    "id": "uuid-del-gasto",
+    "amount": 30,
+    "concept": "cafe y medialuna",
+    "traceId": "t-update"
+  }
+}
+```
+
+#### `expense.reclassify`
+
+```json
+{
+  "action": "expense.reclassify",
+  "payload": {
+    "id": "uuid-del-gasto",
+    "scope": "BUSINESS",
+    "entity": "DELTA",
+    "traceId": "t-reclassify"
+  }
+}
+```
+
+#### `context.list`
+
+```json
+{ "action": "context.list", "payload": {} }
+```
+
+#### `context.correct`
+
+```json
+{
+  "action": "context.correct",
+  "payload": {
+    "id": "uuid-de-la-entrada",
+    "key": "prioridad",
+    "value": "descansar",
+    "kind": "durable",
+    "source": "manual",
+    "traceId": "t-correct"
+  }
+}
+```
+
+#### `case.list`
+
+```json
+{ "action": "case.list", "payload": {} }
+```
+
+#### `case.events`
+
+```json
+{ "action": "case.events", "payload": { "caseId": "uuid-del-caso" } }
+```
+
 #### `case.event`
 
 ```json
@@ -168,9 +238,13 @@ Devuelve conteos de gastos, entradas de contexto, casos y eventos.
 - `src/infra/personalAssistantFileStore.ts` mantiene el estado en
   `data/personal/state.json` y un journal append-only en
   `data/personal/journal.jsonl`.
-- Cada mutación adquiere un lock multiproceso (`data/personal/lock/`), escribe
+- Cada mutación adquiere un lock multiproceso atómico (`data/personal/lock`,
+  un archivo creado con `O_EXCL` y con metadata del PID propietario), escribe
   el journal, actualiza el estado de forma atómica (archivo temporal + rename) y
   libera el lock.
+- La recuperación de un lock abandonado solo ocurre cuando se puede probar que
+  el proceso propietario está muerto; un lock activo nunca se elimina solo por
+  antigüedad.
 - Los datos reales nunca se commitean: `data/personal/` está en `.gitignore`.
 
 ## Qué NO hacer

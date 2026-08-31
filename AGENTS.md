@@ -21,9 +21,16 @@ gestionar un caso personal:
 | Intención de Fito | Ejemplo | Acción CLI |
 |---|---|---|
 | Registrar gasto | "gasté UYU 1.200,50 en supermercado personal" | `expense.create` |
+| Listar gastos | "mostrá los gastos personales" | `expense.list` |
+| Corregir gasto | "cambiá el gasto X a UYU 300" | `expense.update` |
+| Reclasificar gasto | "ese gasto es de DELTA" | `expense.reclassify` |
 | Recordar algo durable | "guardá que prioridad es focus" | `context.save` |
+| Listar contexto | "qué tengo guardado" | `context.list` |
+| Corregir contexto | "cambiá prioridad a descansar" | `context.correct` |
 | Olvidar algo guardado | "olvidá el dato de prioridad" | `context.forget` |
 | Abrir caso | "abrir caso SimpleBox" | `case.create` |
+| Listar casos | "mostrá los casos abiertos" | `case.list` |
+| Ver eventos de caso | "qué eventos tiene SimpleBox" | `case.events` |
 | Agregar evento a caso | "en SimpleBox anotar pedir documento" | `case.event` |
 | Resumen | "resumen personal" | `summary` |
 

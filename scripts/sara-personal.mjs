@@ -8,6 +8,7 @@
 import { createPersonalAssistantFileStore } from "../dist/infra/personalAssistantFileStore.js";
 import { createPersonalAssistantModule } from "../dist/modules/personalAssistant/personalAssistantModule.js";
 import { parseExpenseCommand } from "../dist/modules/personalAssistant/personalAssistantParser.js";
+import { scanForForbidden } from "../dist/modules/personalAssistant/personalAssistantGuard.js";
 
 const DEFAULT_DIR = "./data/personal";
 
@@ -41,7 +42,7 @@ function parseInput(raw) {
   try {
     return { ok: true, data: JSON.parse(text) };
   } catch (err) {
-    return { ok: false, error: `invalid JSON: ${err.message}` };
+    return { ok: false, error: "invalid JSON" };
   }
 }
 
@@ -51,6 +52,27 @@ function success(action, id, persisted, data = {}) {
 
 function failure(action, error, persisted = false) {
   return { ok: false, action, persisted, error };
+}
+
+const MUTATING_ACTIONS = new Set([
+  "expense.create",
+  "expense.update",
+  "expense.reclassify",
+  "context.save",
+  "context.correct",
+  "context.forget",
+  "case.create",
+  "case.event",
+]);
+
+function preflight(action, payload) {
+  if (!MUTATING_ACTIONS.has(action)) return { ok: true };
+  const scan = scanForForbidden(payload);
+  if (scan.forbidden) {
+    // Fail-closed: never reflect the offending value in error, stdout or journal.
+    return { ok: false, error: "forbidden personal data" };
+  }
+  return { ok: true };
 }
 
 async function run() {
@@ -67,11 +89,18 @@ async function run() {
     return;
   }
 
+  // R1-03: preflight forbidden for every mutation before creating the store or touching disk.
+  const checked = preflight(action, payload);
+  if (!checked.ok) {
+    print(failure(action, checked.error));
+    return;
+  }
+
   const mod = createModule();
+  const traceId = payload.traceId || `cli-${Date.now()}`;
 
   switch (action) {
     case "expense.create": {
-      const traceId = payload.traceId || `cli-${Date.now()}`;
       let parsedExpense;
       if (payload.text) {
         parsedExpense = parseExpenseCommand(payload.text);
@@ -91,8 +120,37 @@ async function run() {
       return;
     }
 
+    case "expense.list": {
+      const result = await mod.listExpenses(payload.limit);
+      if (result.status === "success") {
+        print({ ok: true, action, persisted: false, expenses: result.expenses });
+      } else {
+        print(failure(action, result.error || "unknown error"));
+      }
+      return;
+    }
+
+    case "expense.update": {
+      const result = await mod.updateExpense(payload.id, payload, traceId);
+      if (result.status === "updated") {
+        print(success(action, result.expense.id, true, { expense: result.expense, traceId: result.traceId }));
+      } else {
+        print(failure(action, result.error || "unknown error"));
+      }
+      return;
+    }
+
+    case "expense.reclassify": {
+      const result = await mod.reclassifyExpense(payload.id, payload.scope, payload.entity, traceId);
+      if (result.status === "updated") {
+        print(success(action, result.expense.id, true, { expense: result.expense, traceId: result.traceId }));
+      } else {
+        print(failure(action, result.error || "unknown error"));
+      }
+      return;
+    }
+
     case "context.save": {
-      const traceId = payload.traceId || `cli-${Date.now()}`;
       const result = await mod.saveContext({
         key: payload.key,
         value: payload.value,
@@ -109,8 +167,30 @@ async function run() {
       return;
     }
 
+    case "context.list": {
+      const entries = await mod.listContext();
+      print({ ok: true, action, persisted: false, entries });
+      return;
+    }
+
+    case "context.correct": {
+      const result = await mod.correctContext(payload.id, {
+        key: payload.key,
+        value: payload.value,
+        kind: payload.kind || "durable",
+        source: payload.source || "manual",
+        consent: payload.consent,
+        traceId,
+      });
+      if (result.status === "stored") {
+        print(success(action, result.entry.id, true, { entry: result.entry, traceId: result.traceId }));
+      } else {
+        print(failure(action, result.error || result.status));
+      }
+      return;
+    }
+
     case "context.forget": {
-      const traceId = payload.traceId || `cli-${Date.now()}`;
       const result = await mod.forgetContext(payload.id, traceId);
       if (result.status === "forgotten") {
         print(success(action, payload.id, true, { traceId: result.traceId }));
@@ -121,7 +201,6 @@ async function run() {
     }
 
     case "case.create": {
-      const traceId = payload.traceId || `cli-${Date.now()}`;
       const result = await mod.createCase({ name: payload.name, description: payload.description, traceId });
       if (result.status === "created") {
         print(success(action, result.case.id, true, { case: result.case, traceId: result.traceId }));
@@ -131,8 +210,21 @@ async function run() {
       return;
     }
 
+    case "case.list": {
+      const store = createPersonalAssistantFileStore({ dir: repoDir() });
+      const cases = await store.listCases();
+      print({ ok: true, action, persisted: false, cases });
+      return;
+    }
+
+    case "case.events": {
+      const store = createPersonalAssistantFileStore({ dir: repoDir() });
+      const events = await store.listCaseEvents(payload.caseId);
+      print({ ok: true, action, persisted: false, events });
+      return;
+    }
+
     case "case.event": {
-      const traceId = payload.traceId || `cli-${Date.now()}`;
       const result = await mod.addCaseEvent({
         caseId: payload.caseId,
         type: payload.type,
@@ -142,7 +234,7 @@ async function run() {
       if (result.status === "created") {
         print(success(action, result.event.id, true, { event: result.event, traceId: result.traceId }));
       } else {
-        print(failure(action, result.error || result.status));
+        print(failure(action, result.error || "unknown error"));
       }
       return;
     }
@@ -153,7 +245,7 @@ async function run() {
         mod.listExpenses(),
         mod.listContext(),
         store.listCases(),
-        store.listCaseEvents ? [] : [],
+        Promise.resolve([]),
       ]);
       const allCaseEvents = [];
       for (const c of cases) {
