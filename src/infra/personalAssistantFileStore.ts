@@ -124,6 +124,7 @@ function newEvent(eventType: string, traceId: string, payload: Record<string, un
 
 interface LockMeta {
   pid: number;
+  token: string;
   startedAt: string;
   hostname: string;
 }
@@ -131,6 +132,7 @@ interface LockMeta {
 function newLockMeta(): LockMeta {
   return {
     pid: process.pid,
+    token: randomUUID(),
     startedAt: nowIso(),
     hostname: process.env.COMPUTERNAME || process.env.HOSTNAME || "unknown",
   };
@@ -173,53 +175,167 @@ function isStaleLock(lockPath: string, staleMs: number): boolean {
   }
 }
 
+interface LockHandle {
+  fd: number;
+  meta: LockMeta;
+}
+
 /**
  * Acquire an exclusive file lock using O_EXCL creation, which is atomic on
- * both POSIX and Windows. The lock file content carries metadata so a later
- * process can recover from a crash of the owner.
+ * both POSIX and Windows. The lock file content carries metadata (including a
+ * unique token) so a later process can recover from a crash of the owner and
+ * the owner can prove ownership before releasing the lock.
  */
-async function acquireLock(lockPath: string, timeoutMs = 5000, pollMs = 20, staleMs = 30000): Promise<number> {
-  const start = Date.now();
-  while (true) {
-    try {
-      const fd = openSync(lockPath, "wx");
-      try {
-        writeSync(fd, JSON.stringify(newLockMeta()));
-        fsyncSync(fd);
-      } catch (err) {
-        closeSync(fd);
-        rmSync(lockPath, { force: true });
-        throw err;
-      }
-      return fd;
-    } catch (err: any) {
-      if (err.code !== "EEXIST") throw err;
+function isRetryableLockError(code: string | undefined): boolean {
+  // Windows may transiently deny access to the lock path while another handle
+  // is being closed or the file is pending deletion. Treat these as contention.
+  return code === "EACCES" || code === "EPERM" || code === "EBUSY" || code === "ENOENT";
+}
 
-      if (isStaleLock(lockPath, staleMs)) {
-        try {
-          rmSync(lockPath, { force: true });
-          continue;
-        } catch {
-          // Another process may have taken it; fall through to polling.
-        }
-      }
-
-      if (Date.now() - start > timeoutMs) {
-        throw new Error(`personalAssistantFileStore lock timeout after ${timeoutMs}ms: ${lockPath}`);
-      }
-      await new Promise((resolve) => setTimeout(resolve, pollMs));
-    }
+function isStaleLockWithRetry(lockPath: string, staleMs: number): boolean {
+  try {
+    return isStaleLock(lockPath, staleMs);
+  } catch (err: any) {
+    if (isRetryableLockError(err.code)) return true; // be conservative and retry
+    throw err;
   }
 }
 
-function releaseLock(fd: number | undefined, lockPath: string): void {
-  if (fd !== undefined) {
+function removeLockFile(path: string): void {
+  try {
+    rmSync(path, { force: true });
+  } catch (err: any) {
+    if (!isRetryableLockError(err.code)) throw err;
+    // If Windows transiently blocks deletion, the file will become stale later
+    // and be recovered by the next waiter. Do not leak a fatal error.
+  }
+}
+
+/**
+ * Stale recovery must be mutually exclusive. A contender first acquires a
+ * separate recovery guard, then re-reads and revalidates the exact lock owner
+ * before moving/removing it. This guarantees we never move a lock that was
+ * freshly acquired based on stale information.
+ */
+function tryRecoverStaleLock(lockPath: string, staleMs: number, token: string): boolean {
+  const recoveryPath = `${lockPath}.recovery`;
+  let recoveryFd: number | undefined;
+  try {
+    recoveryFd = openSync(recoveryPath, "wx");
+  } catch (err: any) {
+    if (err.code === "EEXIST" || isRetryableLockError(err.code)) return false;
+    throw err;
+  }
+
+  try {
+    // Revalidate under the recovery guard: the lock may have already been
+    // recovered or freshly acquired by another process.
+    if (!existsSync(lockPath)) return false;
+
+    const meta = readLockMeta(lockPath);
+    let stillStale: boolean;
+    if (meta) {
+      stillStale = !isProcessAlive(meta.pid);
+    } else {
+      try {
+        const { birthtimeMs } = statSync(lockPath);
+        stillStale = Date.now() - birthtimeMs > staleMs;
+      } catch (err: any) {
+        if (isRetryableLockError(err.code)) return false;
+        throw err;
+      }
+    }
+
+    if (!stillStale) return false;
+
+    const stalePath = `${lockPath}.stale-${token}`;
     try {
-      closeSync(fd);
+      renameSync(lockPath, stalePath);
+    } catch (err: any) {
+      if (err.code === "ENOENT") return false; // already gone
+      if (isRetryableLockError(err.code)) return false;
+      throw err;
+    }
+
+    removeLockFile(stalePath);
+    return true;
+  } finally {
+    if (recoveryFd !== undefined) {
+      try {
+        closeSync(recoveryFd);
+      } catch {}
+    }
+    removeLockFile(recoveryPath);
+  }
+}
+
+async function acquireLock(lockPath: string, timeoutMs = 5000, pollMs = 20, staleMs = 30000): Promise<LockHandle> {
+  const myMeta = newLockMeta();
+  const start = Date.now();
+
+  function shouldTimeout(): boolean {
+    return Date.now() - start > timeoutMs;
+  }
+
+  function lockTimeoutError(): Error {
+    return new Error(`personalAssistantFileStore lock timeout after ${timeoutMs}ms: ${lockPath}`);
+  }
+
+  async function backoff(): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, pollMs));
+  }
+
+  while (true) {
+    let fd: number | undefined;
+    try {
+      fd = openSync(lockPath, "wx");
+    } catch (err: any) {
+      if (err.code === "EEXIST") {
+        if (isStaleLockWithRetry(lockPath, staleMs) && tryRecoverStaleLock(lockPath, staleMs, myMeta.token)) {
+          continue;
+        }
+      } else if (!isRetryableLockError(err.code)) {
+        throw err;
+      }
+
+      if (shouldTimeout()) throw lockTimeoutError();
+      await backoff();
+      continue;
+    }
+
+    try {
+      writeSync(fd, JSON.stringify(myMeta));
+      fsyncSync(fd);
+    } catch (err: any) {
+      try {
+        closeSync(fd);
+      } catch {}
+      removeLockFile(lockPath);
+      if (isRetryableLockError(err.code)) {
+        if (shouldTimeout()) throw lockTimeoutError();
+        await backoff();
+        continue;
+      }
+      throw err;
+    }
+
+    return { fd, meta: myMeta };
+  }
+}
+
+function releaseLock(handle: LockHandle | undefined, lockPath: string): void {
+  if (handle !== undefined) {
+    try {
+      closeSync(handle.fd);
     } catch {}
   }
   try {
-    rmSync(lockPath, { force: true });
+    // Only remove the lock if it still belongs to us. Another process may have
+    // acquired the lock after we closed our fd; removing it would steal it.
+    const current = readLockMeta(lockPath);
+    if (current && current.token === handle?.meta.token && current.pid === handle?.meta.pid) {
+      removeLockFile(lockPath);
+    }
   } catch {}
 }
 
@@ -243,25 +359,33 @@ export function createPersonalAssistantFileStore(options: PersonalAssistantFileS
   const journalPath = join(dir, "journal.jsonl");
   const lockPath = join(dir, "lock");
 
+  // Directory creation is idempotent and safe outside the lock; the actual
+  // repository files are initialized lazily under the exclusive lock to prevent
+  // initialization races between concurrent processes.
   mkdirSync(dir, { recursive: true });
-  if (!existsSync(statePath)) {
-    atomicWriteJson(statePath, defaultState());
-  }
-  if (!existsSync(journalPath)) {
-    const fd = openSync(journalPath, "a");
-    try {
-      fsyncSync(fd);
-    } finally {
-      closeSync(fd);
-    }
-  }
+
+  let initialized = false;
 
   async function withLock<T>(fn: () => T): Promise<T> {
-    const fd = await acquireLock(lockPath, options.lockTimeoutMs ?? 5000, 20, options.lockStaleMs ?? 30000);
+    const handle = await acquireLock(lockPath, options.lockTimeoutMs ?? 5000, 20, options.lockStaleMs ?? 30000);
     try {
+      if (!initialized) {
+        if (!existsSync(statePath)) {
+          atomicWriteJson(statePath, defaultState());
+        }
+        if (!existsSync(journalPath)) {
+          const fd = openSync(journalPath, "a");
+          try {
+            fsyncSync(fd);
+          } finally {
+            closeSync(fd);
+          }
+        }
+        initialized = true;
+      }
       return fn();
     } finally {
-      releaseLock(fd, lockPath);
+      releaseLock(handle, lockPath);
     }
   }
 

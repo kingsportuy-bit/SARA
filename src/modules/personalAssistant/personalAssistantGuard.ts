@@ -2,7 +2,13 @@
 // Filtro fail-closed para material forbidden en SARA Personal.
 // No refleja el valor sospechoso en errores, logs ni journal.
 
-const FORBIDDEN_RE = /(?:password|contraseña|pin|token|mfa|secret|secreto|recovery|recuperaci[oó]n|passcode|cvv|cvc|2fa|otp)/i;
+// Fail-closed terms with Unicode-aware word boundaries so ordinary words such as
+// "pintura", "opinión", "shopping" or "espinaca" are not rejected.
+const LETTER = "a-zA-Z\\u00e1\\u00e9\\u00ed\\u00f3\\u00fa\\u00c1\\u00c9\\u00cd\\u00d3\\u00da\\u00f1\\u00d1";
+const FORBIDDEN_RE = new RegExp(
+  `(?<![${LETTER}])(?:password|contraseña|pin|token|mfa|secretos?|secrets?|recovery|recuperaci[óo]n|passcode|cvv|cvc|2fa|otp)(?![${LETTER}])`,
+  "i",
+);
 
 export function containsForbiddenMaterial(text: string): boolean {
   return FORBIDDEN_RE.test(text);
