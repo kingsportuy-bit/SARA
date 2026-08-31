@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "taskId": "TASK-20260831-052",
+  "status": "RETURN_REQUIRED",
+  "reviewedCommit": "5c2098c",
+  "reviewer": "Codex",
+  "findings": [
+    {
+      "id": "R1-01",
+      "severity": "BLOCKER",
+      "problem": "La CLI no expone expense.list, expense.update, expense.reclassify, context.list, context.correct, case.list ni case.events, aunque el MVP debe poder listar, corregir y reclasificar desde hilos Codex.",
+      "requiredFix": "Agregar las acciones estructuradas faltantes, documentarlas y cubrirlas E2E. Las mutaciones deben devolver ok/action/id/persisted."
+    },
+    {
+      "id": "R1-02",
+      "severity": "BLOCKER",
+      "problem": "El test de concurrencia usa Promise.all sobre una sola instancia y no certifica dos procesos independientes.",
+      "requiredFix": "Crear una prueba que lance al menos dos procesos Node/CLI contra el mismo SARA_PERSONAL_DIR y demuestre que ninguna escritura se pierde."
+    },
+    {
+      "id": "R1-03",
+      "severity": "HIGH",
+      "problem": "El filtro forbidden se aplica al contexto, pero la CLI acepta el mismo material en conceptos, descripciones o eventos y podría persistirlo en estado o journal.",
+      "requiredFix": "Aplicar preflight fail-closed a toda entrada mutante antes de crear el store o tocar disco; no reflejar el valor rechazado en error, stdout ni journal. Agregar tests para expense, case y case.event."
+    },
+    {
+      "id": "R1-04",
+      "severity": "MEDIUM",
+      "problem": "Un crash puede dejar el directorio lock permanentemente y bloquear todos los hilos.",
+      "requiredFix": "Implementar recuperación segura de lock obsoleto con metadata suficiente y test focal, sin eliminar locks activos."
+    }
+  ],
+  "scopeRule": "Corregir solo estos hallazgos; mantener LOCAL_ONLY, sin package.json, red, Supabase, WhatsApp, UI ni otros proyectos.",
+  "requiredValidation": [
+    "focused tests including real multi-process CLI concurrency",
+    "forbidden input leaves no state or journal artifacts",
+    "npm run typecheck",
+    "npm test",
+    "npm run build",
+    "git diff --check"
+  ],
+  "commit": "fix(TASK-20260831-052): completar puente seguro para hilos Codex"
+}
