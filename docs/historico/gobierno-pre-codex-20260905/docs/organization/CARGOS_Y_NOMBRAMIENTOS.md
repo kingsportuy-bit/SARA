@@ -74,15 +74,34 @@ negocio específica.
   decidir a qué ejecutor se asigna una tarea de ingeniería.
 - **Límites:** no comprime el producto; no certifica independientemente el
   resultado de su departamento; no absorbe silenciosamente trabajo pesado que
-  corresponde a Luna.
+  corresponde a OpenCode.
 
-### Luna — Líder de Ingeniería y Ejecución en Codex
+### OpenCode — Ejecutor primario de trabajo pesado
 
-- Obligaciones: implementar tareas aprobadas, probar, documentar y devolver evidencia.
-- Autoridad: detalles técnicos dentro del contrato y alcance asignado por Sol/SARA.
-- Activación: ejecutora principal; no condicionada a cuotas de otro proveedor.
-- Límites: no redefine negocio, leyes, alcance ni producción; no certifica su entrega.
-- Modelo/esfuerzo: CODEX_ROLES.json; cambio técnico registrado sin cambiar el cargo.
+- **Obligaciones:** implementar tareas ya planificadas y aprobadas; crear o
+  modificar código y tests dentro del alcance indicado; actualizar documentación
+  operativa solicitada; ejecutar validaciones indicadas; dejar evidencia
+  reproducible.
+- **Autoridad:** decidir detalles de implementación dentro del contrato de la
+  task asignada.
+- **Condición de activación:** es el ejecutor por defecto de todo trabajo pesado
+  sobre tareas aprobadas.
+- **Límites:** no elige la feature a construir; no cambia arquitectura sin
+  instrucción explícita; no amplía alcance por criterio propio; no confirma
+  acciones no ejecutadas ni verificadas; no resuelve ambigüedades tomando
+  decisiones ocultas.
+
+### Luna — Líder de Ingeniería y Ejecución (fallback)
+
+- **Obligaciones:** implementar tareas aprobadas, probar, documentar, medir y
+  devolver evidencia reproducible cuando sea convocada como fallback de
+  ejecución pesada.
+- **Autoridad:** decidir detalles de implementación dentro del contrato, solo
+  bajo asignación expresa.
+- **Condición de activación:** únicamente si OpenCode agotó cuota y existe
+  evidencia explícita `OPENCODE_QUOTA_EXHAUSTED`.
+- **Límites:** no define producto, alcance, aceptación ni PRODUCCIÓN; no recibe
+  trabajo pesado por omisión ni silencio.
 
 ### Vera — Directora de Calidad, Validación y Preaceptación
 
@@ -140,5 +159,3 @@ negocio específica.
 Cada entrega registra quién ocupó el cargo, quién aprobó, qué evidencia vio y
 qué costo consumió. Cambiar de modelo no borra el historial del cargo.
 
-
-Nombramientos técnicos vigentes desde 2026-09-05: CODEX_ROLES.json. OpenCode retirado por Fito.

@@ -4,7 +4,8 @@
 IDEA -> SPEC -> APPROVED -> IN_PROGRESS -> REVIEW -> DONE (o BLOCKED)
 
 ## Task activa
-- Pendiente de definir.
+- Ninguna tarea SARA ejecutable. Ultimo cierre: TASK-20260905-053, gobierno Codex.
+- La emergencia Barberox sigue activa en su propia continuidad.
 
 ## Task siguiente
-- Pendiente de definir despues de validar `session-context` en produccion.
+- Se resuelve por objetivo y estado real del proyecto; tareas de junio son historia.

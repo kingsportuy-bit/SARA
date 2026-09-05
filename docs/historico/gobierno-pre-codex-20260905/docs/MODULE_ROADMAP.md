@@ -1,7 +1,3 @@
-> VIGENCIA: las asignaciones/planes OpenCode de este documento son historia.
-> Gobierno actual: [Desarrollo Codex](organization/DESARROLLO_CODEX.md).
-> No usar estados o tareas de este informe como permiso de ejecucion actual.
-
 # MODULE_ROADMAP.md - SARA
 
 ## Objetivo

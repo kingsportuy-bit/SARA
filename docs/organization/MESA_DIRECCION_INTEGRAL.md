@@ -13,6 +13,15 @@ trabajo de sus propios departamentos.
 
 Núcleo permanente:
 
+Permanente significa responsabilidad de gobierno, no procesos simultáneos en
+cada corrección. Para una iniciativa o cambio comercial nuevo se cumplen las
+fases siguientes y se registran las intervenciones pertinentes, incluido costo
+con Clara y preaceptación con Vera. Para ejecutar un contrato ya aprobado,
+SARA registra objetivo, límites y costo dentro del encargo existente; Sol/Luna
+ejecutan y Vera revisa. No se repite exploración ni aprobación comercial sin
+cambio de negocio. Un nuevo presupuesto o desvío vuelve a Clara/SARA y a Fito
+cuando excede la autorización. No atribuir participación a quien no intervino.
+
 - Fito: autoridad final;
 - SARA: coordinación y custodia del objetivo;
 - Clara: costo, recursos, riesgo y gobierno;
@@ -107,3 +116,11 @@ gastar sin stop-loss o permitir que el CEO descubra fallas básicas previsibles.
 Quien implementó un resultado no puede emitir su certificación independiente ni
 presidir la revisión de un incidente causado por ese mismo resultado.
 
+
+## Fuentes y modelos obligatorios (2026-09-05)
+
+Rige DESARROLLO_CODEX.md. Todo participante lee las mismas fuentes rectoras
+del proyecto y sus contratos especificos; no basta el resumen de SARA.
+Los modelos se nombran en CODEX_ROLES.json. No se convoca toda la Mesa por
+defecto; registrar participantes reales. Luna ejecuta en Codex, Vera valida
+independientemente. No aceptar incumplimientos ni cambiar negocio sin Fito.

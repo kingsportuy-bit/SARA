@@ -1,0 +1,38 @@
+{
+  "verified": true,
+  "project": "barberox",
+  "role": "luna",
+  "model": "gpt-5.6-luna",
+  "sources": [
+    "AGENTS.md",
+    "docs/AGENTS.md",
+    "docs/BIBLIA_BARBEROX.md",
+    "docs/biblioteca/capas/C4_ROUTER.md",
+    "docs/biblioteca/capas/C5_HANDLERS.md",
+    "docs/biblioteca/MODULE_COMMON_CONTRACT.md",
+    "docs/biblioteca/modulos/agenda_visual/README.md",
+    "docs/biblioteca/README.md",
+    "docs/BUSINESS.md",
+    "docs/CONTRATOS_NODOS.md",
+    "docs/CORE_PRODUCTION_CONTRACT.md",
+    "docs/INICIAL.md",
+    "docs/LEY_CAPAS_Y_MODULOS_BARBEROX_2026-05-19.md",
+    "docs/OPERADOR.md",
+    "docs/SESSION_STATE.md",
+    "docs/state/PROJECT_STATE.json",
+    "docs/TASKS/active/TASK-20260903-003-production-api-library.md"
+  ],
+  "governanceSources": [
+    "AGENTS.md",
+    "docs/INICIAL.md",
+    "docs/organization/CARGOS_Y_NOMBRAMIENTOS.md",
+    "docs/organization/CODEX_ROLES.json",
+    "docs/organization/DESARROLLO_CODEX.md",
+    "docs/organization/MESA_DIRECCION_INTEGRAL.md",
+    "docs/organization/OFICINA_FITO.md",
+    "docs/organization/PROJECTS.json"
+  ],
+  "hasNodeContract": true,
+  "hasC5": true,
+  "hasActiveTask": true
+}

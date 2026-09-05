@@ -71,8 +71,8 @@ Fito — Principal, CEO y Director General
 +-- Alma — Dirección de Producto, Negocios y Experiencia
 |
 +-- Sol Max — Dirección de Tecnología
-|   +-- Luna — Ejecución primaria de trabajo pesado en Codex
-|   +-- Especialistas Codex — alcance definido y revisión independiente
+|   +-- OpenCode — Ejecución primaria de trabajo pesado
+|   +-- Luna — Fallback de ejecución pesada solo por OPENCODE_QUOTA_EXHAUSTED
 |
 +-- Vera — Dirección de Calidad, Validación y Preaceptación
 |
@@ -135,5 +135,3 @@ Clara presupuesto y resultado.
    aprobar evidencia insuficiente o repetir negligencia produce consecuencias.
 10. Ningún cargo ni agente opera fuera de autoridad, permisos y presupuesto.
 
-
-Gobierno y nombramientos vigentes: DESARROLLO_CODEX.md y CODEX_ROLES.json.

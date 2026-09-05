@@ -1,0 +1,10 @@
+{
+  "schemaVersion":1,
+  "projects":[{
+    "id":"barberox",
+    "requiredSources":["AGENTS.md","docs/INICIAL.md","docs/OPERADOR.md","docs/AGENTS.md","docs/LEY_CAPAS_Y_MODULOS_BARBEROX_2026-05-19.md","docs/BIBLIA_BARBEROX.md","docs/BUSINESS.md","docs/CORE_PRODUCTION_CONTRACT.md","docs/biblioteca/README.md","docs/biblioteca/MODULE_COMMON_CONTRACT.md"],
+    "moduleBase":"docs/biblioteca/modulos",
+    "layerBase":"docs/biblioteca/capas"
+  }],
+  "unknownProjectPolicy":"Identificar checkout y fuentes oficiales antes de ejecutar; nunca heredar leyes de otro proyecto ni deducir ubicacion por coincidencia de nombre."
+}

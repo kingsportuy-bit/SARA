@@ -1,0 +1,215 @@
+{
+  "scope": "All module cards and layer cards selected at least once; context integrity, not product E2E",
+  "results": [
+    {
+      "module": "agenda_recurrente",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "agenda_visual",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "auditoria_seguridad",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "canal_whatsapp",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "cancelacion",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "configuracion_sucursal",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "confirmacion_24h",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "control_humano",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "disponibilidad",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "historial_operativo",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "horarios_personales_barbero",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "identidad_canales",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "lista_espera",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "metricas_caja",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "notificaciones_operativas",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "observabilidad_llm",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 19
+    },
+    {
+      "module": "observabilidad_operativa",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "onboarding_registro",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "panel_agente_barbero",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 18
+    },
+    {
+      "module": "panel_soporte_barberox",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 18
+    },
+    {
+      "module": "perfiles_comunicacion",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "reactivacion",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "reconexion_whatsapp",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "release_governance",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 18
+    },
+    {
+      "module": "roles_permisos",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "seguridad",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 19
+    },
+    {
+      "module": "suscripciones",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 18
+    },
+    {
+      "module": "agenda_visual",
+      "layer": "C1_CONTEXT_BUILDER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "agenda_visual",
+      "layer": "C2_ORIGIN_DETECTOR",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "agenda_visual",
+      "layer": "C3_CLASIFICACION",
+      "pass": true,
+      "sourceCount": 18
+    },
+    {
+      "module": "agenda_visual",
+      "layer": "C4_ROUTER",
+      "pass": true,
+      "sourceCount": 17
+    },
+    {
+      "module": "agenda_visual",
+      "layer": "C5_HANDLERS",
+      "pass": true,
+      "sourceCount": 16
+    },
+    {
+      "module": "agenda_visual",
+      "layer": "C6_POLITICA_RESPUESTA",
+      "pass": true,
+      "sourceCount": 16
+    },
+    {
+      "module": "agenda_visual",
+      "layer": "C7_EJECUCION",
+      "pass": true,
+      "sourceCount": 16
+    },
+    {
+      "module": "agenda_visual",
+      "layer": "C8_WRITE_STATE",
+      "pass": true,
+      "sourceCount": 18
+    }
+  ]
+}

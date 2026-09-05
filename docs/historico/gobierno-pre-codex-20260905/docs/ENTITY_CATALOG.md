@@ -1,7 +1,3 @@
-> VIGENCIA: las asignaciones/planes OpenCode de este documento son historia.
-> Gobierno actual: [Desarrollo Codex](organization/DESARROLLO_CODEX.md).
-> No usar estados o tareas de este informe como permiso de ejecucion actual.
-
 # ENTITY_CATALOG.md - SARA
 
 Estado: FASE A MINIMA + TASKS MVP + SESSION CONTEXT MVP + REMINDERS MVP + DAILY LOG MVP + AREAS MVP + OBJECTIVES MVP + BASE PERSONAL PLANIFICADA

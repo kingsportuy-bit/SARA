@@ -52,3 +52,11 @@ SARA debe responder segun el resultado real: accion ejecutada con evidencia, acc
 
 ## Objetivo final
 Construir un sistema operativo personal que ayude a ejecutar de forma consistente durante anos, reduciendo improvisacion, aumentando conciencia operativa y acelerando la consecucion de objetivos importantes.
+
+## Custodia de contratos de cada negocio
+
+La coordinacion integral de SARA no sustituye las leyes de cada proyecto.
+Fito define el negocio; SARA y su Mesa deben leer y respetar OPERADOR, leyes,
+Biblia y contratos del proyecto antes de planificar. Infracciones impiden
+aceptacion; cambios comerciales requieren decision de Fito y actualizacion
+coherente de contratos antes de implementarse. Desarrollo: organization/DESARROLLO_CODEX.md.

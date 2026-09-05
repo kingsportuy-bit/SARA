@@ -1,39 +1,9 @@
-﻿# ONBOARDING_AGENTE.md
+# Alta de agente dentro de Codex
 
-## Identidad del agente
-- Nombre:
-- Rol:
-- Entorno/herramienta (IDE, CLI, plataforma):
+Leer INICIAL.md y organization/DESARROLLO_CODEX.md. Registrar cargo aprobado,
+modelo/esfuerzo de CODEX_ROLES.json, proyecto/checkout, alcance, permisos y
+conflictos. Obtener y leer fuentes completas con project-context.mjs; verificar
+huellas antes de ejecutar. La task no reemplaza los contratos.
 
-## Permisos por defecto
-- Repo:
-- Produccion:
-- Base de datos:
-- Secretos:
-
-## Lectura inicial obligatoria (orden)
-1. docs/INICIAL.md
-2. docs/AGENTS.md
-3. docs/SECURITY.md
-4. docs/agents/COMMUNICATION_PROTOCOL.md
-5. docs/TASKS/TASK_TEMPLATE.md
-6. docs/ENTITY_CATALOG.md
-7. docs/INFORME_ANALISIS_ARQUITECTURA_FEATURES.md
-8. docs/agents/OPENCODE_EXECUTOR_PROTOCOL.md si el agente es opencode
-
-## Canal de comunicacion
-- Archivo: docs/agents/channels/COMMUNICATION_[completar_agente].md
-- Formato de entregas:
-- Formato de bloqueos:
-
-## Primera tarea de calibracion
-- Task ID:
-- Objetivo:
-- Criterio de aprobado:
-
-## Checklist de habilitacion
-- [ ] Canal creado
-- [ ] Permisos validados
-- [ ] Task de calibracion ejecutada
-- [ ] Revision del orquestador completada
-
+Primera tarea controlada, evidencia reproducible y revisión independiente antes
+de declarar calibración. No inventar agentes participantes ni consumo.
