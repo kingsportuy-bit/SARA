@@ -62,3 +62,13 @@ fuentes se versionan juntos con este informe en SARA.
 El checkout habitual de SARA tiene cambios ajenos en package.json y archivos
 sin seguimiento; deben permanecer intactos al integrar solo esta rama.
 La rama Barberox conserva reconciliación productiva pendiente y no cierra la emergencia.
+
+## Integracion final verificada
+
+Fuente SARA f581891 integrada por fast-forward en C:/Users/Fito/Documents/CODEX/SARA
+y publicada en origin/main y codex/sara-contract-governance. Barberox f8e39d58
+integrado en checkout habitual y publicado en origin/main/rama incidente.
+Paquete real Vera configuracion_sucursal+C6 generado y verificado desde ambos
+checkouts habituales: ok=true. Cambios ajenos package.json de SARA conservan
+SHA256 7BF5761C1B5EA021B70604C6BA67B46755247F65C9C6A0DA9707518120FBA90C.
+No se cambio selector del hilo ni se desplego runtime; emergencia abierta.
