@@ -5,7 +5,9 @@ Decisión Fito 2026-09-05: desarrollo completo en Codex; SARA coordina y Luna ej
 Orden de lectura obligatorio:
 1. AGENTS.md de la raíz.
 2. organization/DESARROLLO_CODEX.md, BIBLIA.md y LEY_ARQUITECTURA.md.
-3. organization/OFICINA_FITO.md, MESA_DIRECCION_INTEGRAL.md y CARGOS_Y_NOMBRAMIENTOS.md.
+3. Para cambios de organizacion/autoridad: organization/OFICINA_FITO.md,
+   MESA_DIRECCION_INTEGRAL.md y CARGOS_Y_NOMBRAMIENTOS.md. En mantenimiento de
+   proyectos rige el gobierno operativo del punto 2 y el cargo del punto 4.
 4. organization/CODEX_ROLES.json y PROJECTS.json.
 5. Proyecto seleccionado: OPERADOR protegido, leyes, Biblia, negocio, contrato
 productivo, Biblioteca y fichas de capas/módulos. Los documentos reales prevalecen

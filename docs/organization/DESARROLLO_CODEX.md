@@ -49,8 +49,11 @@ opiniones ni certificaciones a agentes que no fueron ejecutados.
 Desde SARA, `node scripts/project-context.mjs --project barberox --root <checkout>
 --role luna --module agenda_visual --layer C4_ROUTER --manifest <archivo.json>`.
 SARA selecciona módulos/capas por análisis semántico y arquitectura; el script
-no clasifica intenciones por palabras. Leer la salida completa. `--verify
-<archivo.json>` comprueba integridad y vigencia antes de despacho y aceptación.
+no clasifica intenciones por palabras. Leer las fuentes del paquete una vez; la
+salida compacta no sustituye su contenido. `--full` imprime el contenido y
+`--governance full` incorpora tambien el organigrama cuando el alcance lo exige.
+`--verify <archivo.json>` comprueba integridad y vigencia antes de despacho y
+aceptación.
 La salida y el manifiesto registran proyecto, raíz, rol, modelo y fuentes con
 huella; ningún hash demuestra por sí mismo lectura ni comprensión.
 
@@ -85,6 +88,31 @@ disponible. Un documento no cambia el modelo del hilo ya abierto: registrar
 modelo observado cuando la herramienta lo exponga y no afirmar un cambio que
 no se efectuó. Si no está disponible el modelo asignado, informar y resolver
 el reemplazo; no ejecutar con sustitución silenciosa.
+
+## Mantenimiento proporcional aprobado por Fito, 2026-09-10
+
+SARA sigue siendo la entrada unica. Para mantenimiento de un proyecto, el
+arranque corporativo no se repite dentro de cada encargo: se conserva gobierno
+operativo, cargo y permisos; el organigrama completo se consulta solo cuando
+el objetivo modifica organizacion o autoridad. Cada participante nuevo debe
+leer sus fuentes aplicables; ninguna huella acredita lectura ni memoria.
+
+Dentro del mismo contexto, una fuente ya leida y sin cambios no se vuelve a
+imprimir. Tras perdida de contexto se recuperan las fuentes necesarias, no se
+presupone recuerdo. El paquete mide tambien gobierno y dependencias normativas.
+Biblia, negocio, contrato Core y fronteras aplicables no se omiten para ahorrar.
+
+El ciclo de fix es caso reproducible y regla/owner -> prueba que detecta el
+fallo -> correccion -> recorrido y vecinos -> evidencia final. Antes basta
+objetivo, alcance, esperado y referencias. Durante intentos se conservan logs
+y checkpoint breve. La explicacion extensa se escribe despues de validar;
+una decision comercial nueva sigue requiriendo contrato aprobado primero.
+
+En conversacion, la aceptacion incluye texto final real, estado y efectos del
+mismo escenario y candidato. Una sonda de clasificacion/voz no equivale a E2E.
+Un fallo conserva su evidencia y no se convierte en PASS mediante un resumen.
+Emergencias, campañas, tareas, revision independiente, GO y rollback permanecen.
+No se modifica producto, concurrencia ni infraestructura por esta optimizacion.
 
 ## Historia y límites
 

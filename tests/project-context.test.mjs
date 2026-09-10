@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 
 import {
   ProjectContextError,
@@ -10,6 +13,11 @@ import {
   verifyProjectContext,
   writeProjectContext,
 } from '../scripts/project-context.mjs';
+
+const runFile = promisify(execFile);
+const cli = fileURLToPath(new URL('../scripts/project-context.mjs', import.meta.url));
+const cliArgs = (f) => [cli, '--project', 'barberox', '--role', 'luna', '--root', f.root,
+  '--config-root', f.configRoot, '--module', 'agenda_visual', '--layer', 'C4_ROUTER'];
 
 async function fixture() {
   const root = await mkdtemp(path.join(os.tmpdir(), 'project-context-root-'));
@@ -37,6 +45,8 @@ async function fixture() {
   await writeFile(path.join(configRoot, 'AGENTS.md'), 'Governance agents\n');
   await writeFile(path.join(configRoot, 'docs', 'INICIAL.md'), 'Governance inicial\n');
   await writeFile(path.join(configRoot, 'docs', 'organization', 'DESARROLLO_CODEX.md'), 'Desarrollo\n');
+  await writeFile(path.join(configRoot, 'docs', 'BIBLIA.md'), 'Biblia SARA\n');
+  await writeFile(path.join(configRoot, 'docs', 'LEY_ARQUITECTURA.md'), 'Ley SARA\n');
   await writeFile(path.join(configRoot, 'docs', 'organization', 'CARGOS_Y_NOMBRAMIENTOS.md'), 'Cargos\n');
   await writeFile(path.join(configRoot, 'docs', 'organization', 'MESA_DIRECCION_INTEGRAL.md'), 'Mesa\n');
   await writeFile(path.join(configRoot, 'docs', 'organization', 'OFICINA_FITO.md'), 'Oficina\n');
@@ -164,6 +174,76 @@ test('manifest verifica hashes y detecta cambio, fuente faltante y modelo altera
     await writeFile(path.join(f.root, 'docs', 'INICIAL.md'), 'Inicial\r\n');
     await writeFile(path.join(f.configRoot, 'docs', 'organization', 'CODEX_ROLES.json'), JSON.stringify({ roles: [{ id: 'luna', model: 'gpt-altered', reasoningEffort: 'high' }, { id: 'clara', model: 'gpt-clara', reasoningEffort: 'low' }] }));
     await rejectsCode(verifyProjectContext(manifest, { configRoot: f.configRoot }), 'METADATA_MISMATCH');
+  } finally {
+    await cleanup(f);
+  }
+});
+
+test('CLI compacta omite contenido de stdout, conserva todas las fuentes y verifica el paquete', async () => {
+  const f = await fixture();
+  try {
+    await writeFile(path.join(f.root, 'docs', 'INICIAL.md'), 'Contenido obligatorio completo\n'.repeat(100));
+    const manifest = path.join(f.root, 'cli.manifest.json');
+    const { stdout } = await runFile(process.execPath, [...cliArgs(f), '--manifest', manifest]);
+    const summary = JSON.parse(stdout);
+    const persisted = JSON.parse(await readFile(summary.package, 'utf8'));
+    const fresh = await buildProjectContext({ root: f.root, configRoot: f.configRoot, project: 'barberox', role: 'luna', modules: ['agenda_visual'], layers: ['C4_ROUTER'] });
+    assert.equal(summary.kind, 'project-context-summary');
+    assert.equal(summary.contentIncluded, false);
+    assert.match(summary.reading, /no acredita lectura/);
+    assert.equal(stdout.includes('Contenido obligatorio completo'), false);
+    assert.deepEqual(persisted, fresh);
+    for (const group of ['sources', 'governanceSources']) {
+      assert.deepEqual(summary[group], persisted[group].map(({ path, sha256, bytes }) => ({ path, sha256, bytes })));
+    }
+    assert.equal(summary.metrics.totalContentBytes, [...fresh.sources, ...fresh.governanceSources].reduce((total, source) => total + Buffer.byteLength(source.content), 0));
+    assert.equal(summary.metrics.governanceSources, 7);
+    assert.equal(summary.metrics.governanceReferences, 3);
+    assert.ok(persisted.governanceReferences.every((source) => source.content === undefined));
+    assert.ok(stdout.length < JSON.stringify(persisted, null, 2).length);
+    const checked = await runFile(process.execPath, [cli, '--verify', manifest, '--config-root', f.configRoot]);
+    assert.equal(JSON.parse(checked.stdout).ok, true);
+    persisted.governanceSources.pop();
+    await writeFile(summary.package, JSON.stringify(persisted));
+    await rejectsCode(verifyProjectContext(manifest, { configRoot: f.configRoot }), 'PACKAGE_INCOMPLETE');
+  } finally {
+    await cleanup(f);
+  }
+});
+
+test('CLI exige destino para resumen y permite contenido completo explicito sin persistencia', async () => {
+  const f = await fixture();
+  try {
+    await assert.rejects(runFile(process.execPath, cliArgs(f)), (error) => {
+      assert.equal(JSON.parse(error.stderr).code, 'OUTPUT_REQUIRED');
+      return true;
+    });
+    const { stdout } = await runFile(process.execPath, [...cliArgs(f), '--full']);
+    const full = JSON.parse(stdout);
+    assert.equal(full.kind, 'project-context-package');
+    assert.equal(full.complete, true);
+    assert.equal(full.package, null);
+    assert.ok(full.sources.every((source) => typeof source.content === 'string'));
+    assert.ok(full.governanceSources.every((source) => typeof source.content === 'string'));
+  } finally {
+    await cleanup(f);
+  }
+});
+
+test('gobierno full incluye organizacion, operational conserva referencias verificadas', async () => {
+  const f = await fixture();
+  try {
+    const manifest = path.join(f.root, 'governance.manifest.json');
+    const options = { root: f.root, configRoot: f.configRoot, project: 'barberox', role: 'luna', modules: ['agenda_visual'], layers: ['C4_ROUTER'], manifest };
+    const full = await writeProjectContext({ ...options, governance: 'full' });
+    assert.equal(full.context.governanceSources.length, 10);
+    assert.deepEqual(full.context.governanceReferences, []);
+    assert.equal((await verifyProjectContext(manifest, { configRoot: f.configRoot })).ok, true);
+    await writeProjectContext(options);
+    await writeFile(path.join(f.configRoot, 'docs', 'organization', 'MESA_DIRECCION_INTEGRAL.md'), 'Cambio organizativo\n');
+    await rejectsCode(verifyProjectContext(manifest, { configRoot: f.configRoot }), 'SOURCE_CHANGED');
+    const { stdout } = await runFile(process.execPath, [...cliArgs(f), '--full', '--governance', 'full']);
+    assert.equal(JSON.parse(stdout).governanceSources.length, 10);
   } finally {
     await cleanup(f);
   }

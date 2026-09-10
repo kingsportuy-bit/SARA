@@ -234,19 +234,22 @@ async function fileExists(file) {
   try { return (await fs.stat(file)).isFile(); } catch { return false; }
 }
 
-async function governanceSeeds(configRoot) {
+async function governanceSeeds(configRoot, profile) {
   const root = await realRoot(configRoot);
   const candidates = [
     'AGENTS.md',
     'docs/INICIAL.md',
     'docs/organization/DESARROLLO_CODEX.md',
+    'docs/BIBLIA.md',
+    'docs/LEY_ARQUITECTURA.md',
     'docs/organization/CODEX_ROLES.json',
     'docs/organization/PROJECTS.json',
     'docs/organization/CARGOS_Y_NOMBRAMIENTOS.md',
     'docs/organization/MESA_DIRECCION_INTEGRAL.md',
     'docs/organization/OFICINA_FITO.md',
   ];
-  return { root, seeds: candidates.map((candidate) => ({ path: candidate, followLinks: false })) };
+  return { root, seeds: candidates.slice(0, profile === 'full' ? candidates.length : 7).map((candidate) => ({ path: candidate, followLinks: false })),
+    referenceSeeds: profile === 'full' ? [] : candidates.slice(7) };
 }
 
 async function barberoxDynamicSeeds(root, projectId) {
@@ -328,8 +331,12 @@ export async function buildProjectContext(options = {}) {
   for (const dynamic of await barberoxDynamicSeeds(root, project.id)) seeds.push(dynamic);
   const records = await collectSources(root, seeds);
   if (records.length === 0) fail('El paquete no contiene fuentes', 'PACKAGE_INCOMPLETE');
-  const governance = await governanceSeeds(options.configRoot ?? DEFAULT_CONFIG_ROOT);
+  const governanceProfile = options.governance ?? 'operational';
+  if (!['operational', 'full'].includes(governanceProfile)) fail('governance debe ser operational o full', 'INVALID_ARGUMENT');
+  const governance = await governanceSeeds(options.configRoot ?? DEFAULT_CONFIG_ROOT, governanceProfile);
   const governanceRecords = await collectSources(governance.root, governance.seeds);
+  const governanceReferences = (await collectSources(governance.root, governance.referenceSeeds))
+    .map(({ path: sourcePath, sha256, bytes }) => ({ path: sourcePath, sha256, bytes }));
   if (governanceRecords.length === 0) fail('El paquete no contiene fuentes de gobierno SARA', 'GOVERNANCE_INCOMPLETE');
   const metadata = packageMetadata({ root, project, role, modules, layers });
   return {
@@ -339,7 +346,9 @@ export async function buildProjectContext(options = {}) {
     ...metadata,
     sources: records,
     governanceRoot: governance.root,
+    governanceProfile,
     governanceSources: governanceRecords,
+    governanceReferences,
     limitation: 'El paquete prueba alcance, integridad y selección documental; no prueba comprensión semántica.',
   };
 }
@@ -363,6 +372,8 @@ export async function writeProjectContext(options = {}) {
       packagePath,
       root: context.root,
       governanceRoot: context.governanceRoot,
+      governanceProfile: context.governanceProfile,
+      governanceReferences: context.governanceReferences,
       project: context.project,
       role: context.role,
       model: context.model,
@@ -401,12 +412,17 @@ export async function verifyProjectContext(manifestPath, options = {}) {
     layers: manifest.layers,
     configRoot: options.configRoot,
     configuration: options.configuration,
+    governance: manifest.governanceProfile ?? 'full',
   });
   for (const key of ['project', 'role', 'model', 'reasoningEffort', 'root', 'governanceRoot']) {
     if (packageData[key] !== fresh[key] || manifest[key] !== fresh[key]) fail(`Metadato alterado: ${key}`, 'METADATA_MISMATCH');
   }
   if (!sameList(packageData.modules, fresh.modules) || !sameList(packageData.layers, fresh.layers) || !sameList(manifest.modules, fresh.modules) || !sameList(manifest.layers, fresh.layers)) fail('Alcance de módulo/capa alterado', 'SCOPE_MISMATCH');
   const expected = canonicalSourceMap(fresh.sources);
+  if ((packageData.governanceProfile ?? 'full') !== fresh.governanceProfile) fail('Perfil de gobierno alterado', 'METADATA_MISMATCH');
+  for (const data of [packageData, manifest]) {
+    if (JSON.stringify(data.governanceReferences ?? []) !== JSON.stringify(fresh.governanceReferences)) fail('Referencias de gobierno modificadas', 'SOURCE_CHANGED');
+  }
   const packageSources = canonicalSourceMap(Array.isArray(packageData.sources) ? packageData.sources : []);
   const manifestSources = canonicalSourceMap(Array.isArray(manifest.sources) ? manifest.sources : []);
   if (expected.size !== packageSources.size || expected.size !== manifestSources.size) fail('Paquete incompleto: faltan fuentes', 'PACKAGE_INCOMPLETE');
@@ -432,6 +448,31 @@ export async function verifyProjectContext(manifestPath, options = {}) {
 export const createProjectContext = buildProjectContext;
 export const verifyManifest = verifyProjectContext;
 
+// Presentation only: every source remains in the persisted, verifiable package.
+// References are not a claim that an agent has read their contents.
+export function summarizeProjectContext(context) {
+  const { sources, governanceSources, ...metadata } = context;
+  const references = (records) => records.map(({ path: sourcePath, sha256, bytes }) => ({ path: sourcePath, sha256, bytes }));
+  const totalBytes = (records) => records.reduce((sum, source) => sum + source.bytes, 0);
+  return {
+    ...metadata,
+    kind: 'project-context-summary',
+    contentIncluded: false,
+    sources: references(sources),
+    governanceSources: references(governanceSources),
+    metrics: {
+      projectSources: sources.length,
+      governanceSources: governanceSources.length,
+      governanceReferences: (context.governanceReferences ?? []).length,
+      referencedContentBytes: (context.governanceReferences ?? []).reduce((sum, source) => sum + source.bytes, 0),
+      projectContentBytes: totalBytes(sources),
+      governanceContentBytes: totalBytes(governanceSources),
+      totalContentBytes: totalBytes(sources) + totalBytes(governanceSources),
+    },
+    reading: 'Solo referencias; no acredita lectura. Leer las fuentes completas no leidas o modificadas del paquete. --full imprime todo el contenido.',
+  };
+}
+
 function parseArgs(argv) {
   const args = { modules: [], layers: [] };
   for (let index = 0; index < argv.length; index += 1) {
@@ -441,9 +482,10 @@ function parseArgs(argv) {
     else if (token === '--verify') args.verify = argv[++index];
     else if (token === '--manifest') args.manifest = argv[++index];
     else if (token === '--output') args.output = argv[++index];
+    else if (token === '--full') args.full = true;
     else if (token.startsWith('--')) {
       const key = token.slice(2);
-      if (!['project', 'root', 'role', 'config-root'].includes(key)) fail(`Argumento desconocido: ${token}`, 'INVALID_ARGUMENT');
+      if (!['project', 'root', 'role', 'config-root', 'governance'].includes(key)) fail(`Argumento desconocido: ${token}`, 'INVALID_ARGUMENT');
       args[key.replaceAll('-', '')] = argv[++index];
     } else fail(`Argumento inesperado: ${token}`, 'INVALID_ARGUMENT');
   }
@@ -457,6 +499,9 @@ async function main(argv = process.argv.slice(2)) {
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     return;
   }
+  if (!args.full && !args.manifest && !args.output) {
+    fail('La salida compacta requiere --manifest o --output para conservar el paquete completo; use --full para emitirlo por stdout.', 'OUTPUT_REQUIRED');
+  }
   const result = await writeProjectContext({
     project: args.project,
     root: args.root,
@@ -466,8 +511,10 @@ async function main(argv = process.argv.slice(2)) {
     manifest: args.manifest,
     output: args.output,
     configRoot: args.configroot,
+    governance: args.governance,
   });
-  const response = { ok: true, package: result.packagePath, manifest: result.manifestPath, ...result.context };
+  const response = { ok: true, package: result.packagePath, manifest: result.manifestPath,
+    ...(args.full ? result.context : summarizeProjectContext(result.context)) };
   process.stdout.write(`${JSON.stringify(response, null, 2)}\n`);
 }
 
