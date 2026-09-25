@@ -252,7 +252,7 @@ async function governanceSeeds(configRoot, profile) {
     referenceSeeds: profile === 'full' ? [] : candidates.slice(7) };
 }
 
-async function barberoxDynamicSeeds(root, projectId) {
+export async function barberoxDynamicSeeds(root, projectId) {
   if (projectId !== 'barberox') return [];
   const statePath = 'docs/state/PROJECT_STATE.json';
   const sessionPath = 'docs/SESSION_STATE.md';
@@ -263,6 +263,7 @@ async function barberoxDynamicSeeds(root, projectId) {
   const stateFile = await safeFile(root, statePath, statePath);
   let state;
   try { state = JSON.parse(await fs.readFile(stateFile.absolute, 'utf8')); } catch (error) { fail(`Estado Barberox inválido: ${error.message}`, 'STATE_INVALID'); }
+  if (state?.activeTask === null) return seeds;
   const activePath = state?.activeTask?.path;
   if (typeof activePath !== 'string' || !activePath) fail('Barberox no declara una tarea activa válida', 'ACTIVE_TASK_MISSING');
   const activeRoot = path.resolve(root, 'docs', 'TASKS', 'active');
