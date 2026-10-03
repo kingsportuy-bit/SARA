@@ -130,6 +130,24 @@ test('rechaza rol inexistente y selección incompleta para Sol Luna Vera', async
   }
 });
 
+test('foco process permite tooling sin capa ficticia y queda ligado al manifest', async () => {
+  const f = await fixture();
+  try {
+    const manifest = path.join(f.root, 'process.manifest.json');
+    const context = await buildProjectContext({ root: f.root, configRoot: f.configRoot, project: 'barberox', role: 'luna', focus: 'process' });
+    assert.equal(context.focus, 'process');
+    assert.ok(context.sources.some((source) => source.path === 'docs/INICIAL.md'));
+    await writeProjectContext({ context, manifest });
+    assert.equal((await verifyProjectContext(manifest, { configRoot: f.configRoot })).ok, true);
+    const data = JSON.parse(await readFile(manifest, 'utf8'));
+    data.focus = 'product';
+    await writeFile(manifest, JSON.stringify(data));
+    await rejectsCode(verifyProjectContext(manifest, { configRoot: f.configRoot }), 'SELECTION_REQUIRED');
+  } finally {
+    await cleanup(f);
+  }
+});
+
 test('rechaza traversal local y enlace simbólico exterior', async (t) => {
   const f = await fixture();
   try {

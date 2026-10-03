@@ -48,6 +48,11 @@ opiniones ni certificaciones a agentes que no fueron ejecutados.
 
 Desde SARA, `node scripts/project-context.mjs --project barberox --root <checkout>
 --role luna --module agenda_visual --layer C4_ROUTER --manifest <archivo.json>`.
+Para tooling transversal sin módulo ni capa de producto, usar `--focus process`
+en lugar de inventar una selección. El paquete conserva las fuentes rectoras,
+incluye `docs/generated/CURRENT_STATE.md` cuando existe y declara el foco en
+el manifiesto verificable. Leer esa vista breve primero; luego leer los
+contratos aplicables y verificar las huellas antes de despacho y aceptación.
 SARA selecciona módulos/capas por análisis semántico y arquitectura; el script
 no clasifica intenciones por palabras. Leer las fuentes del paquete una vez; la
 salida compacta no sustituye su contenido. `--full` imprime el contenido y

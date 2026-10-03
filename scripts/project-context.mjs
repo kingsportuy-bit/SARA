@@ -260,6 +260,8 @@ export async function barberoxDynamicSeeds(root, projectId) {
     { path: statePath, followLinks: false },
     { path: sessionPath, followLinks: false },
   ];
+  const currentStatePath = 'docs/generated/CURRENT_STATE.md';
+  if (await fileExists(path.join(root, currentStatePath))) seeds.unshift({ path: currentStatePath, followLinks: false });
   const stateFile = await safeFile(root, statePath, statePath);
   let state;
   try { state = JSON.parse(await fs.readFile(stateFile.absolute, 'utf8')); } catch (error) { fail(`Estado Barberox inválido: ${error.message}`, 'STATE_INVALID'); }
@@ -281,7 +283,7 @@ function expandBase(base, selected, label) {
   return path.join(normalized, label === 'module' ? path.join(selected, 'README.md') : `${selected}.md`);
 }
 
-function packageMetadata({ root, project, role, modules, layers }) {
+function packageMetadata({ root, project, role, modules, layers, focus }) {
   return {
     root: path.resolve(root),
     project: project.id,
@@ -290,10 +292,12 @@ function packageMetadata({ root, project, role, modules, layers }) {
     reasoningEffort: role.reasoningEffort,
     modules: [...modules],
     layers: [...layers],
+    focus,
   };
 }
 
-function ensureSelections(roleId, modules, layers) {
+function ensureSelections(roleId, modules, layers, focus) {
+  if (focus === 'process' && modules.length === 0 && layers.length === 0) return;
   if (HIGH_CONTEXT_ROLES.has(roleId) && (modules.length === 0 || layers.length === 0)) {
     fail(`El rol ${roleId} requiere al menos un módulo y una capa`, 'SELECTION_REQUIRED');
   }
@@ -324,7 +328,9 @@ export async function buildProjectContext(options = {}) {
   const project = findById(config.projects, projectId, 'Proyecto');
   const modules = uniqueStrings(options.modules ?? options.module, 'module');
   const layers = uniqueStrings(options.layers ?? options.layer, 'layer');
-  ensureSelections(role.id, modules, layers);
+  const focus = options.focus ?? 'product';
+  if (!['product', 'process'].includes(focus)) fail('focus debe ser product o process', 'INVALID_ARGUMENT');
+  ensureSelections(role.id, modules, layers, focus);
 
   const seeds = project.requiredSources.map((source) => ({ path: source, followLinks: false }));
   for (const module of modules) seeds.push({ path: expandBase(project.moduleBase, module, 'module'), followLinks: true });
@@ -339,7 +345,7 @@ export async function buildProjectContext(options = {}) {
   const governanceReferences = (await collectSources(governance.root, governance.referenceSeeds))
     .map(({ path: sourcePath, sha256, bytes }) => ({ path: sourcePath, sha256, bytes }));
   if (governanceRecords.length === 0) fail('El paquete no contiene fuentes de gobierno SARA', 'GOVERNANCE_INCOMPLETE');
-  const metadata = packageMetadata({ root, project, role, modules, layers });
+  const metadata = packageMetadata({ root, project, role, modules, layers, focus });
   return {
     version: 1,
     kind: 'project-context-package',
@@ -381,6 +387,7 @@ export async function writeProjectContext(options = {}) {
       reasoningEffort: context.reasoningEffort,
       modules: context.modules,
       layers: context.layers,
+      focus: context.focus,
       sources: context.sources.map(({ path: sourcePath, sha256, bytes }) => ({ path: sourcePath, sha256, bytes })),
       governanceSources: context.governanceSources.map(({ path: sourcePath, sha256, bytes }) => ({ path: sourcePath, sha256, bytes })),
       limitation: context.limitation,
@@ -411,6 +418,7 @@ export async function verifyProjectContext(manifestPath, options = {}) {
     role: manifest.role,
     modules: manifest.modules,
     layers: manifest.layers,
+    focus: manifest.focus ?? 'product',
     configRoot: options.configRoot,
     configuration: options.configuration,
     governance: manifest.governanceProfile ?? 'full',
@@ -419,6 +427,7 @@ export async function verifyProjectContext(manifestPath, options = {}) {
     if (packageData[key] !== fresh[key] || manifest[key] !== fresh[key]) fail(`Metadato alterado: ${key}`, 'METADATA_MISMATCH');
   }
   if (!sameList(packageData.modules, fresh.modules) || !sameList(packageData.layers, fresh.layers) || !sameList(manifest.modules, fresh.modules) || !sameList(manifest.layers, fresh.layers)) fail('Alcance de módulo/capa alterado', 'SCOPE_MISMATCH');
+  if ((packageData.focus ?? 'product') !== fresh.focus || (manifest.focus ?? 'product') !== fresh.focus) fail('Foco alterado', 'SCOPE_MISMATCH');
   const expected = canonicalSourceMap(fresh.sources);
   if ((packageData.governanceProfile ?? 'full') !== fresh.governanceProfile) fail('Perfil de gobierno alterado', 'METADATA_MISMATCH');
   for (const data of [packageData, manifest]) {
@@ -470,7 +479,7 @@ export function summarizeProjectContext(context) {
       governanceContentBytes: totalBytes(governanceSources),
       totalContentBytes: totalBytes(sources) + totalBytes(governanceSources),
     },
-    reading: 'Solo referencias; no acredita lectura. Leer las fuentes completas no leidas o modificadas del paquete. --full imprime todo el contenido.',
+    reading: 'Solo referencias; no acredita lectura. Leer primero docs/generated/CURRENT_STATE.md si figura entre las fuentes; es vista derivada y no sustituye contratos. Leer las fuentes completas no leidas o modificadas del paquete. --full imprime todo el contenido.',
   };
 }
 
@@ -486,7 +495,7 @@ function parseArgs(argv) {
     else if (token === '--full') args.full = true;
     else if (token.startsWith('--')) {
       const key = token.slice(2);
-      if (!['project', 'root', 'role', 'config-root', 'governance'].includes(key)) fail(`Argumento desconocido: ${token}`, 'INVALID_ARGUMENT');
+      if (!['project', 'root', 'role', 'config-root', 'governance', 'focus'].includes(key)) fail(`Argumento desconocido: ${token}`, 'INVALID_ARGUMENT');
       args[key.replaceAll('-', '')] = argv[++index];
     } else fail(`Argumento inesperado: ${token}`, 'INVALID_ARGUMENT');
   }
@@ -513,6 +522,7 @@ async function main(argv = process.argv.slice(2)) {
     output: args.output,
     configRoot: args.configroot,
     governance: args.governance,
+    focus: args.focus,
   });
   const response = { ok: true, package: result.packagePath, manifest: result.manifestPath,
     ...(args.full ? result.context : summarizeProjectContext(result.context)) };
