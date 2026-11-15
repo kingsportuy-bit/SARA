@@ -4,6 +4,8 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { POLICY_PATH, POLICY_DOC } from './governance-evolution.mjs';
+import { BINDING_PATH, projectAdoption } from './project-os.mjs';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_CONFIG_ROOT = path.resolve(SCRIPT_DIR, '..');
@@ -248,7 +250,7 @@ async function governanceSeeds(configRoot, profile) {
     'docs/organization/MESA_DIRECCION_INTEGRAL.md',
     'docs/organization/OFICINA_FITO.md',
   ];
-  return { root, seeds: candidates.slice(0, profile === 'full' ? candidates.length : 7).map((candidate) => ({ path: candidate, followLinks: false })),
+  return { root, seeds: [...candidates.slice(0, profile === 'full' ? candidates.length : 7), POLICY_PATH, POLICY_DOC].map((candidate) => ({ path: candidate, followLinks: false })),
     referenceSeeds: profile === 'full' ? [] : candidates.slice(7) };
 }
 
@@ -327,6 +329,8 @@ export async function buildProjectContext(options = {}) {
   ensureSelections(role.id, modules, layers);
 
   const seeds = project.requiredSources.map((source) => ({ path: source, followLinks: false }));
+  const governanceEvolution = await projectAdoption({ root, project: project.id, configRoot: options.configRoot ?? DEFAULT_CONFIG_ROOT }, project.governanceEvolution);
+  if (governanceEvolution.bindingInstalled) seeds.push({ path: BINDING_PATH, followLinks: false });
   for (const module of modules) seeds.push({ path: expandBase(project.moduleBase, module, 'module'), followLinks: true });
   for (const layer of layers) seeds.push({ path: expandBase(project.layerBase, layer, 'layer'), followLinks: true });
   for (const dynamic of await barberoxDynamicSeeds(root, project.id)) seeds.push(dynamic);
@@ -348,6 +352,7 @@ export async function buildProjectContext(options = {}) {
     sources: records,
     governanceRoot: governance.root,
     governanceProfile,
+    governanceEvolution,
     governanceSources: governanceRecords,
     governanceReferences,
     limitation: 'El paquete prueba alcance, integridad y selección documental; no prueba comprensión semántica.',
@@ -374,6 +379,7 @@ export async function writeProjectContext(options = {}) {
       root: context.root,
       governanceRoot: context.governanceRoot,
       governanceProfile: context.governanceProfile,
+      governanceEvolution: context.governanceEvolution,
       governanceReferences: context.governanceReferences,
       project: context.project,
       role: context.role,
@@ -420,6 +426,9 @@ export async function verifyProjectContext(manifestPath, options = {}) {
   }
   if (!sameList(packageData.modules, fresh.modules) || !sameList(packageData.layers, fresh.layers) || !sameList(manifest.modules, fresh.modules) || !sameList(manifest.layers, fresh.layers)) fail('Alcance de módulo/capa alterado', 'SCOPE_MISMATCH');
   const expected = canonicalSourceMap(fresh.sources);
+  for (const data of [packageData, manifest]) {
+    if (JSON.stringify(data.governanceEvolution) !== JSON.stringify(fresh.governanceEvolution)) fail('Estado de adopción alterado', 'METADATA_MISMATCH');
+  }
   if ((packageData.governanceProfile ?? 'full') !== fresh.governanceProfile) fail('Perfil de gobierno alterado', 'METADATA_MISMATCH');
   for (const data of [packageData, manifest]) {
     if (JSON.stringify(data.governanceReferences ?? []) !== JSON.stringify(fresh.governanceReferences)) fail('Referencias de gobierno modificadas', 'SOURCE_CHANGED');

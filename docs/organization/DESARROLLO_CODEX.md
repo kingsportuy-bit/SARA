@@ -91,6 +91,13 @@ el reemplazo; no ejecutar con sustitución silenciosa.
 
 ## Mantenimiento proporcional aprobado por Fito, 2026-09-10
 
+Metodología transversal: [evolución de gobernanza](EVOLUCION_GOBERNANZA.md),
+MASTER WP autorizado 2026-11-09. R1 baseline, R2 validación proporcional,
+R3 evolución de guards, R4 diagnóstico antes de reparar y R5 modo cierre.
+SARA la aplica; en proyectos existentes es una referencia `PENDING_ADOPTION`,
+sin nuevas exigencias ni cambio de gates/CI hasta adopción individual autorizada.
+Que el paquete incluya esta metodología no la activa en el proyecto seleccionado.
+
 SARA sigue siendo la entrada unica. Para mantenimiento de un proyecto, el
 arranque corporativo no se repite dentro de cada encargo: se conserva gobierno
 operativo, cargo y permisos; el organigrama completo se consulta solo cuando

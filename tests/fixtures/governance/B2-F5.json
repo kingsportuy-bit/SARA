@@ -1,0 +1,20 @@
+[
+  {
+    "id": "B2",
+    "source": {
+      "path": "BARBEROX-B2-DOC-CANONICAL/docs/campanas/barberox-2-v1-vendible-2026/WP00-B2_REVISION_VERA.md",
+      "sha256": "158ce03c7e0d3936aae2c5d0b2c27413a9cb1ef5fca10f73bd12b4c48457ea85"
+    },
+    "snapshot": "tests/fixtures/governance/B2.md",
+    "lesson": "No PASS con evidencia obligatoria ausente"
+  },
+  {
+    "id": "F5",
+    "source": {
+      "path": "BARBEROX-B2-DOC-CANONICAL/docs/campanas/barberox-2-v1-vendible-2026/BARBEROX_PROCESS_OPTIMIZATION_POST_D_HANDOFF_IA_AUXILIAR.md",
+      "sha256": "81904e9bc28686d2362037cb6b35e24897660b324407a6d40a4b1b6c5f245014"
+    },
+    "snapshot": "tests/fixtures/governance/F5.md",
+    "lesson": "Sucesión preserva historia; fallo mecánico no cambia producto"
+  }
+]

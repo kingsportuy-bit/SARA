@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "policyVersion": "1.0.0",
+  "owner": "sara",
+  "saraState": "ACTIVE",
+  "existingProjectsDefault": "PENDING_ADOPTION",
+  "newProjectsDefault": "ACTIVE",
+  "rules": ["R1_BASELINE", "R2_PROPORTIONAL_VALIDATION", "R3_GUARD_EVOLUTION", "R4_DIAGNOSIS_FIRST", "R5_CLOSE_MODE"],
+  "states": ["ACTIVE", "SUPERSEDED", "HISTORICAL_ONLY", "RETIRED"],
+  "phases": ["DEVELOPMENT", "TASK_CLOSE", "RELEASE"],
+  "strongRisks": ["authorization", "data-isolation", "persistence", "transactions", "critical-contract"],
+  "failureClasses": ["PRODUCT_DEFECT", "SECURITY_OR_DATA_RISK", "CURRENT_CONTRACT_REGRESSION", "HISTORICAL_TEST_INCOMPATIBILITY", "CERTIFICATION_TOOLING_FAILURE", "ENVIRONMENT_FAILURE"],
+  "requiredGuardFields": ["id", "contract", "contractVersion", "risks", "scope", "covers", "tests", "phases", "state"],
+  "document": "docs/organization/EVOLUCION_GOBERNANZA.md"
+}

@@ -28,6 +28,9 @@ async function fixture() {
   await mkdir(path.join(root, 'docs', 'state'), { recursive: true });
   await mkdir(path.join(root, 'docs', 'TASKS', 'active'), { recursive: true });
   await mkdir(path.join(configRoot, 'docs', 'organization'), { recursive: true });
+  for (const name of ['GOVERNANCE_POLICY.json', 'EVOLUCION_GOBERNANZA.md']) {
+    await writeFile(path.join(configRoot, 'docs', 'organization', name), await readFile(new URL(`../docs/organization/${name}`, import.meta.url)));
+  }
   await writeFile(path.join(configRoot, 'docs', 'organization', 'CODEX_ROLES.json'), JSON.stringify({
     roles: [
       { id: 'luna', model: 'gpt-luna', reasoningEffort: 'high' },
@@ -197,7 +200,7 @@ test('CLI compacta omite contenido de stdout, conserva todas las fuentes y verif
       assert.deepEqual(summary[group], persisted[group].map(({ path, sha256, bytes }) => ({ path, sha256, bytes })));
     }
     assert.equal(summary.metrics.totalContentBytes, [...fresh.sources, ...fresh.governanceSources].reduce((total, source) => total + Buffer.byteLength(source.content), 0));
-    assert.equal(summary.metrics.governanceSources, 7);
+    assert.equal(summary.metrics.governanceSources, 9);
     assert.equal(summary.metrics.governanceReferences, 3);
     assert.ok(persisted.governanceReferences.every((source) => source.content === undefined));
     assert.ok(stdout.length < JSON.stringify(persisted, null, 2).length);
@@ -236,14 +239,14 @@ test('gobierno full incluye organizacion, operational conserva referencias verif
     const manifest = path.join(f.root, 'governance.manifest.json');
     const options = { root: f.root, configRoot: f.configRoot, project: 'barberox', role: 'luna', modules: ['agenda_visual'], layers: ['C4_ROUTER'], manifest };
     const full = await writeProjectContext({ ...options, governance: 'full' });
-    assert.equal(full.context.governanceSources.length, 10);
+    assert.equal(full.context.governanceSources.length, 12);
     assert.deepEqual(full.context.governanceReferences, []);
     assert.equal((await verifyProjectContext(manifest, { configRoot: f.configRoot })).ok, true);
     await writeProjectContext(options);
     await writeFile(path.join(f.configRoot, 'docs', 'organization', 'MESA_DIRECCION_INTEGRAL.md'), 'Cambio organizativo\n');
     await rejectsCode(verifyProjectContext(manifest, { configRoot: f.configRoot }), 'SOURCE_CHANGED');
     const { stdout } = await runFile(process.execPath, [...cliArgs(f), '--full', '--governance', 'full']);
-    assert.equal(JSON.parse(stdout).governanceSources.length, 10);
+    assert.equal(JSON.parse(stdout).governanceSources.length, 12);
   } finally {
     await cleanup(f);
   }

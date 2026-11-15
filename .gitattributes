@@ -1,0 +1,3 @@
+# Historical evidence is byte-addressed; preserve original LF/CRLF bytes.
+/tests/fixtures/governance/B2.md -text
+/tests/fixtures/governance/F5.md -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

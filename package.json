@@ -7,8 +7,9 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
-    "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "test": "vitest run && npm run test:governance",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:governance": "node --test tests/governance-evolution.test.mjs tests/governance-adoption.test.mjs tests/project-os.test.mjs tests/project-context.test.mjs scripts/project-context-no-active.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.8",
