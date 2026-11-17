@@ -42,6 +42,29 @@
         "state": "PENDING_ADOPTION",
         "reference": "docs/organization/EVOLUCION_GOBERNANZA.md"
       }
+    },
+    {
+      "id": "barberox-3",
+      "requiredSources": [
+        "AGENTS.md",
+        "docs/CONTRACT_AUTHORITY.md",
+        "docs/biblioteca/README.md",
+        "docs/contracts/original/docs/LEY_CAPAS_Y_MODULOS_BARBEROX_2026-05-19.md",
+        "docs/contracts/original/docs/BIBLIA_BARBEROX.md",
+        "docs/contracts/original/docs/BUSINESS.md",
+        "docs/contracts/original/docs/CORE_PRODUCTION_CONTRACT.md",
+        "docs/contracts/original/docs/SECURITY.md",
+        "docs/contracts/original/docs/biblioteca/MODULE_COMMON_CONTRACT.md",
+        "docs/contracts/original/docs/biblioteca/modulos/suscripciones/PLANES_V1.md",
+        "docs/contracts/original/docs/campanas/barberox-2-v1-vendible-2026/DECISION_FITO_CONSOLIDADA.md",
+        "docs/contracts/original/docs/campanas/barberox-2-v1-vendible-2026/PRECISIONES_FITO.md"
+      ],
+      "moduleBase": "docs/biblioteca/modulos",
+      "layerBase": "docs/biblioteca/capas",
+      "governanceEvolution": {
+        "state": "ACTIVE",
+        "reference": "docs/organization/EVOLUCION_GOBERNANZA.md"
+      }
     }
   ],
   "unknownProjectPolicy": "Identificar checkout y fuentes oficiales antes de ejecutar; nunca heredar leyes de otro proyecto ni deducir ubicacion por coincidencia de nombre."
