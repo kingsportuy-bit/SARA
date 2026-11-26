@@ -48,6 +48,10 @@
       "requiredSources": [
         "AGENTS.md",
         "docs/CONTRACT_AUTHORITY.md",
+        "docs/recovery/R01_DIRECTION_REGRESSION.md",
+        "docs/decisions/2026-11-26-direction-recovery.md",
+        "docs/decisions/2026-11-26-m26-provider-model-config.md",
+        "docs/state/PROJECT_STATE.json",
         "docs/biblioteca/README.md",
         "docs/contracts/original/docs/LEY_CAPAS_Y_MODULOS_BARBEROX_2026-05-19.md",
         "docs/contracts/original/docs/BIBLIA_BARBEROX.md",
@@ -61,6 +65,15 @@
       ],
       "moduleBase": "docs/biblioteca/modulos",
       "layerBase": "docs/biblioteca/capas",
+      "directionGate": {
+        "authorityRemote": "https://github.com/kingsportuy-bit/BARBEROX-3.0.git",
+        "authorityRef": "refs/heads/recovery/2026-11-26-governance",
+        "evidencePath": "docs/recovery/R01_DIRECTION_REGRESSION.md",
+        "checkpoints": {
+          "A": "21fb2d5bce2bfa5c38bfb2275fa3f1c4c05cb071",
+          "B": "10d1ef912c28997cfbb96ac309158cb892180563"
+        }
+      },
       "governanceEvolution": {
         "state": "ACTIVE",
         "reference": "docs/organization/EVOLUCION_GOBERNANZA.md"

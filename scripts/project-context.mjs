@@ -324,6 +324,9 @@ export async function buildProjectContext(options = {}) {
   validateConfig({ projects: config.projects }, 'projects', 'project');
   const role = findById(config.roles, roleId, 'Rol');
   const project = findById(config.projects, projectId, 'Proyecto');
+  if (project.directionGate) {
+    fail('DIRECTION_GATE pendiente de implementación y revisión: no se autoriza generar ni verificar paquetes de este proyecto', 'DIRECTION_GATE_BLOCKED');
+  }
   const modules = uniqueStrings(options.modules ?? options.module, 'module');
   const layers = uniqueStrings(options.layers ?? options.layer, 'layer');
   ensureSelections(role.id, modules, layers);

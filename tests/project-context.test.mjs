@@ -100,6 +100,51 @@ test('construye paquete completo, normaliza LF y resuelve contratos locales', as
   }
 });
 
+test('barberox-3 distribuye deltas y estado activos sin añadirlos a otros proyectos', async () => {
+  const f = await fixture();
+  try {
+    const authorityPaths = [
+      'docs/decisions/2026-11-26-direction-recovery.md',
+      'docs/decisions/2026-11-26-m26-provider-model-config.md',
+      'docs/state/PROJECT_STATE.json',
+    ];
+    for (const source of authorityPaths) {
+      const target = path.join(f.root, source);
+      await mkdir(path.dirname(target), { recursive: true });
+      await writeFile(target, `${source}\n`);
+    }
+    const requiredSources = ['docs/INICIAL.md', ...authorityPaths];
+    const configuration = {
+      roles: [{ id: 'clara', model: 'gpt-clara', reasoningEffort: 'medium' }],
+      projects: [
+        { id: 'barberox-3', requiredSources, moduleBase: 'docs/biblioteca/modulos', layerBase: 'docs/biblioteca/capas' },
+        { id: 'sportex', requiredSources: ['docs/INICIAL.md'], moduleBase: 'docs/biblioteca/modulos', layerBase: 'docs/biblioteca/capas' },
+      ],
+    };
+    const barberox = await buildProjectContext({ root: f.root, configRoot: f.configRoot, configuration, project: 'barberox-3', role: 'clara' });
+    const sportex = await buildProjectContext({ root: f.root, configRoot: f.configRoot, configuration, project: 'sportex', role: 'clara' });
+    const barberoxPaths = new Set(barberox.sources.map((source) => source.path));
+    const sportexPaths = new Set(sportex.sources.map((source) => source.path));
+    for (const source of authorityPaths) assert.ok(barberoxPaths.has(source), `falta ${source} en barberox-3`);
+    for (const source of authorityPaths) assert.equal(sportexPaths.has(source), false, `${source} se filtró a sportex`);
+  } finally {
+    await cleanup(f);
+  }
+});
+
+test('no genera paquetes sujetos a DIRECTION_GATE mientras no esté implementado', async () => {
+  const f = await fixture();
+  try {
+    const configuration = {
+      roles: [{ id: 'clara', model: 'gpt-clara', reasoningEffort: 'medium' }],
+      projects: [{ id: 'barberox-3', requiredSources: ['docs/INICIAL.md'], directionGate: {}, moduleBase: 'docs/biblioteca/modulos', layerBase: 'docs/biblioteca/capas' }],
+    };
+    await assert.rejects(buildProjectContext({ root: f.root, configRoot: f.configRoot, configuration, project: 'barberox-3', role: 'clara' }), { code: 'DIRECTION_GATE_BLOCKED' });
+  } finally {
+    await cleanup(f);
+  }
+});
+
 test('rechaza fuente requerida faltante', async () => {
   const f = await fixture();
   try {

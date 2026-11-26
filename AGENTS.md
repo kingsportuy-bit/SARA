@@ -20,6 +20,11 @@ Solo se trabaja en el proyecto y alcance autorizado; mencionar un proyecto no
 concede permisos de producción, mensajes, secretos ni borrados. Las emergencias
 siguen el gobierno del proyecto y no se cierran por un PASS local.
 
+Al terminar un trabajo con resultado PASS o BLOCKED, entregar el informe en el
+chat del proyecto abierto en el navegador interno, además de informar en Codex.
+Confirmar que el destino y el envío sean los correctos; si no se puede enviar,
+informar la limitación sin afirmar que se entregó.
+
 Para gastos/contexto/casos personales usar docs/PERSONAL/CODEX_THREADS.md y
 PERSONAL_CONTEXT_POLICY.md; almacenamiento local exclusivamente en data/personal.
 No guardar secretos, no persistir conversación casual, no editar datos a mano.
