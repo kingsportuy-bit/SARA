@@ -132,7 +132,7 @@ test('barberox-3 distribuye deltas y estado activos sin añadirlos a otros proye
   }
 });
 
-test('no genera paquetes sujetos a DIRECTION_GATE mientras no esté implementado', async () => {
+test('no genera paquetes sujetos a DIRECTION_GATE sin alcance de revisión', async () => {
   const f = await fixture();
   try {
     const configuration = {

@@ -325,17 +325,24 @@ export async function buildProjectContext(options = {}) {
   validateConfig({ projects: config.projects }, 'projects', 'project');
   const role = findById(config.roles, roleId, 'Rol');
   const project = findById(config.projects, projectId, 'Proyecto');
+  const modules = uniqueStrings(options.modules ?? options.module, 'module');
+  const layers = uniqueStrings(options.layers ?? options.layer, 'layer');
+  ensureSelections(role.id, modules, layers);
   let directionGate;
   let directionPath;
+  let authorizationPath;
   if (project.directionGate) {
     if (!options.directionPath || !options.operatorPath) fail('DIRECTION_GATE requiere alcance de revisión y fuente protegida', 'DIRECTION_GATE_BLOCKED');
     directionPath = await realRoot(asAbsolute(options.directionPath, 'directionPath'));
     const direction = await readJson(directionPath, 'DIRECTION_GATE');
-    directionGate = await reviewDirection({ root, config: project.directionGate, direction, operatorPath: options.operatorPath });
+    let authorization;
+    if (options.authorizationPath) {
+      authorizationPath = await realRoot(asAbsolute(options.authorizationPath, 'authorizationPath'));
+      if (authorizationPath === directionPath) fail('La validación manual debe estar separada de la solicitud', 'DIRECTION_GATE_BLOCKED');
+      authorization = await readJson(authorizationPath, 'autorización manual');
+    }
+    directionGate = await reviewDirection({ root, config: project.directionGate, direction, operatorPath: options.operatorPath, authorization, selectedScope: { modules, layers } });
   }
-  const modules = uniqueStrings(options.modules ?? options.module, 'module');
-  const layers = uniqueStrings(options.layers ?? options.layer, 'layer');
-  ensureSelections(role.id, modules, layers);
 
   const seeds = project.requiredSources.map((source) => ({ path: source, followLinks: false }));
   if (project.directionGate) {
@@ -367,7 +374,7 @@ export async function buildProjectContext(options = {}) {
     kind: 'project-context-package',
     complete: true,
     ...metadata,
-    ...(directionGate ? { directionGate, directionPath, executionAuthorized: false } : {}),
+    ...(directionGate ? { directionGate, directionPath, ...(authorizationPath ? { authorizationPath } : {}), executionAuthorized: false } : {}),
     sources: records,
     governanceRoot: governance.root,
     governanceProfile,
@@ -400,7 +407,7 @@ export async function writeProjectContext(options = {}) {
       governanceProfile: context.governanceProfile,
       governanceEvolution: context.governanceEvolution,
       governanceReferences: context.governanceReferences,
-      ...(context.directionGate ? { directionGate: context.directionGate, directionPath: context.directionPath, executionAuthorized: false } : {}),
+      ...(context.directionGate ? { directionGate: context.directionGate, directionPath: context.directionPath, ...(context.authorizationPath ? { authorizationPath: context.authorizationPath } : {}), executionAuthorized: false } : {}),
       project: context.project,
       role: context.role,
       model: context.model,
@@ -441,6 +448,7 @@ export async function verifyProjectContext(manifestPath, options = {}) {
     configuration: options.configuration,
     governance: manifest.governanceProfile ?? 'full',
     directionPath: manifest.directionPath,
+    authorizationPath: manifest.authorizationPath,
     operatorPath: manifest.directionGate?.operator?.path,
   });
   for (const key of ['project', 'role', 'model', 'reasoningEffort', 'root', 'governanceRoot']) {
@@ -449,7 +457,7 @@ export async function verifyProjectContext(manifestPath, options = {}) {
   if (!sameList(packageData.modules, fresh.modules) || !sameList(packageData.layers, fresh.layers) || !sameList(manifest.modules, fresh.modules) || !sameList(manifest.layers, fresh.layers)) fail('Alcance de módulo/capa alterado', 'SCOPE_MISMATCH');
   const expected = canonicalSourceMap(fresh.sources);
   for (const data of [packageData, manifest]) {
-    if (JSON.stringify(data.directionGate) !== JSON.stringify(fresh.directionGate) || data.directionPath !== fresh.directionPath || data.executionAuthorized !== fresh.executionAuthorized) fail('DIRECTION_GATE alterado', 'METADATA_MISMATCH');
+    if (JSON.stringify(data.directionGate) !== JSON.stringify(fresh.directionGate) || data.directionPath !== fresh.directionPath || data.authorizationPath !== fresh.authorizationPath || data.executionAuthorized !== fresh.executionAuthorized) fail('DIRECTION_GATE alterado', 'METADATA_MISMATCH');
     if (JSON.stringify(data.governanceEvolution) !== JSON.stringify(fresh.governanceEvolution)) fail('Estado de adopción alterado', 'METADATA_MISMATCH');
   }
   if ((packageData.governanceProfile ?? 'full') !== fresh.governanceProfile) fail('Perfil de gobierno alterado', 'METADATA_MISMATCH');
@@ -519,7 +527,7 @@ function parseArgs(argv) {
     else if (token === '--full') args.full = true;
     else if (token.startsWith('--')) {
       const key = token.slice(2);
-      if (!['project', 'root', 'role', 'config-root', 'governance', 'direction', 'operator'].includes(key)) fail(`Argumento desconocido: ${token}`, 'INVALID_ARGUMENT');
+      if (!['project', 'root', 'role', 'config-root', 'governance', 'direction', 'operator', 'authorization'].includes(key)) fail(`Argumento desconocido: ${token}`, 'INVALID_ARGUMENT');
       args[key.replaceAll('-', '')] = argv[++index];
     } else fail(`Argumento inesperado: ${token}`, 'INVALID_ARGUMENT');
   }
@@ -548,6 +556,7 @@ async function main(argv = process.argv.slice(2)) {
     governance: args.governance,
     directionPath: args.direction,
     operatorPath: args.operator,
+    authorizationPath: args.authorization,
   });
   const response = { ok: true, package: result.packagePath, manifest: result.manifestPath,
     ...(args.full ? result.context : summarizeProjectContext(result.context)) };

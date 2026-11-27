@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { verifyDirectionIdentity } from '../scripts/direction-identity.mjs';
 import { reviewDirection } from '../scripts/direction-gate.mjs';
 import { buildProjectContext, verifyProjectContext, writeProjectContext } from '../scripts/project-context.mjs';
@@ -31,9 +32,11 @@ test('Regresiones A–F de identidad y distribución de revisión DIR-10', async
   const b = git(authority, 'rev-parse', 'HEAD');
   git(authority, 'checkout', '-b', 'authority', a);
   await writeFile(path.join(authority, 'direction.txt'), 'DIR-03\n');
+  const manualEvidence = 'Aprobación manual de fixture para el objetivo y su alcance.\n';
+  await writeFile(path.join(authority, 'approval-evidence.txt'), manualEvidence);
   await mkdir(path.join(authority, 'docs', 'decisions'), { recursive: true });
   await writeFile(path.join(authority, 'docs', 'decisions', 'initial.md'), 'Decisión inicial\n');
-  git(authority, 'add', 'direction.txt', 'docs/decisions/initial.md');
+  git(authority, 'add', 'direction.txt', 'approval-evidence.txt', 'docs/decisions/initial.md');
   git(authority, 'commit', '-m', 'authority');
   git(authority, 'push', 'origin', 'HEAD:refs/heads/governance');
   git(authority, 'worktree', 'add', '--detach', candidateA, a);
@@ -128,5 +131,64 @@ test('Regresiones A–F de identidad y distribución de revisión DIR-10', async
   await t.test('D: decisión remota nueva se incluye en el siguiente paquete', async () => {
     const next = await buildProjectContext(args);
     assert.ok(next.sources.some((source) => source.path === 'docs/decisions/new.md' && source.content.includes('Nueva decisión')));
+  });
+
+  await t.test('DIR-10: trabajo autorizado compara registro manual separado y permite continuidad normal', async () => {
+    await writeFile(path.join(candidateA, 'tracked.txt'), 'evolución autorizada\n');
+    git(candidateA, 'add', 'tracked.txt');
+    git(candidateA, 'commit', '-m', 'authorized objective progress');
+    const evolvedSha = git(candidateA, 'rev-parse', 'HEAD');
+    const workDirection = { ...direction, purpose: 'work', candidateSha: evolvedSha };
+    const selectedScope = { modules: ['m'], layers: ['l'] };
+    const manual = {
+      version: 1, kind: 'direction-manual-authorization', decision: 'AUTHORIZED',
+      objective: direction.objective,
+      scope: { applicable: direction.applicable, superseded: direction.superseded, entrypoint: direction.entrypoint, continuity: direction.continuity, ...selectedScope },
+      authoritySha: git(authority, 'rev-parse', 'HEAD'), candidateRoot: candidateA, startingSha: a,
+      constraints: direction.constraints,
+      evidence: { path: 'approval-evidence.txt', sha256: crypto.createHash('sha256').update(manualEvidence).digest('hex'), reference: 'decision-log:fixture-1', summary: 'Aprobación del objetivo y alcance contrastados por el canal de dirección.' },
+      approvedBy: 'Fito (atribución manual, no autenticada)', approvedAt: '2026-11-27T12:00:00Z',
+    };
+    const authorized = await reviewDirection({ ...gate, direction: workDirection, authorization: manual, selectedScope });
+    assert.equal(authorized.outcome, 'WORK_SCOPE_MATCHED');
+    assert.equal(authorized.executionAuthorized, false);
+    assert.equal(authorized.manualValidationMatch.startingSha, a);
+    assert.equal(authorized.candidateSha, evolvedSha);
+    assert.equal(authorized.manualValidationMatch.authentication, 'NOT_PERFORMED');
+
+    for (const invalid of [
+      null,
+      { ...manual, objective: 'otro objetivo' },
+      { ...manual, scope: { ...manual.scope, applicable: ['DIR-09'] } },
+      { ...manual, scope: { ...manual.scope, superseded: [] } },
+      { ...manual, scope: { ...manual.scope, continuity: 'otra evidencia' } },
+      { ...manual, scope: { ...manual.scope, modules: ['otra-superficie'] } },
+      { ...manual, authoritySha: a },
+      { ...manual, candidateRoot: candidateB },
+      { ...manual, constraints: ['restricción alterada'] },
+      { ...manual, evidence: undefined },
+      { ...manual, evidence: { ...manual.evidence, sha256: '0'.repeat(64) } },
+      { ...manual, evidence: { ...manual.evidence, path: 'missing-evidence.txt' } },
+    ]) {
+      await assert.rejects(reviewDirection({ ...gate, direction: workDirection, authorization: invalid, selectedScope }), { code: 'DIRECTION_GATE_BLOCKED' });
+    }
+    await assert.rejects(reviewDirection({ ...gate, direction: workDirection, selectedScope }), { code: 'DIRECTION_GATE_BLOCKED' });
+    await assert.rejects(reviewDirection({ ...gate, direction: { ...workDirection, candidateSha: b }, authorization: manual, selectedScope }), { code: 'DIRECTION_GATE_BLOCKED' });
+
+    const workDirectionPath = path.join(base, 'work-direction.json');
+    const authorizationPath = path.join(base, 'manual-authorization.json');
+    await writeFile(workDirectionPath, JSON.stringify(workDirection));
+    await writeFile(authorizationPath, JSON.stringify(manual));
+    const workManifest = path.join(base, 'work-context.json');
+    const workConfiguration = { ...configuration, projects: [{ ...configuration.projects[0], moduleBase: 'direction.txt', layerBase: 'direction.txt' }] };
+    const workArgs = { ...args, configuration: workConfiguration, directionPath: workDirectionPath, authorizationPath, modules: ['m'], layers: ['l'] };
+    await assert.rejects(buildProjectContext({ ...workArgs, authorizationPath: workDirectionPath }), { code: 'DIRECTION_GATE_BLOCKED' });
+    const written = await writeProjectContext({ ...workArgs, manifest: workManifest });
+    assert.equal(written.context.directionGate.outcome, 'WORK_SCOPE_MATCHED');
+    assert.equal(written.context.executionAuthorized, false);
+    assert.equal((await verifyProjectContext(workManifest, { configuration: workConfiguration, configRoot })).executionAuthorized, false);
+    await assert.rejects(buildProjectContext({ ...workArgs, modules: ['otro'], layers: ['l'] }), { code: 'DIRECTION_GATE_BLOCKED' });
+    await writeFile(authorizationPath, JSON.stringify({ ...manual, constraints: ['cambio'] }));
+    await assert.rejects(verifyProjectContext(workManifest, { configuration: workConfiguration, configRoot }));
   });
 });
