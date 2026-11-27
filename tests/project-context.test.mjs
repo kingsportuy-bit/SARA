@@ -100,6 +100,23 @@ test('construye paquete completo, normaliza LF y resuelve contratos locales', as
   }
 });
 
+test('incluye el registro R02 autorizado y rechaza otros paths de decisión como tarea', async () => {
+  const f = await fixture();
+  try {
+    const decision = 'docs/decisions/2026-11-26-direction-recovery.md';
+    await mkdir(path.join(f.root, 'docs', 'decisions'), { recursive: true });
+    await writeFile(path.join(f.root, decision), 'R02 autorizado\n');
+    await writeFile(path.join(f.root, 'docs', 'state', 'PROJECT_STATE.json'), JSON.stringify({ activeTask: { id: 'R02-RECONCILE-CANDIDATES', path: decision } }));
+    const options = { root: f.root, configRoot: f.configRoot, project: 'barberox', role: 'luna', modules: ['agenda_visual'], layers: ['C4_ROUTER'] };
+    const context = await buildProjectContext(options);
+    assert.ok(context.sources.some((source) => source.path === decision));
+    await writeFile(path.join(f.root, 'docs', 'state', 'PROJECT_STATE.json'), JSON.stringify({ activeTask: { id: 'OTHER', path: decision } }));
+    await rejectsCode(buildProjectContext(options), 'ACTIVE_TASK_INVALID');
+  } finally {
+    await cleanup(f);
+  }
+});
+
 test('barberox-3 distribuye deltas y estado activos sin añadirlos a otros proyectos', async () => {
   const f = await fixture();
   try {

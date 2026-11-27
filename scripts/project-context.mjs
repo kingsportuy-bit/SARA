@@ -271,7 +271,11 @@ export async function barberoxDynamicSeeds(root, projectId) {
   if (typeof activePath !== 'string' || !activePath) fail('Barberox no declara una tarea activa válida', 'ACTIVE_TASK_MISSING');
   const activeRoot = path.resolve(root, 'docs', 'TASKS', 'active');
   const activeAbsolute = path.resolve(root, activePath);
-  if (!isInside(activeRoot, activeAbsolute) || path.extname(activeAbsolute).toLowerCase() !== '.md') fail('La tarea activa debe estar bajo docs/TASKS/active y ser Markdown', 'ACTIVE_TASK_INVALID');
+  const registeredR02 = state.activeTask.id === 'R02-RECONCILE-CANDIDATES'
+    && activePath === 'docs/decisions/2026-11-26-direction-recovery.md';
+  if ((!isInside(activeRoot, activeAbsolute) && !registeredR02) || path.extname(activeAbsolute).toLowerCase() !== '.md') {
+    fail('La tarea activa debe estar bajo docs/TASKS/active o ser el registro autorizado R02', 'ACTIVE_TASK_INVALID');
+  }
   seeds.push({ path: activePath, followLinks: false, allowForbidden: true });
   return seeds;
 }
