@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { verifyDirectionIdentity } from '../scripts/direction-identity.mjs';
@@ -19,7 +19,8 @@ test('DIR-10 comprueba autoridad, candidato, cambios locales y checkpoint incomp
   git(authority, 'config', 'user.name', 'R01 test');
   git(authority, 'config', 'user.email', 'r01@example.invalid');
   await writeFile(path.join(authority, 'tracked.txt'), 'A\n');
-  git(authority, 'add', 'tracked.txt');
+  await writeFile(path.join(authority, '.gitignore'), '.local/\nsrc/ignored.ts\n');
+  git(authority, 'add', 'tracked.txt', '.gitignore');
   git(authority, 'commit', '-m', 'A');
   const a = git(authority, 'rev-parse', 'HEAD');
   await writeFile(path.join(authority, 'tracked.txt'), 'B\n');
@@ -36,6 +37,16 @@ test('DIR-10 comprueba autoridad, candidato, cambios locales y checkpoint incomp
   const accepted = await verifyDirectionIdentity(input);
   assert.equal(accepted.candidateSha, a);
   assert.equal(accepted.authoritySha, git(authority, 'rev-parse', 'HEAD'));
+  await mkdir(path.join(candidateA, '.local'), { recursive: true });
+  await writeFile(path.join(candidateA, '.local', 'report.log'), 'artefacto local');
+  await verifyDirectionIdentity(input);
+  await mkdir(path.join(candidateA, 'src'), { recursive: true });
+  await writeFile(path.join(candidateA, 'src', 'new.ts'), 'export const changed = true;');
+  await assert.rejects(verifyDirectionIdentity(input), { code: 'DIRECTION_GATE_BLOCKED' });
+  await rm(path.join(candidateA, 'src', 'new.ts'));
+  await writeFile(path.join(candidateA, 'src', 'ignored.ts'), 'export const hidden = true;');
+  await assert.rejects(verifyDirectionIdentity(input), { code: 'DIRECTION_GATE_BLOCKED' });
+  await rm(path.join(candidateA, 'src', 'ignored.ts'));
   await assert.rejects(verifyDirectionIdentity({ ...input, candidateRoot: candidateB, candidateSha: b }), { code: 'DIRECTION_GATE_BLOCKED' });
   await assert.rejects(verifyDirectionIdentity({ ...input, candidateSha: b }), { code: 'DIRECTION_GATE_BLOCKED' });
   await assert.rejects(verifyDirectionIdentity({ ...input, authorityRef: 'refs/heads/missing' }), { code: 'DIRECTION_GATE_BLOCKED' });
