@@ -68,6 +68,11 @@
       "directionGate": {
         "authorityRemote": "https://github.com/kingsportuy-bit/BARBEROX-3.0.git",
         "authorityRef": "refs/heads/recovery/2026-11-26-governance",
+        "decisionRegister": "docs/decisions/2026-11-26-direction-recovery.md",
+        "protectedOperator": {
+          "remote": "https://github.com/kingsportuy-bit/WORKFLOW-BARBEROX.git",
+          "commit": "b6a72c5d4b3020d5f1de079599516704871813b6"
+        },
         "evidencePath": "docs/recovery/R01_DIRECTION_REGRESSION.md",
         "checkpoints": {
           "A": "21fb2d5bce2bfa5c38bfb2275fa3f1c4c05cb071",
