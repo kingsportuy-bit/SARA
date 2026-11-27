@@ -23,7 +23,7 @@ test('Regresiones A–F de identidad y distribución de revisión DIR-10', async
   git(authority, 'config', 'user.name', 'R01 test');
   git(authority, 'config', 'user.email', 'r01@example.invalid');
   await writeFile(path.join(authority, 'tracked.txt'), 'A\n');
-  await writeFile(path.join(authority, '.gitignore'), '.local/\nsrc/ignored.ts\n');
+  await writeFile(path.join(authority, '.gitignore'), '.local/\ndist-p01/\nsrc/ignored.ts\n');
   git(authority, 'add', 'tracked.txt', '.gitignore');
   git(authority, 'commit', '-m', 'A');
   const a = git(authority, 'rev-parse', 'HEAD');
@@ -92,6 +92,9 @@ test('Regresiones A–F de identidad y distribución de revisión DIR-10', async
   git(operatorRoot, 'restore', 'docs/OPERADOR.md');
   await mkdir(path.join(candidateA, '.local'), { recursive: true });
   await writeFile(path.join(candidateA, '.local', 'report.log'), 'artefacto local');
+  await verifyDirectionIdentity(input);
+  await mkdir(path.join(candidateA, 'dist-p01'), { recursive: true });
+  await writeFile(path.join(candidateA, 'dist-p01', 'compiled.js'), 'artefacto compilado');
   await verifyDirectionIdentity(input);
   await mkdir(path.join(candidateA, 'src'), { recursive: true });
   await writeFile(path.join(candidateA, 'src', 'new.ts'), 'export const changed = true;');

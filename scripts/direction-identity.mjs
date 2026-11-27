@@ -13,7 +13,7 @@ async function git(root, args) {
 
 // Solo artefactos locales conocidos en la raíz; no excluir src/, db/ ni
 // scripts/. Un archivo ignorado por Git puede ser ejecutable igualmente.
-const LOCAL_ARTIFACT = /^(?:\.local\/|node_modules\/|\.next\/|coverage\/|dist\/|build\/|docs\/SARA_GOVERNANCE\.json$|\.env(?:\.[^/]*)?$)/;
+const LOCAL_ARTIFACT = /^(?:\.local\/|node_modules\/|\.next\/|coverage\/|dist\/|dist-p01\/|build\/|docs\/SARA_GOVERNANCE\.json$|\.env(?:\.[^/]*)?$)/;
 async function hasUnexpectedFiles(root) {
   const status = await git(root, ['status', '--porcelain=v1', '-z', '--untracked-files=all', '--ignored=matching']);
   const records = status.split('\0').filter(Boolean);
